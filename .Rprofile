@@ -6,11 +6,10 @@ if (interactive()) {
 # Setting up python stuff
 Sys.setenv("PATH" = paste0("/usr/local/anaconda3/bin:", Sys.getenv("PATH")))
 
-# use_condaenv("r-reticulate")
-# Giving up, just use defaults.
 # install_keras(method = "conda")
 # tensorflow::install_tensorflow(method = "conda")
-# reticulate::virtualenv_python()
+# reticulate::conda_list()
+# reticulate::conda_version()
 # reticulate::conda_binary()
-
+# required = TRUE seems to help.
 reticulate::use_condaenv("r-reticulate", required = TRUE)

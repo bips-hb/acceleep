@@ -12,9 +12,9 @@
 generate_ts_chunk <- function(res = 20, interval_length = 30, offset = 0) {
   tibble::tibble(
     timestamp = seq(offset, (offset + interval_length) - 1/res, by = 1/res),
-    x = rnorm(length(timestamp)),
-    y = rnorm(length(timestamp)),
-    z = rnorm(length(timestamp)),
+    x = stats::rnorm(length(timestamp), mean = 0),
+    y = stats::rnorm(length(timestamp), mean = 10),
+    z = stats::rnorm(length(timestamp), mean = 100),
   )
 }
 
