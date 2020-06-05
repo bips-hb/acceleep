@@ -1,10 +1,10 @@
-#' Generate a single interval of time-series of acceloremetry data
+#' Generate a single interval of time-series of accelerometry data
 #'
 #' One chunk of length `interval_length` seconds of accelerometry data
 #' measured at `res` Hz with normally-distributed X/Y/Z measurements.
 #' Using `offset` (in seconds) allows this function to be called repeatedly to
 #' create consecutive chunks.
-#' @param res Resolution of accelormetry data, in Hz. 20 for Activpal, 100 for other models
+#' @param res Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models
 #' @param interval_length Number of seconds a chunk covers
 #' @param offset Second offset from previous chunk
 #' @export
@@ -17,6 +17,9 @@ generate_ts_chunk <- function(res = 20, interval_length = 30, offset = 0) {
     z = stats::rnorm(length(timestamp), mean = 0),
   )
 }
+
+# Appease R CMD check
+globalVariables("timestamp")
 
 #' Generate a full acceloremtry dataset
 #'

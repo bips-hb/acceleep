@@ -2,12 +2,12 @@
 % Please edit documentation in R/simulation.R
 \name{generate_ts_chunk}
 \alias{generate_ts_chunk}
-\title{Generate a single interval of time-series of acceloremetry data}
+\title{Generate a single interval of time-series of accelerometry data}
 \usage{
 generate_ts_chunk(res = 20, interval_length = 30, offset = 0)
 }
 \arguments{
-\item{res}{Resolution of accelormetry data, in Hz. 20 for Activpal, 100 for other models}
+\item{res}{Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models}
 
 \item{interval_length}{Number of seconds a chunk covers}
 

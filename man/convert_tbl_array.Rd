@@ -11,7 +11,7 @@ convert_tbl_array(accel_tbl, interval_length, res)
 
 \item{interval_length}{Number of seconds a chunk covers}
 
-\item{res}{Resolution of accelormetry data, in Hz. 20 for Activpal, 100 for other models}
+\item{res}{Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models}
 }
 \value{
 An array of dimensions c(chunks_per_tbl, 3, rows_per_chunk)

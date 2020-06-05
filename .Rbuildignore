@@ -3,3 +3,4 @@
 ^simulated-data$
 ^\.github$
 ^\.Rprofile$
+^LICENSE\.md$

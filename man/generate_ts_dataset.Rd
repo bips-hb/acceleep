@@ -7,7 +7,7 @@
 generate_ts_dataset(res = 20, interval_length = 30, n_chunks = 100)
 }
 \arguments{
-\item{res}{Resolution of accelormetry data, in Hz. 20 for Activpal, 100 for other models}
+\item{res}{Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models}
 
 \item{interval_length}{Number of seconds a chunk covers}
 
