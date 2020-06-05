@@ -1,5 +1,5 @@
 # As per Marvin ----
-n <- 30 # Number of seconds per interval
+n <- 30 # anzahl kinder (?)
 p <- 3 # No. of accelerometry axes
 t <- 100 # seconds
 res <- 20 # measures/sec
@@ -26,7 +26,7 @@ library(acceleep)
 
 res <- 10             # Starting wit 20Hz instead of 100Hz or simplicity
 interval_length <- 30 # 30 seconds seems reasonable due to MET limitation
-n_chunks <- 10       # Arbitrarily chosen, 120 results in 1 hour of simulated data
+n_chunks <- 10        # Arbitrarily chosen, setting 120 results in 1 hour of simulated data
 
 # Generate 10 consecutive chunks at 20Hz, 30s per chunk
 accel_sim_tbl <- generate_ts_dataset(
@@ -39,12 +39,13 @@ accel_sim_tbl <- generate_ts_dataset(
 # One matrix (res * interval_length * n_chunks) x 3
 accel_sim_mat <- as.matrix(accel_sim_tbl[-1])
 
-xx <- array(
-  as.numeric(accel_sim_mat),
-  dim = c(res * interval_length * n_chunks, res * interval_length, 3)
-)
+# as per 00-array-exp
+accel_array <- split(accel_sim_mat,  (accel_sim_tbl$timestamp - 1) %/% interval_length) %>%
+  lapply(matrix, ncol = 3) %>%
+  unlist() %>%
+  array(dim = c(10, 3, 5)) # intervals, # accel axes, 5 intervals (?)
 
-dim(xx)
+dim(accel_array)
 
 # Now how to convert to appropriate array?
 
