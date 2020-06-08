@@ -50,9 +50,9 @@ convert_tbl_array <- function(accel_tbl, interval_length, res) {
 #' aggregate_spiro("data/input/spiro/ID_001_spiro.csv", t0 = hms::as_hms("09:00:00"))
 #' }
 aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
-  stopifnot(file.exists(input_file_spiro))
+  stopifnot(file.exists(here(input_file_spiro)))
 
-  spiro <- data.table::fread(input_file_spiro, select = c("Time", "MET", "O2", "CO2")) #%>%
+  spiro <- data.table::fread(here(input_file_spiro), select = c("Time", "MET", "O2", "CO2")) #%>%
 
   spiro %>% as_tibble() %>%
     mutate(
@@ -64,12 +64,12 @@ aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
     filter(!is.na(MET))
 }
 
-#' (TWIP) Read accelerometry + spiro and save to disk in analysis-friendly state
+#' (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
 #'
 #' @param input_file_acce,input_file_spiro File path to accelerometry/spirometrydata CSV.
 #' @param ID Subject ID as character with 3 places, e.g. `"002"`.
 #' @inheritParams aggregate_spiro
-#'
+#' @import data.table
 #' @return Nothing, btu writes data
 #' @export
 #'
@@ -80,7 +80,7 @@ convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_int
     warning("File ", input_file_accel, " does not exist.")
     return(NULL)
   }
-  accel_data <- fread(input_file_accel)
+  accel_data <- data.table::fread(input_file_accel)
 
   # Convert time format
   if (stringr::str_detect(input_file_accel, "actigraph")) {
