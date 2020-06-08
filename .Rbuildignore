@@ -4,3 +4,5 @@
 ^\.github$
 ^\.Rprofile$
 ^LICENSE\.md$
+^data$
+^setup$
