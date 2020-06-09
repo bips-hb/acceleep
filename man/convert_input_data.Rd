@@ -2,20 +2,20 @@
 % Please edit documentation in R/convert-data.R
 \name{convert_input_data}
 \alias{convert_input_data}
-\title{(TWIP) Read accelerometry + spiro and save to disk in analysis-friendly state}
+\title{(WIP) Read accelerometry + spiro and save to disk in analysis-friendly state}
 \usage{
 convert_input_data(input_file_accel, input_file_spiro, ID, spiro_interval = 30)
 }
 \arguments{
+\item{input_file_accel, input_file_spiro}{File path to accelerometry/spirometrydata CSV.}
+
 \item{ID}{Subject ID as character with 3 places, e.g. \code{"002"}.}
 
 \item{spiro_interval}{\verb{[30]} Interval in seconds to calculate mean METs from}
-
-\item{input_file_acce, input_file_spiro}{File path to accelerometry/spirometrydata CSV.}
 }
 \value{
-Nothing, btu writes data
+Nothing, just writes data
 }
 \description{
-(TWIP) Read accelerometry + spiro and save to disk in analysis-friendly state
+(WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
 }

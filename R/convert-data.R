@@ -44,7 +44,7 @@ convert_tbl_array <- function(accel_tbl, interval_length, res) {
 #'
 #' @return A tibble
 #' @export
-#'
+#' @importFrom data.table fread
 #' @examples
 #' \dontrun{
 #' aggregate_spiro("data/input/spiro/ID_001_spiro.csv", t0 = hms::as_hms("09:00:00"))
@@ -66,11 +66,13 @@ aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
 
 #' (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
 #'
-#' @param input_file_acce,input_file_spiro File path to accelerometry/spirometrydata CSV.
+#' @param input_file_accel,input_file_spiro File path to accelerometry/spirometrydata CSV.
 #' @param ID Subject ID as character with 3 places, e.g. `"002"`.
 #' @inheritParams aggregate_spiro
-#' @import data.table
-#' @return Nothing, btu writes data
+#' @importFrom  data.table fread
+#' @importFrom data.table :=
+#' @importFrom stats median
+#' @return Nothing, just writes data
 #' @export
 #'
 convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_interval = 30) {
@@ -127,8 +129,6 @@ convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_int
   # res[, kJ := (3.9 * O2 + 1.1 * CO2) * 4.184]
   # res[, Jrel := 1000 * kJ / bodyweight]
 
-  # saveRDS(data, here::here("data", "proc", ))
-
   # save final data data
   out_file_accel <- stringr::str_replace(input_file_accel, "input", "processed")
   out_file_accel <- fs::path_ext_set(out_file_accel, ".rds")
@@ -140,5 +140,10 @@ convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_int
 
 }
 
+# Appease R CMD check (for now)
+globalVariables(c(
+  "CO2", "MET", "O2", "Timestamp", "datetime", "file_accel", "file_spiro",
+  "interval", "median", "model", "placement", "sid", "time"
+))
 
 

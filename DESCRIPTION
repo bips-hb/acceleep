@@ -17,4 +17,11 @@ Imports:
     tibble,
     magrittr,
     purrr,
-    stats
+    stats,
+    data.table,
+    hms,
+    dplyr,
+    fs,
+    here,
+    stringr,
+    cliapp
