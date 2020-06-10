@@ -4,7 +4,13 @@
 \alias{convert_input_data}
 \title{(WIP) Read accelerometry + spiro and save to disk in analysis-friendly state}
 \usage{
-convert_input_data(input_file_accel, input_file_spiro, ID, spiro_interval = 30)
+convert_input_data(
+  input_file_accel,
+  input_file_spiro,
+  ID,
+  spiro_interval = 30,
+  overwrite = TRUE
+)
 }
 \arguments{
 \item{input_file_accel, input_file_spiro}{File path to accelerometry/spirometrydata CSV.}
@@ -12,10 +18,32 @@ convert_input_data(input_file_accel, input_file_spiro, ID, spiro_interval = 30)
 \item{ID}{Subject ID as character with 3 places, e.g. \code{"002"}.}
 
 \item{spiro_interval}{\verb{[30]} Interval in seconds to calculate mean METs from}
+
+\item{overwrite}{\verb{[TRUE]} Overwrite existing output files or leave them untouched?}
 }
 \value{
-Nothing, just writes data
+Nothing, just writes data with colums \code{c("interval", "ID", "X", "Y", "Z", "MET", "O2", "CO2")}
 }
 \description{
 (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
+}
+\details{
+Accelerometer model is currently detected from the file path in \code{input_file_accel}, which has to contain
+the following strings to properly detect each model:
+\itemize{
+\item \code{"actigraph"}: GT3X ActiGraph
+\item \code{"activpal"}: activPAL
+\item \code{"geneactiv"}: GENEActiv
+}
+}
+\examples{
+\dontrun{
+# actigraph
+input_file_accel <- "data/input/actigraph/001_left_readable.csv"
+# activpal
+input_file_accel <- "data/input/activpal/001_ActivPal_readable.csv"
+input_file_spiro <- "data/input/spiro/ID_001_spiro.csv"
+ID <- "001"
+
+}
 }

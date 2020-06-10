@@ -24,4 +24,6 @@ Imports:
     fs,
     here,
     stringr,
-    cliapp
+    cliapp,
+    vroom,
+    lubridate

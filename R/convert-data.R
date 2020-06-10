@@ -52,7 +52,7 @@ convert_tbl_array <- function(accel_tbl, interval_length, res) {
 aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
   stopifnot(file.exists(here(input_file_spiro)))
 
-  spiro <- data.table::fread(here(input_file_spiro), select = c("Time", "MET", "O2", "CO2")) #%>%
+  spiro <- data.table::fread(here::here(input_file_spiro), select = c("Time", "MET", "O2", "CO2"))
 
   spiro %>% as_tibble() %>%
     mutate(
@@ -66,50 +66,100 @@ aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
 
 #' (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
 #'
+#' @details
+#' Accelerometer model is currently detected from the file path in `input_file_accel`, which has to contain
+#' the following strings to properly detect each model:
+#'
+#' - `"actigraph"`: GT3X ActiGraph
+#' - `"activpal"`: activPAL
+#' - `"geneactiv"`: GENEActiv
+#'
 #' @param input_file_accel,input_file_spiro File path to accelerometry/spirometrydata CSV.
 #' @param ID Subject ID as character with 3 places, e.g. `"002"`.
+#' @param overwrite `[TRUE]` Overwrite existing output files or leave them untouched?
 #' @inheritParams aggregate_spiro
 #' @importFrom  data.table fread
 #' @importFrom data.table :=
+#' @importFrom vroom vroom cols
 #' @importFrom stats median
-#' @return Nothing, just writes data
+#' @return Nothing, just writes data with colums `c("interval", "ID", "X", "Y", "Z", "MET", "O2", "CO2")`
 #' @export
+#' @examples
+#' \dontrun{
+#' # actigraph
+#' input_file_accel <- "data/input/actigraph/001_left_readable.csv"
+#' # activpal
+#' input_file_accel <- "data/input/activpal/001_ActivPal_readable.csv"
+#' input_file_spiro <- "data/input/spiro/ID_001_spiro.csv"
+#' ID <- "001"
 #'
-convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_interval = 30) {
+#' }
+convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_interval = 30, overwrite = TRUE) {
+
+  cliapp::cli_alert_info("Reading {input_file_accel} and {input_file_spiro}")
 
   # Read acceleration data
-  if (!file.exists(input_file_accel)) {
+  if (!file.exists(here::here(input_file_accel))) {
     warning("File ", input_file_accel, " does not exist.")
     return(NULL)
   }
-  accel_data <- data.table::fread(input_file_accel)
+  # accel_data <- data.table::fread(input_file_accel)
+  #
+  # accel_data2 <- vroom::vroom(input_file_accel)
 
   # Convert time format
   if (stringr::str_detect(input_file_accel, "actigraph")) {
 
-    accel_data[, datetime := gsub(":(\\d+)$", ".\\1", Timestamp)]
-    accel_data[, datetime := gsub("\\d+.\\d+.\\d+ ", "", datetime)]
-    accel_data[, datetime := as.POSIXct(datetime, format = "%H:%M:%OS")]
-    accel_data[, Timestamp := NULL]
+    accel_data <- vroom::vroom(
+      input_file_accel,
+      col_select = c("Timestamp", "Axis1", "Axis2", "Axis3"),
+      col_types = vroom::cols("Timestamp" = "c")
+    ) %>%
+      dplyr::transmute(
+        X = Axis1,
+        Y = Axis2,
+        Z = Axis3,
+        datetime = lubridate::parse_date_time(Timestamp, orders = "%d.%m.%Y %H:%M:%0S"),
+        time = hms::as_hms(datetime) # Time in H:M:S is easier
+      )
 
   } else if (stringr::str_detect(input_file_accel, "activpal")) {
 
-    accel_data[, datetime := as.POSIXct(as.numeric(datetime)*60*60*24, origin = "1899-12-30", tz = "GMT")]
+    accel_data <- vroom::vroom(
+      input_file_accel,
+      col_select = c("datetime", "X", "Y", "Z"),
+      col_types = vroom::cols("datetime" = "d")
+    ) %>%
+      mutate(
+        datetime = datetime * 60 * 60 * 24,
+        datetime = lubridate::as_datetime(datetime, origin = "1899-12-30", tz = "GMT"),
+        time = hms::as_hms(datetime) # Time in H:M:S is easier
+      )
 
   } else if (stringr::str_detect(input_file_accel, "geneactiv")) {
 
-    accel_data[, datetime := gsub(":(\\d+)$", ".\\1", datetime)]
-    accel_data[, datetime := gsub("\\d+-\\d+-\\d+ ", "", datetime)]
-    accel_data[, datetime := as.POSIXct(datetime, format = "%H:%M:%OS")]
-    accel_data[, c("datetime", "X", "Y", "Z")]
+    accel_data <- vroom::vroom(
+      input_file_accel,
+      col_select = c("datetime", "X", "Y", "Z"),
+      col_types = vroom::cols("datetime" = "c")
+    ) %>%
+      mutate(
+        datetime = stringr::str_replace(datetime, ":(\\d+)$", ".\\1"), # Thanks Marvin
+        datetime = lubridate::parse_date_time(datetime, orders = "%Y-%m-%d %H:%M:%0S"),
+        time = hms::as_hms(datetime) # Time in H:M:S is easier
+      )
 
   }
 
   # Time in seconds
-  # t0 <- min(accel_data$datetime)
-  t0 <- hms::as_hms(min(accel_data$datetime))
-  accel_data[, time := as.numeric(difftime(datetime, t0, units = "secs"))]
-  accel_data[, interval := floor(time / spiro_interval) + 1]
+  # Can't call min() on an hms, would return difftime obj
+  t0 <- sort(accel_data$time)[1]
+
+  accel_data <- accel_data %>%
+    mutate(
+      time = as.numeric(difftime(time, t0, units = "secs")),
+      interval = floor(time / spiro_interval) + 1
+    )
 
   # Match spiro to accelerometer time
   spiro <- aggregate_spiro(input_file_spiro, t0, spiro_interval)
@@ -121,7 +171,8 @@ convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_int
   accel_data$ID <- ID
 
   # Add METs
-  final_data <- dplyr::left_join(spiro, accel_data, by = "interval")
+  final_data <- dplyr::left_join(spiro, accel_data, by = "interval") %>%
+    select(interval, ID, X, Y, Z, MET, O2, CO2)
 
   # Compute kJ and absolute and relative
   # pheno <- fread(file_pheno, select = c("ID", "weight"))
@@ -133,7 +184,7 @@ convert_input_data <- function(input_file_accel, input_file_spiro, ID, spiro_int
   out_file_accel <- stringr::str_replace(input_file_accel, "input", "processed")
   out_file_accel <- fs::path_ext_set(out_file_accel, ".rds")
 
-  if (!fs::file_exists(out_file_accel)) {
+  if (!fs::file_exists(out_file_accel) | overwrite) {
     cliapp::cli_alert_info("Saving accelerometry for ID {ID} to file {out_file_accel}")
     saveRDS(final_data, file = out_file_accel)
   }
