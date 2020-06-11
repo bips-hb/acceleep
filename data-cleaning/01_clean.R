@@ -3,10 +3,6 @@ library(acceleep)
 library(dplyr)
 
 files_overview <- get_overview_table()
-save_output_data(files_overview)
-
-files_overview %>%
-  count(model, placement)
 
 # Delete files associated with ID 38 -- No usable spiro data
 files_overview %>%
@@ -25,14 +21,31 @@ files_overview %>%
 out_files <- fs::dir_ls(here::here("data", "processed", c("actigraph", "activpal", "geneactiv")))
 fs::file_delete(out_files)
 
+# Collect files to read, ignoring missing spiro files
 to_read <- files_overview %>%
   filter(!is.na(file_spiro)) %>%
   select(file_accel, file_spiro, sid)
 
+# Adding a progress bar
 prog <- cliapp::cli_progress_bar(total = nrow(to_read))
 
+# This will take a while.
 purrr::pwalk(to_read, ~{
   prog$tick()
   convert_input_data(input_file_accel = ..1, input_file_spiro = ..2, ID = ..3)
 })
 
+
+purrr::map_df(c("actigraph", "geneactiv", "activpal"), ~{
+  tibble::tibble(
+    file_clean = fs::dir_ls(here::here("data", "processed", .x)),
+    model = .x
+  )
+})
+
+
+files_overview %>%
+  mutate(
+    file_clean = stringr::str_replace(file_accel, "input", "processed"),
+    file_clean = fs::path_ext_set(file_clean, ".rds")
+  )

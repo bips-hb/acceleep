@@ -2,6 +2,7 @@
 
 export("%>%")
 export(aggregate_spiro)
+export(combine_clean_data)
 export(convert_input_data)
 export(convert_tbl_array)
 export(generate_ts_chunk)
