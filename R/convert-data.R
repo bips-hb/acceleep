@@ -34,9 +34,10 @@ convert_tbl_array <- function(accel_tbl, interval_length, res) {
 
 
 #' Take raw spirotmetry data and collapse it into approrpiate intervals
-#'
-#' @note Since t0 will vary ma acceloreter model, placement, and SID,
-#'   this function needs to be called for all combinations thereof.
+#' TODO: Add demographic data to include REE + AEE units
+#' @note Since `t0` will vary by accelerometer model, placement, and SID,
+#'   this function needs to be called for all combinations thereof,
+#'   as this is the most robust way to ensure measurements align correctly.
 #'
 #' @param input_file_spiro File path to spirometry data.
 #' @param t0 Value of class `hms::hms()` to calibrate interval sequence to.
@@ -78,8 +79,6 @@ aggregate_spiro <- function(input_file_spiro, t0, spiro_interval = 30) {
 #' @param ID Subject ID as character with 3 places, e.g. `"002"`.
 #' @param overwrite `[TRUE]` Overwrite existing output files or leave them untouched?
 #' @inheritParams aggregate_spiro
-#' @importFrom  data.table fread
-#' @importFrom data.table :=
 #' @importFrom vroom vroom cols
 #' @importFrom stats median
 #' @return Nothing, just writes data with colums `c("interval", "ID", "X", "Y", "Z", "MET", "O2", "CO2")`

@@ -17,4 +17,6 @@ Label accelerometer models for final text
 }
 \examples{
 label_accel_models("actigraph") # -> "Actigraph GT3X"
+label_accel_models("activpal") # -> "activPAL"
+label_accel_models("geneactiv") # -> "GENEActiv"
 }
