@@ -32,7 +32,10 @@ prog <- cliapp::cli_progress_bar(total = nrow(to_read))
 # This will take a while.
 purrr::pwalk(to_read, ~{
   prog$tick()
-  convert_input_data(input_file_accel = ..1, input_file_spiro = ..2, ID = ..3)
+  convert_input_data(
+    input_file_accel = ..1, input_file_spiro = ..2, ID = ..3, file_demo = here::here("data/input/demo.csv"),
+    spiro_interval = 30, overwrite = TRUE, verbose = FALSE
+  )
 })
 
 

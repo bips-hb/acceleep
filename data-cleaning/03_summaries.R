@@ -24,18 +24,16 @@ files_overview %>%
   nrow()
 
 # Demographics ----
-demo <- vroom::vroom(
-  file = here::here("data", "input", "demo.csv"),
-  col_types = cols(
-    ID = "c", sex = "c", hand = "c"
-  ),
-  col_select = -date
-)
+demo <- get_demo() %>%
+  inner_join(
+    # Subset demo to keep only IDs that have usable data
+    files_overview %>% filter(file_clean_exists) %>% transmute(ID = as.numeric(sid)) %>% distinct()
+  )
 
 demo_summary <- demo %>%
-  filter(ID %in% unique(as.numeric(files_overview$sid))) %>%
-  group_by(sex) %>%
-  summarize_at(vars(height, weight, BMI, hand, age), list(~mean(.x, na.rm = TRUE), ~sd(.x, na.rm = TRUE), ~n()))
+  # group_by(sex) %>%
+  summarize_at(vars(height, weight, BMI, hand, age), list(~mean(.x, na.rm = TRUE), ~sd(.x, na.rm = TRUE))) %>%
+  mutate(n = nrow(demo))
 
 save_output_data(demo_summary)
 

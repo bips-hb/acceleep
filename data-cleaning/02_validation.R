@@ -4,24 +4,8 @@ library(acceleep)
 
 files_overview <- get_overview_table()
 
-test_comb <- files_overview %>%
-  filter(model == "geneactiv", placement == "hip_right", file_clean_exists) %>%
-  pull(file_clean) %>%
-  purrr::map_df(~{
-    readRDS(.x)
-  })
+test_comb <- combine_clean_data("actigraph", "hip_right")
 
-test_comb %>%
- head(1000) %>%
-  mutate(
-    interval_id = glue::glue("{interval}_{ID}")
-  ) %>%
-  group_by(interval_id) %>%
-  summarize(
-    n_rows = n()
-  ) %>%
-  pull(n_rows) %>%
-  table()
 
 # Intervals that are not of expected length (3000 = 30 * 100)
 test_comb %>%
@@ -30,13 +14,13 @@ test_comb %>%
 
 # Intervals per subject
 test_comb %>%
-  count(ID) %>%
+  count(ID, sort = TRUE) %>%
   summarize(
     min = min(n), max = max(n), mean = mean(n), median = median(n), n_subj = n_distinct(ID)
   )
 
 
-# Get number of intervals per model/placement
+# Get number of measurements per model/placement
 summarize_measure_counts <- function(model, placement) {
   files_overview %>%
     filter(file_clean_exists, model == !!model, placement == !!placement) %>%
@@ -57,3 +41,29 @@ files_overview %>%
   purrr::pmap_df(summarize_measure_counts) -> measurements_per_accel
 
 save_output_data(measurements_per_accel)
+
+
+# Investigate by subject ----
+clean_file_checkup <- files_overview %>%
+  filter(file_clean_exists) %>%
+  select(model, placement, file_clean) %>%
+  purrr::pmap_df(~{
+    xdf <- readRDS(..3)
+
+    # res <- ifelse(model == "activpal", 20, 100)
+
+    tibble::tibble(
+      file = ..3,
+      model = ..1,
+      placement = ..2,
+      rows = nrow(xdf),
+      intervals = list(count(xdf, interval)),
+      intervals_n = n_distinct(xdf$interval),
+      interval_first = min(xdf$interval),
+      interval_last = max(xdf$interval),
+      missings = list(purrr::map_int(xdf, ~sum(is.na(.x))))
+    )
+
+  })
+
+

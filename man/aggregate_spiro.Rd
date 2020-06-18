@@ -2,12 +2,20 @@
 % Please edit documentation in R/convert-data.R
 \name{aggregate_spiro}
 \alias{aggregate_spiro}
-\title{Take raw spirotmetry data and collapse it into approrpiate intervals}
+\title{Take raw spirotmetry data and collapse it into approrpiate intervals
+TODO: Add demographic data to include REE + AEE units}
 \usage{
-aggregate_spiro(input_file_spiro, t0, spiro_interval = 30)
+aggregate_spiro(
+  input_file_spiro,
+  file_demo = here::here("data/input/demo.csv"),
+  t0,
+  spiro_interval = 30
+)
 }
 \arguments{
 \item{input_file_spiro}{File path to spirometry data.}
+
+\item{file_demo}{\verb{[here::here("data/input/demo.csv")]}: Path to \code{demo.csv}.}
 
 \item{t0}{Value of class \code{hms::hms()} to calibrate interval sequence to.}
 
@@ -18,10 +26,12 @@ A tibble
 }
 \description{
 Take raw spirotmetry data and collapse it into approrpiate intervals
+TODO: Add demographic data to include REE + AEE units
 }
 \note{
-Since t0 will vary ma acceloreter model, placement, and SID,
-this function needs to be called for all combinations thereof.
+Since \code{t0} will vary by accelerometer model, placement, and SID,
+this function needs to be called for all combinations thereof,
+as this is the most robust way to ensure measurements align correctly.
 }
 \examples{
 \dontrun{

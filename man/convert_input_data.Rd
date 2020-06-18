@@ -7,22 +7,28 @@
 convert_input_data(
   input_file_accel,
   input_file_spiro,
+  file_demo = here::here("data/input/demo.csv"),
   ID,
   spiro_interval = 30,
-  overwrite = TRUE
+  overwrite = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{
 \item{input_file_accel, input_file_spiro}{File path to accelerometry/spirometrydata CSV.}
+
+\item{file_demo}{\verb{[here::here("data/input/demo.csv")]}: Path to \code{demo.csv}.}
 
 \item{ID}{Subject ID as character with 3 places, e.g. \code{"002"}.}
 
 \item{spiro_interval}{\verb{[30]} Interval in seconds to calculate mean METs from}
 
 \item{overwrite}{\verb{[TRUE]} Overwrite existing output files or leave them untouched?}
+
+\item{verbose}{\verb{[FALSE]} If \code{TRUE}, the function signals input file and save location to the console.}
 }
 \value{
-Nothing, just writes data with colums \code{c("interval", "ID", "X", "Y", "Z", "MET", "O2", "CO2")}
+Invisibly + writtem data with colums \code{c("interval", "ID", "X", "Y", "Z", "MET", "kJ", "Jrel")}
 }
 \description{
 (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
@@ -42,8 +48,11 @@ the following strings to properly detect each model:
 input_file_accel <- "data/input/actigraph/001_left_readable.csv"
 # activpal
 input_file_accel <- "data/input/activpal/001_ActivPal_readable.csv"
+# spiro
 input_file_spiro <- "data/input/spiro/ID_001_spiro.csv"
 ID <- "001"
+
+convert_input_data(input_file_accel, input_file_spiro, ID = ID, overwrite = FALSE, verbose = TRUE)
 
 }
 }

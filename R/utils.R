@@ -88,3 +88,18 @@ combine_clean_data <- function(
     dplyr::pull(file_clean) %>%
     purrr::map_df(readRDS)
 }
+
+
+#' Extract the subject ID from a file path
+#'
+#' This is entirely overengineered.
+#' @param x A file path, e.g. `"data/input/spiro/ID_001_spiro.csv"`
+#' @return A character of the same length as the input
+#' @export
+#'
+#' @examples
+#' id_from_path("data/input/spiro/ID_001_spiro.csv") # -> "001"
+id_from_path <- function(x) {
+  fs::path_file(x) %>%
+    stringr::str_extract("\\d{3}")
+}
