@@ -76,6 +76,7 @@ get_demo <- function(file_demo = here::here("data/input/demo.csv"), id = NULL) {
 #' @return A tibble
 #' @export
 #' @importFrom vroom vroom
+#' @importFrom vroom cols
 #' @examples
 #' \dontrun{
 #' aggregate_spiro("data/input/spiro/ID_001_spiro.csv", t0 = hms::as_hms("09:00:00"))
@@ -83,10 +84,10 @@ get_demo <- function(file_demo = here::here("data/input/demo.csv"), id = NULL) {
 aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input/demo.csv"), t0, spiro_interval = 30) {
   stopifnot(file.exists(here::here(input_file_spiro)))
 
-    spiro <- vroom::vroom(
+  spiro <- vroom::vroom(
     here::here(input_file_spiro),
     col_select = c("Time", "MET", "O2", "CO2"),
-    col_types = cols(Time = "c", MET = "d", O2 = "d", CO2 = "d")
+    col_types = vroom::cols(Time = "c", MET = "d", O2 = "d", CO2 = "d")
   )
 
   demo <- get_demo(file_demo, id = id_from_path(input_file_spiro))
@@ -125,12 +126,12 @@ aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input
 #' @examples
 #' \dontrun{
 #' # actigraph
-#' input_file_accel <- "data/input/actigraph/001_left_readable.csv"
+#' input_file_accel <- "data/input/actigraph/006_left_readable.csv"
 #' # activpal
-#' input_file_accel <- "data/input/activpal/001_ActivPal_readable.csv"
+#' input_file_accel <- "data/input/activpal/006_ActivPal_readable.csv"
 #' # spiro
-#' input_file_spiro <- "data/input/spiro/ID_001_spiro.csv"
-#' ID <- "001"
+#' input_file_spiro <- "data/input/spiro/ID_006_spiro.csv"
+#' ID <- "006"
 #'
 #' convert_input_data(input_file_accel, input_file_spiro, ID = ID, overwrite = FALSE, verbose = TRUE)
 #'
@@ -209,12 +210,13 @@ convert_input_data <- function(
   ) %>%
     filter(!is.na(MET), !is.na(kJ), !is.na(Jrel)) # Drop rows for which all of these are NA
 
-  # Add ID
-  accel_data$ID <- ID
-
   # Add METs, kJ (AEE), Jrel (REE)
   final_data <- dplyr::left_join(spiro, accel_data, by = "interval") %>%
-    select(interval, ID, X, Y, Z, MET, kJ, Jrel)
+    dplyr::mutate(ID = ID) %>%
+    dplyr::select(.data$interval, .data$ID, .data$X, .data$Y, .data$Z, .data$MET, .data$kJ, .data$Jrel)
+
+  # # Add ID
+  # final_data$ID <- ID
 
   # save final data
   out_file <- stringr::str_replace(input_file_accel, "input", "processed")

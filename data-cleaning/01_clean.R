@@ -2,6 +2,9 @@
 library(acceleep)
 library(dplyr)
 
+# Disable progress bar fro vroom::vroom
+options(readr.show_progress = FALSE)
+
 files_overview <- get_overview_table()
 
 # Delete files associated with ID 38 -- No usable spiro data
@@ -13,13 +16,21 @@ files_overview %>%
   pull(value) %>%
   fs::file_delete()
 
+# Accelerometry files without corresponding spiro data (i.e. children without spiro measurements)
+# are moved to the exclusion directory of shame
+# Only needs to be done once, commented out in case of accidents
+# files_overview %>%
+#   filter(is.na(file_spiro)) %>%
+#   pull(file_accel) %>%
+#   fs::file_move(here::here("data/excluded/"))
+
 # Read, clean, and re-save all data, by accelerometer model
 # Resulting data will be original-resolution accelerometry joined with spirometry aggregated over 30s intervals
 # Intervals are matched using the first timestamp in acceloermetry
 
 # Pre-run cleanup
-out_files <- fs::dir_ls(here::here("data", "processed", c("actigraph", "activpal", "geneactiv")))
-fs::file_delete(out_files)
+# out_files <- fs::dir_ls(here::here("data", "processed", c("actigraph", "activpal", "geneactiv")))
+# fs::file_delete(out_files)
 
 # Collect files to read, ignoring missing spiro files
 to_read <- files_overview %>%
@@ -38,17 +49,3 @@ purrr::pwalk(to_read, ~{
   )
 })
 
-
-purrr::map_df(c("actigraph", "geneactiv", "activpal"), ~{
-  tibble::tibble(
-    file_clean = fs::dir_ls(here::here("data", "processed", .x)),
-    model = .x
-  )
-})
-
-
-files_overview %>%
-  mutate(
-    file_clean = stringr::str_replace(file_accel, "input", "processed"),
-    file_clean = fs::path_ext_set(file_clean, ".rds")
-  )

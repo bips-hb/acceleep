@@ -45,12 +45,12 @@ the following strings to properly detect each model:
 \examples{
 \dontrun{
 # actigraph
-input_file_accel <- "data/input/actigraph/001_left_readable.csv"
+input_file_accel <- "data/input/actigraph/006_left_readable.csv"
 # activpal
-input_file_accel <- "data/input/activpal/001_ActivPal_readable.csv"
+input_file_accel <- "data/input/activpal/006_ActivPal_readable.csv"
 # spiro
-input_file_spiro <- "data/input/spiro/ID_001_spiro.csv"
-ID <- "001"
+input_file_spiro <- "data/input/spiro/ID_006_spiro.csv"
+ID <- "006"
 
 convert_input_data(input_file_accel, input_file_spiro, ID = ID, overwrite = FALSE, verbose = TRUE)
 

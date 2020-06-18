@@ -20,29 +20,6 @@ test_comb %>%
   )
 
 
-# Get number of measurements per model/placement
-summarize_measure_counts <- function(model, placement) {
-  files_overview %>%
-    filter(file_clean_exists, model == !!model, placement == !!placement) %>%
-    pull(file_clean) %>%
-    purrr::map_df(readRDS) %>%
-    count(ID) %>%
-    summarize(
-      min = min(n), max = max(n), mean = mean(n), median = median(n), n_subj = n_distinct(ID)
-    ) %>%
-    mutate(model = model, placement = placement)
-}
-
-# summarize_measure_counts("actigraph", "hip_left")
-
-files_overview %>%
-  select(model, placement) %>%
-  distinct() %>%
-  purrr::pmap_df(summarize_measure_counts) -> measurements_per_accel
-
-save_output_data(measurements_per_accel)
-
-
 # Investigate by subject ----
 clean_file_checkup <- files_overview %>%
   filter(file_clean_exists) %>%
@@ -50,10 +27,8 @@ clean_file_checkup <- files_overview %>%
   purrr::pmap_df(~{
     xdf <- readRDS(..3)
 
-    # res <- ifelse(model == "activpal", 20, 100)
-
     tibble::tibble(
-      file = ..3,
+      file_clean = ..3,
       model = ..1,
       placement = ..2,
       rows = nrow(xdf),
@@ -66,4 +41,38 @@ clean_file_checkup <- files_overview %>%
 
   })
 
+clean_file_checkup <- files_overview %>%
+  full_join(clean_file_checkup, by = c("file_clean", "model", "placement"))
+
+save_output_data(clean_file_checkup)
+
+# Manual investigation afterwards
+
+clean_file_checkup %>%
+  arrange(rows)
+
+clean_file_checkup %>%
+  arrange(intervals_n)
+
+clean_file_checkup %>%
+  pull(missings) %>%
+  bind_rows() %>%
+  bind_cols(
+    clean_file_checkup %>%
+      select(file, rows, intervals_n)
+  ) %>%
+  View()
+
+# 006 activpal: Not enough overlapping measurements beetwen spiro & accel
+# -> excluded
+readRDS("data/processed/activpal/006_ActivPal_readable.rds") %>% View()
+file.remove("data/processed/activpal/006_ActivPal_readable.rds")
+
+# Relatively little data but at least complete?
+readRDS("data/processed/activpal/040_ActivPal_readable.rds") %>% View()
+
+# Some missing accel data, but not a major issue
+readRDS("data/processed/geneactiv/026_wrist_right_readable.rds") %>%
+  count(interval) %>%
+  filter(n == 1)
 
