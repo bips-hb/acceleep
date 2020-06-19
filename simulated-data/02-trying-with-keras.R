@@ -47,3 +47,5 @@ history <- model %>% fit(
   validation_split = 0.2
 )
 
+predict(model, accel_train)
+

@@ -2,7 +2,7 @@
 % Please edit documentation in R/convert-data.R
 \name{convert_input_data}
 \alias{convert_input_data}
-\title{(WIP) Read accelerometry + spiro and save to disk in analysis-friendly state}
+\title{Read accelerometry + spiro and save to disk in analysis-friendly state}
 \usage{
 convert_input_data(
   input_file_accel,
@@ -31,7 +31,7 @@ convert_input_data(
 Invisibly + writtem data with colums \code{c("interval", "ID", "X", "Y", "Z", "MET", "kJ", "Jrel")}
 }
 \description{
-(WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
+Read accelerometry + spiro and save to disk in analysis-friendly state
 }
 \details{
 Accelerometer model is currently detected from the file path in \code{input_file_accel}, which has to contain
@@ -45,12 +45,14 @@ the following strings to properly detect each model:
 \examples{
 \dontrun{
 # actigraph
-input_file_accel <- "data/input/actigraph/006_left_readable.csv"
+input_file_accel <- "data/input/actigraph/026_left_readable.csv"
 # activpal
-input_file_accel <- "data/input/activpal/006_ActivPal_readable.csv"
+input_file_accel <- "data/input/activpal/026_ActivPal_readable.csv"
+# geneactiv
+input_file_accel <- "data/input/geneactiv/026_wrist_right_readable.csv"
 # spiro
-input_file_spiro <- "data/input/spiro/ID_006_spiro.csv"
-ID <- "006"
+input_file_spiro <- "data/input/spiro/ID_026_spiro.csv"
+ID <- "026"
 
 convert_input_data(input_file_accel, input_file_spiro, ID = ID, overwrite = FALSE, verbose = TRUE)
 

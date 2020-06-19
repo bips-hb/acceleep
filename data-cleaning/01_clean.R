@@ -8,13 +8,13 @@ options(readr.show_progress = FALSE)
 files_overview <- get_overview_table()
 
 # Delete files associated with ID 38 -- No usable spiro data
-files_overview %>%
-  filter(sid == "038") %>%
-  select(file_accel, file_spiro) %>%
-  tidyr::gather() %>%
-  distinct() %>%
-  pull(value) %>%
-  fs::file_delete()
+# files_overview %>%
+#   filter(sid == "038") %>%
+#   select(file_accel, file_spiro) %>%
+#   tidyr::gather() %>%
+#   distinct() %>%
+#   pull(value) %>%
+#   fs::file_delete()
 
 # Accelerometry files without corresponding spiro data (i.e. children without spiro measurements)
 # are moved to the exclusion directory of shame

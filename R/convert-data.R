@@ -82,7 +82,7 @@ get_demo <- function(file_demo = here::here("data/input/demo.csv"), id = NULL) {
 #' aggregate_spiro("data/input/spiro/ID_001_spiro.csv", t0 = hms::as_hms("09:00:00"))
 #' }
 aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input/demo.csv"), t0, spiro_interval = 30) {
-  stopifnot(file.exists(here::here(input_file_spiro)))
+  stopifnot(file.exists(input_file_spiro))
 
   spiro <- vroom::vroom(
     here::here(input_file_spiro),
@@ -103,7 +103,7 @@ aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input
     summarise_at(vars(MET, kJ, Jrel), median)
 }
 
-#' (WIP) Read accelerometry + spiro and save to disk in analysis-friendly state
+#' Read accelerometry + spiro and save to disk in analysis-friendly state
 #'
 #' @details
 #' Accelerometer model is currently detected from the file path in `input_file_accel`, which has to contain
@@ -126,12 +126,14 @@ aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input
 #' @examples
 #' \dontrun{
 #' # actigraph
-#' input_file_accel <- "data/input/actigraph/006_left_readable.csv"
+#' input_file_accel <- "data/input/actigraph/026_left_readable.csv"
 #' # activpal
-#' input_file_accel <- "data/input/activpal/006_ActivPal_readable.csv"
+#' input_file_accel <- "data/input/activpal/026_ActivPal_readable.csv"
+#' # geneactiv
+#' input_file_accel <- "data/input/geneactiv/026_wrist_right_readable.csv"
 #' # spiro
-#' input_file_spiro <- "data/input/spiro/ID_006_spiro.csv"
-#' ID <- "006"
+#' input_file_spiro <- "data/input/spiro/ID_026_spiro.csv"
+#' ID <- "026"
 #'
 #' convert_input_data(input_file_accel, input_file_spiro, ID = ID, overwrite = FALSE, verbose = TRUE)
 #'
@@ -210,15 +212,13 @@ convert_input_data <- function(
   ) %>%
     filter(!is.na(MET), !is.na(kJ), !is.na(Jrel)) # Drop rows for which all of these are NA
 
+  # Inner join spiro + accel by interval, result contains only data for intervals present in both datasets!
   # Add METs, kJ (AEE), Jrel (REE)
-  final_data <- dplyr::left_join(spiro, accel_data, by = "interval") %>%
+  final_data <- dplyr::inner_join(spiro, accel_data, by = "interval") %>%
     dplyr::mutate(ID = ID) %>%
     dplyr::select(.data$interval, .data$ID, .data$X, .data$Y, .data$Z, .data$MET, .data$kJ, .data$Jrel)
 
-  # # Add ID
-  # final_data$ID <- ID
-
-  # save final data
+  # Save final data
   out_file <- stringr::str_replace(input_file_accel, "input", "processed")
   out_file <- fs::path_ext_set(out_file, ".rds")
 
@@ -226,8 +226,8 @@ convert_input_data <- function(
     if (verbose) cliapp::cli_alert_info("Saving accelerometry for ID {ID} to file {out_file}")
     saveRDS(final_data, file = out_file)
   }
+  # Invisible return for interactive debugging
   invisible(final_data)
-
 }
 
 # Appease R CMD check (for now)

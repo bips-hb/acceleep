@@ -27,13 +27,16 @@ clean_file_checkup <- files_overview %>%
   purrr::pmap_df(~{
     xdf <- readRDS(..3)
 
+    res <- ifelse(model == "activpal", 20, 100)
+
     tibble::tibble(
       file_clean = ..3,
       model = ..1,
       placement = ..2,
       rows = nrow(xdf),
       intervals = list(count(xdf, interval)),
-      intervals_n = n_distinct(xdf$interval),
+      intervals_calc = rows / res / 30,       # 30 = spiro_interval, if intervals_calc is not an integer, something is wrong
+      intervals_n = n_distinct(xdf$interval), # Number of unique intervals found in data, must match intervals_calc
       interval_first = min(xdf$interval),
       interval_last = max(xdf$interval),
       missings = list(purrr::map_int(xdf, ~sum(is.na(.x))))
@@ -72,6 +75,7 @@ file.remove("data/processed/activpal/006_ActivPal_readable.rds")
 readRDS("data/processed/activpal/040_ActivPal_readable.rds") %>% View()
 
 # Some missing accel data, but not a major issue
+# Fixed by using inner_join to merge spiro + accel data (left_join on spiro was a silly idea)
 readRDS("data/processed/geneactiv/026_wrist_right_readable.rds") %>%
   count(interval) %>%
   filter(n == 1)
