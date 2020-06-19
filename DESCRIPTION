@@ -18,7 +18,6 @@ Imports:
     magrittr,
     purrr,
     stats,
-    data.table,
     hms,
     dplyr,
     fs,
