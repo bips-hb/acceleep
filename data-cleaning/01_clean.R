@@ -29,15 +29,15 @@ files_overview <- get_overview_table()
 # Intervals are matched using the first timestamp in acceloermetry
 
 # Pre-run cleanup
-# out_files <- fs::dir_ls(here::here("data", "processed", c("actigraph", "activpal", "geneactiv")))
-# fs::file_delete(out_files)
+out_files <- fs::dir_ls(here::here("data", "processed", c("actigraph", "activpal", "geneactiv")))
+fs::file_delete(out_files)
 
 # Collect files to read, ignoring missing spiro files
 to_read <- files_overview %>%
   filter(!is.na(file_spiro)) %>%
   select(file_accel, file_spiro, sid)
 
-# Adding a progress bar
+# Adding a progress bar (somehow buggy, maybe vroom progress is not suppressed correctly)
 prog <- cliapp::cli_progress_bar(total = nrow(to_read))
 
 # This will take a while.

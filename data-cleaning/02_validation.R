@@ -27,12 +27,11 @@ clean_file_checkup <- files_overview %>%
   purrr::pmap_df(~{
     xdf <- readRDS(..3)
 
-    res <- ifelse(model == "activpal", 20, 100)
-
     tibble::tibble(
       file_clean = ..3,
       model = ..1,
       placement = ..2,
+      res = ifelse(model == "activpal", 20, 100),
       rows = nrow(xdf),
       intervals = list(count(xdf, interval)),
       intervals_calc = rows / res / 30,       # 30 = spiro_interval, if intervals_calc is not an integer, something is wrong
@@ -62,7 +61,7 @@ clean_file_checkup %>%
   bind_rows() %>%
   bind_cols(
     clean_file_checkup %>%
-      select(file, rows, intervals_n)
+      select(file_clean, rows, intervals_n)
   ) %>%
   View()
 
