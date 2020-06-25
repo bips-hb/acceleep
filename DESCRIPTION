@@ -25,4 +25,5 @@ Imports:
     stringr,
     cliapp,
     vroom,
-    lubridate
+    lubridate,
+    zeallot
