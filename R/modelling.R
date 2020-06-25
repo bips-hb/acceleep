@@ -116,14 +116,93 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
   )
 
   # split data into train/validation sets
-  dat_validation <- dat_activpal %>%
+  dat_validation <- full_data %>%
     dplyr::filter(ID %in% ids_validation)
 
-  dat_training <- dat_activpal %>%
+  dat_training <- full_data %>%
     dplyr::filter(ID %in% ids_train)
 
   list(
     training = dat_training,
     validation = dat_validation
+  )
+}
+
+#' Split training/validation datasets into separate data and labels
+#'
+#' This function also normalizes XYZ and desired outcome, where the validation data is
+#' scaled using the same mean and standard deviation as the training data.
+#' @note As of now, this function only ever returns one label per interval of accelerometry data.
+#' @param training_data,validation_data Datasets as created by e.g. `[make_initial_splits()]`.
+#' @param outcome `["MET"]`: Outcome variable to be extracted, passed to `[extract_outcome()]`.
+#'
+#' @return A nested list of the form
+#' ```
+#' list(
+#'   training = list(
+#'     train_data = training_xyz,
+#'     train_labels = training_labels
+#'   ),
+#'   validation = list(
+#'     val_data = validation_xyz,
+#'     cal_labels = validation_labels
+#'   )
+#' )
+#' ```
+#' @export
+#' @importFrom dplyr select mutate summarize_at vars
+#' @importFrom stats sd
+#' @examples
+#' \dontrun{
+#' full_data <- combine_clean_data("activpal", "thigh_right")
+#' c(training_data, validation_data) %<-% make_initial_splits(full_data, random_seed = 21421, val_split = 1/3)
+#' split_data <- split_data_labels(training_data, validation_data, outcome = "kJ")
+#'
+#' c(train_data, train_labels) %<-% split_data$training
+#' c(test_data, test_labels) %<-%  split_data$validation
+#' }
+split_data_labels <- function(training_data, validation_data, outcome = c("MET", "kJ", "Jrel")) {
+
+  # This is sloppy but at least it gets the job done
+  # I can agonize over this later
+  training_meansd <- training_data %>%
+    dplyr::summarize_at(dplyr::vars(X, Y, Z), list(mean = mean, sd = sd), na.rm = TRUE)
+
+  training_xyz <- training_data %>%
+    dplyr::select(X, Y, Z) %>%
+    dplyr::mutate(
+      X = (X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (Z - training_meansd$Z_mean) / training_meansd$Z_sd
+    )
+
+  training_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
+  training_labels_mean <- mean(training_labels, na.rm = TRUE)
+  training_labels_sd <- sd(training_labels, na.rm = TRUE)
+
+  training_labels <- (training_labels - training_labels_mean) / training_labels_sd
+
+  # Validation data and labels
+  # Scaling XYZ and labels with same mean/sd as training data!
+  validation_xyz <- validation_data %>%
+    dplyr::select(X, Y, Z) %>%
+    dplyr::mutate(
+      X = (X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (Z - training_meansd$Z_mean) / training_meansd$Z_sd
+    )
+
+  validation_labels <- extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
+  validation_labels <- (validation_labels - training_labels_mean) / training_labels_sd
+
+  list(
+    training = list(
+      train_data = training_xyz,
+      train_labels = training_labels
+    ),
+    validation = list(
+      val_data = validation_xyz,
+      val_labels = validation_labels
+    )
   )
 }

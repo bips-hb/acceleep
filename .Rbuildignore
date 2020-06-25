@@ -6,3 +6,6 @@
 ^LICENSE\.md$
 ^data$
 ^setup$
+^output$
+^modelling$
+^todo\.md$

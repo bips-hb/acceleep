@@ -2,7 +2,8 @@
 % Please edit documentation in R/modelling.R
 \name{make_initial_splits}
 \alias{make_initial_splits}
-\title{Split an entire dataset into training/validation data}
+\title{Split an entire dataset into training/validation data.
+Please note that the resulting datasets are \emph{not} yet split into data and labels.}
 \usage{
 make_initial_splits(full_data, random_seed = 11235813, val_split = 1/3)
 }
@@ -18,7 +19,8 @@ make_initial_splits(full_data, random_seed = 11235813, val_split = 1/3)
 A list of two tibbles, each containing the full dataset incl. accelerometry and calorimetry.
 }
 \description{
-Split an entire dataset into training/validation data
+Split an entire dataset into training/validation data.
+Please note that the resulting datasets are \emph{not} yet split into data and labels.
 }
 \examples{
 \dontrun{
