@@ -64,32 +64,6 @@ save_output_data <- function(x, dir = "") {
   saveRDS(x, fs::path(out_dir, filename))
 }
 
-#' Combine cleaned data for one accelerometer model / placement
-#'
-#' This function collects the datasets (split by subject) for a given model and placement, where the result is a
-#' single dataset of all measurements across subjects.
-#'
-#' @param model Accelerometer model, one of `c("actigraph", "activpal", "geneactiv")`.
-#' @param placement One of `c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")`.
-#'
-#' @return A tibble. If combination of `model` and `placement` is invalid, an empty `data.frame`.
-#' @export
-#' @note Note that not every combination of `model` and `placement` are valid.
-#' @examples
-#' \dontrun{
-#' combine_clean_data("actigraph", "hip_left")
-#' }
-combine_clean_data <- function(
-  model = c("actigraph", "activpal", "geneactiv"),
-  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
-) {
-  get_overview_table() %>%
-    dplyr::filter(file_clean_exists, model == !!model, placement == !!placement) %>%
-    dplyr::pull(file_clean) %>%
-    purrr::map_df(readRDS)
-}
-
-
 #' Extract the subject ID from a file path
 #'
 #' This is entirely overengineered.

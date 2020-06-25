@@ -23,7 +23,7 @@ expenditure respectively.}
 or as a \code{\link[tibble:tibble]{tibble::tibble()}}, where the latter additionally preserves
 \code{interval} and \code{ID} variables for potential debugging.}
 
-\item{rescale}{\verb{[FALSE]} If \code{TRUE}, outcome variable will be rescale using \code{\link[=scale]{scale()}}.}
+\item{rescale}{\verb{[FALSE]} If \code{TRUE}, outcome variable will be rescaled using \code{\link[=scale]{scale()}}.}
 }
 \value{
 Either a \code{numeric} vector (default) or \verb{[tibble::tibble()]}, depending on
