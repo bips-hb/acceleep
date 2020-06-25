@@ -16,7 +16,8 @@ make_initial_splits(full_data, random_seed = 11235813, val_split = 1/3)
 (rounded down) will be used as validation dataset.}
 }
 \value{
-A list of two tibbles, each containing the full dataset incl. accelerometry and calorimetry.
+A list of two tibbles, each containing the full dataset incl.
+accelerometry and calorimetry.
 }
 \description{
 Split an entire dataset into training/validation data.
@@ -25,6 +26,8 @@ Please note that the resulting datasets are \emph{not} yet split into data and l
 \examples{
 \dontrun{
 full_data <- combine_clean_data("activpal", "thigh_right")
-c(training_data, validation_data) \%<-\% make_initial_splits(full_data, random_seed = 21421, val_split = 1/3)
+c(training_data, validation_data) \%<-\% make_initial_splits(
+  full_data, random_seed = 21421, val_split = 1/3
+)
 }
 }

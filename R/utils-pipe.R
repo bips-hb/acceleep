@@ -19,5 +19,4 @@ NULL
 #' @keywords internal
 #' @export
 #' @importFrom zeallot %<-%
-#' @usage c(a, b) %<-% list(0, 1)
 NULL

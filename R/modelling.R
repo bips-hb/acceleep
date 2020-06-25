@@ -94,13 +94,16 @@ extract_outcome <- function(
 #' @param val_split `[1/3]` Validation split, meaning e.g. 1/3 of the subjects
 #'   (rounded down) will be used as validation dataset.
 #'
-#' @return A list of two tibbles, each containing the full dataset incl. accelerometry and calorimetry.
+#' @return A list of two tibbles, each containing the full dataset incl.
+#'   accelerometry and calorimetry.
 #' @export
 #' @importFrom dplyr filter
 #' @examples
 #' \dontrun{
 #' full_data <- combine_clean_data("activpal", "thigh_right")
-#' c(training_data, validation_data) %<-% make_initial_splits(full_data, random_seed = 21421, val_split = 1/3)
+#' c(training_data, validation_data) %<-% make_initial_splits(
+#'   full_data, random_seed = 21421, val_split = 1/3
+#' )
 #' }
 make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1/3) {
   # Extract subject ids present in data and assign them to test / validation sets

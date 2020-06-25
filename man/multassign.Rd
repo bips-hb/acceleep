@@ -3,9 +3,6 @@
 \name{\%<-\%}
 \alias{\%<-\%}
 \title{Multiple assignment operator}
-\usage{
-c(a, b) %<-% list(0, 1)
-}
 \description{
 See \code{zeallot::\link[zeallot:operator]{\%<-\%}} for details.
 }

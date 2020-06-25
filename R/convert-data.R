@@ -231,9 +231,11 @@ convert_input_data <- function(
 }
 
 # Appease R CMD check (for now)
-# globalVariables(c(
-#   "CO2", "MET", "O2", "Timestamp", "datetime", "file_accel", "file_spiro",
-#   "interval", "median", "model", "placement", "sid", "time"
-# ))
+globalVariables(c(
+  "CO2", "MET", "O2", "Timestamp", "datetime", "file_accel", "file_spiro",
+  "file_clean_exists",
+  "interval", "median", "model", "placement", "sid", "time",
+  "Axis1", "Axis2", "Axis3", "Jrel", "kJ"
+))
 
 
