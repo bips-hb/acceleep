@@ -13,7 +13,7 @@ c(training_data, validation_data) %<-% make_initial_splits(dat_activpal, random_
 
 
 # Training data and labels
-# The scaling is done wrong, i.e. not using mean/sd from training data
+# The scaling is done wrong, i.e. not using mean/sd from training data (fixed in split_data_labels())
 array_train <- training_data %>%
   select(X, Y, Z) %>%
   mutate_all(~as.numeric(scale(.x))) %>%
@@ -33,7 +33,7 @@ labels_validation <- extract_outcome(validation_data, outcome = "MET", output_ty
 # Doing the keras -----
 dim(array_train) # c(2588, 3, 600)
 
-# array_train <- array_reshape(array_train, c(2588, 3, 600))
+# array_train <- array_reshape(array_train, c(2588, 600, 3))
 # dim(array_train)
 
 # "Normal" regression model: Output is a matrix :(
@@ -110,7 +110,7 @@ history_reg_mat <- model_reg_mat %>% fit(
   verbose = 1
 )
 # Training takes approx 30 sek/epoch @ M's machine
-# Validation loss does not look good (not too surprising givin the toy layers alone)
+# Validation loss does not look good (not too surprising)
 
 summary(model_reg_mat)
 
