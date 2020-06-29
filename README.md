@@ -16,4 +16,7 @@ This repository is technically a valid R package to enable the documentation of 
 Additional folders with their intended purposes:
 
 - [`simulated-data`](simulated-data): Simulation of structurally similiar accelerometry data, reshaping to keras/tensorflow-compatible shapes for experimentation. (The "dry run"-stage)
-- [`modelling`](modelling): Will contain modelling code, i.e. keras models, output if possible, etc.
+- [`data-cleaning`](data-cleaning): Code to read the raw `.csv` accelerometry and spirometry data, merge them, and save them as more space-efficient `.rds` files.
+- [`modelling`](modelling): Modelling code, i.e. keras models, output if possible, etc.
+
+- [`output`](output): Intermediate output for data description, including summary data.
