@@ -7,8 +7,7 @@
 extract_outcome(
   xdf,
   outcome = c("MET", "kJ", "Jrel"),
-  output_type = c("numeric", "tbl"),
-  rescale = FALSE
+  output_type = c("numeric", "tbl")
 )
 }
 \arguments{
@@ -22,8 +21,6 @@ expenditure respectively.}
 \item{output_type}{\verb{["numeric", "tbl"]} Return the outcome as a \code{"numeric"} vector
 or as a \code{\link[tibble:tibble]{tibble::tibble()}}, where the latter additionally preserves
 \code{interval} and \code{ID} variables for potential debugging.}
-
-\item{rescale}{\verb{[FALSE]} If \code{TRUE}, outcome variable will be rescaled using \code{\link[=scale]{scale()}}.}
 }
 \value{
 Either a \code{numeric} vector (default) or \verb{[tibble::tibble()]}, depending on

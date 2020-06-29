@@ -7,13 +7,18 @@
 split_data_labels(
   training_data,
   validation_data,
-  outcome = c("MET", "kJ", "Jrel")
+  outcome = c("MET", "kJ", "Jrel"),
+  rescale_labels = FALSE
 )
 }
 \arguments{
 \item{training_data, validation_data}{Datasets as created by e.g. \verb{[make_initial_splits()]}.}
 
 \item{outcome}{\verb{["MET"]}: Outcome variable to be extracted, passed to \verb{[extract_outcome()]}.}
+
+\item{rescale_labels}{\verb{[FALSE]}: Whether to re-scale labels to unit
+mean/standard deviation. This should not be necessary, hence it is disabled
+by default.}
 }
 \value{
 A nested list of the form\preformatted{list(
@@ -38,10 +43,12 @@ As of now, this function only ever returns one label per interval of acceleromet
 \examples{
 \dontrun{
 full_data <- combine_clean_data("activpal", "thigh_right")
-c(training_data, validation_data) \%<-\% make_initial_splits(full_data, random_seed = 21421, val_split = 1/3)
+c(training_data, validation_data) \%<-\% make_initial_splits(
+  full_data, random_seed = 21421, val_split = 1/3
+)
 split_data <- split_data_labels(training_data, validation_data, outcome = "kJ")
 
 c(train_data, train_labels) \%<-\% split_data$training
-c(test_data, test_labels) \%<-\%  split_data$validation
+c(test_data, test_labels) \%<-\% split_data$validation
 }
 }

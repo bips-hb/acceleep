@@ -30,8 +30,11 @@ combine_clean_data <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
 ) {
   get_overview_table() %>%
-    dplyr::filter(file_clean_exists, model == !!model, placement == !!placement) %>%
-    dplyr::pull(file_clean) %>%
+    dplyr::filter(
+      .data$file_clean_exists,
+      .data$model == !!model, .data$placement == !!placement
+    ) %>%
+    dplyr::pull(.data$file_clean) %>%
     purrr::map_df(readRDS)
 }
 
@@ -53,7 +56,6 @@ combine_clean_data <- function(
 #' @param output_type `["numeric", "tbl"]` Return the outcome as a `"numeric"` vector
 #' or as a [`tibble::tibble()`], where the latter additionally preserves
 #' `interval` and `ID` variables for potential debugging.
-#' @param rescale `[FALSE]` If `TRUE`, outcome variable will be rescaled using [`scale()`].
 #'
 #' @return Either a `numeric` vector (default) or `[tibble::tibble()]`, depending on
 #' `outcome_type`.
@@ -67,8 +69,7 @@ combine_clean_data <- function(
 #' # mets is now a vector with one value per interval across all subjects
 #' }
 extract_outcome <- function(
-  xdf, outcome = c("MET", "kJ", "Jrel"), output_type = c("numeric", "tbl"),
-  rescale = FALSE
+  xdf, outcome = c("MET", "kJ", "Jrel"), output_type = c("numeric", "tbl")
   ) {
 
   outcome <- match.arg(outcome, choices = c("MET", "kJ", "Jrel"))
@@ -76,8 +77,6 @@ extract_outcome <- function(
   ret <- xdf %>%
     dplyr::select("interval", "ID", outcome) %>%
     dplyr::distinct()
-
-  if (rescale) ret[[outcome]] <- as.numeric(scale(ret[[outcome]]))
 
   if (output_type == "numeric") {
     ret <- ret[[outcome]]
@@ -120,10 +119,10 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 
   # split data into train/validation sets
   dat_validation <- full_data %>%
-    dplyr::filter(ID %in% ids_validation)
+    dplyr::filter(.data$ID %in% ids_validation)
 
   dat_training <- full_data %>%
-    dplyr::filter(ID %in% ids_train)
+    dplyr::filter(.data$ID %in% ids_train)
 
   list(
     training = dat_training,
@@ -138,6 +137,9 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 #' @note As of now, this function only ever returns one label per interval of accelerometry data.
 #' @param training_data,validation_data Datasets as created by e.g. `[make_initial_splits()]`.
 #' @param outcome `["MET"]`: Outcome variable to be extracted, passed to `[extract_outcome()]`.
+#' @param rescale_labels `[FALSE]`: Whether to re-scale labels to unit
+#'  mean/standard deviation. This should not be necessary, hence it is disabled
+#'  by default.
 #'
 #' @return A nested list of the form
 #' ```
@@ -158,45 +160,59 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 #' @examples
 #' \dontrun{
 #' full_data <- combine_clean_data("activpal", "thigh_right")
-#' c(training_data, validation_data) %<-% make_initial_splits(full_data, random_seed = 21421, val_split = 1/3)
+#' c(training_data, validation_data) %<-% make_initial_splits(
+#'   full_data, random_seed = 21421, val_split = 1/3
+#' )
 #' split_data <- split_data_labels(training_data, validation_data, outcome = "kJ")
 #'
 #' c(train_data, train_labels) %<-% split_data$training
-#' c(test_data, test_labels) %<-%  split_data$validation
+#' c(test_data, test_labels) %<-% split_data$validation
 #' }
-split_data_labels <- function(training_data, validation_data, outcome = c("MET", "kJ", "Jrel")) {
+split_data_labels <- function(
+  training_data, validation_data,
+  outcome = c("MET", "kJ", "Jrel"), rescale_labels = FALSE
+  ) {
 
   # This is sloppy but at least it gets the job done
   # I can agonize over this later
   training_meansd <- training_data %>%
-    dplyr::summarize_at(dplyr::vars(X, Y, Z), list(mean = mean, sd = sd), na.rm = TRUE)
+    dplyr::summarize_at(
+      dplyr::vars(.data$X,.data$Y, .data$Z),
+      list(mean = mean, sd = sd), na.rm = TRUE
+    )
 
   training_xyz <- training_data %>%
-    dplyr::select(X, Y, Z) %>%
+    dplyr::select(.data$X, .data$Y, .data$Z) %>%
     dplyr::mutate(
-      X = (X - training_meansd$X_mean) / training_meansd$X_sd,
-      Y = (Y - training_meansd$Y_mean) / training_meansd$Y_sd,
-      Z = (Z - training_meansd$Z_mean) / training_meansd$Z_sd
+      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
     )
 
   training_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
-  training_labels_mean <- mean(training_labels, na.rm = TRUE)
-  training_labels_sd <- sd(training_labels, na.rm = TRUE)
 
-  training_labels <- (training_labels - training_labels_mean) / training_labels_sd
+  if (rescale_labels) {
+    training_labels_mean <- mean(training_labels, na.rm = TRUE)
+    training_labels_sd <- sd(training_labels, na.rm = TRUE)
+
+    training_labels <- (training_labels - training_labels_mean) / training_labels_sd
+  }
 
   # Validation data and labels
   # Scaling XYZ and labels with same mean/sd as training data!
   validation_xyz <- validation_data %>%
-    dplyr::select(X, Y, Z) %>%
+    dplyr::select(.data$X, .data$Y, .data$Z) %>%
     dplyr::mutate(
-      X = (X - training_meansd$X_mean) / training_meansd$X_sd,
-      Y = (Y - training_meansd$Y_mean) / training_meansd$Y_sd,
-      Z = (Z - training_meansd$Z_mean) / training_meansd$Z_sd
+      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
     )
 
   validation_labels <- extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
-  validation_labels <- (validation_labels - training_labels_mean) / training_labels_sd
+
+  if (rescale_labels) {
+    validation_labels <- (validation_labels - training_labels_mean) / training_labels_sd
+  }
 
   list(
     training = list(
