@@ -2,44 +2,42 @@
 #'
 #' @return A tibble
 #' @export
-#' @import fs
-#' @import stringr
 #' @examples
 #' \dontrun{
 #' get_overview_table()
 #' }
 get_overview_table <- function() {
   accel_models <- c("actigraph", "activpal", "geneactiv")
-  input_files_accel <- dir_ls(here::here("data", "input", accel_models))
-  input_files_spiro <- dir_ls(here::here("data", "input", "spiro"))
+  input_files_accel <- fs::dir_ls(here::here("data", "input", accel_models))
+  input_files_spiro <- fs::dir_ls(here::here("data", "input", "spiro"))
   # proc_files <- fs::dir_ls(here::here("data", "processed", accel_models))
 
   files_accel_overview <- tibble::tibble(
-    file_accel = path_rel(input_files_accel),
-    sid = str_extract(file_accel, "0\\d{2}"),
+    file_accel = fs::path_rel(input_files_accel),
+    sid = str_extract(.data$file_accel, "0\\d{2}"),
     model = dplyr::case_when(
-      str_detect(file_accel, "actigraph") ~ "actigraph",
-      str_detect(file_accel, "activpal") ~ "activpal",
-      str_detect(file_accel, "geneactiv") ~ "geneactiv"
+      str_detect(.data$file_accel, "actigraph") ~ "actigraph",
+      str_detect(.data$file_accel, "activpal") ~ "activpal",
+      str_detect(.data$file_accel, "geneactiv") ~ "geneactiv"
     ),
-    placement = str_remove_all(path_file(file_accel), "(\\d{3}\\_)|(\\_readable)|(\\.csv)"),
+    placement = str_remove_all(fs::path_file(.data$file_accel), "(\\d{3}\\_)|(\\_readable)|(\\.csv)"),
   ) %>%
     mutate(
-      placement = ifelse(model == "activpal", "thigh_right", placement),
-      placement = ifelse(model == "actigraph", paste0("hip_", placement), placement),
-      file_clean = stringr::str_replace(file_accel, "input", "processed"),
-      file_clean = fs::path_ext_set(file_clean, ".rds"),
-      file_clean_exists = fs::file_exists(file_clean)
+      placement = ifelse(.data$model == "activpal", "thigh_right", .data$placement),
+      placement = ifelse(.data$model == "actigraph", paste0("hip_", .data$placement), .data$placement),
+      file_clean = stringr::str_replace(.data$file_accel, "input", "processed"),
+      file_clean = fs::path_ext_set(.data$file_clean, ".rds"),
+      file_clean_exists = fs::file_exists(.data$file_clean)
     )
 
   files_spiro_overview <- tibble::tibble(
-    file_spiro = path_rel(input_files_spiro),
-    sid = str_extract(file_spiro, "0\\d{2}")
+    file_spiro = fs::path_rel(input_files_spiro),
+    sid = str_extract(.data$file_spiro, "0\\d{2}")
   )
 
   dplyr::left_join(files_accel_overview, files_spiro_overview, by = "sid") %>%
-    dplyr::arrange(sid) %>%
-    dplyr::select(sid, model, placement, dplyr::starts_with("file_"))
+    dplyr::arrange(.data$sid) %>%
+    dplyr::select(.data$sid, .data$model, .data$placement, dplyr::starts_with("file_"))
 }
 
 

@@ -77,11 +77,15 @@ get_demo <- function(file_demo = here::here("data/input/demo.csv"), id = NULL) {
 #' @export
 #' @importFrom vroom vroom
 #' @importFrom vroom cols
+#' @importFrom stats median
 #' @examples
 #' \dontrun{
 #' aggregate_spiro("data/input/spiro/ID_001_spiro.csv", t0 = hms::as_hms("09:00:00"))
 #' }
-aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input/demo.csv"), t0, spiro_interval = 30) {
+aggregate_spiro <- function(
+  input_file_spiro, file_demo = here::here("data/input/demo.csv"),
+  t0, spiro_interval = 30
+  ) {
   stopifnot(file.exists(input_file_spiro))
 
   spiro <- vroom::vroom(
@@ -95,12 +99,12 @@ aggregate_spiro <- function(input_file_spiro, file_demo = here::here("data/input
   spiro %>%
     mutate(
       time = as.numeric(difftime(hms::as_hms(.data$Time), t0, units = "secs")),
-      interval = floor(time / spiro_interval) + 1,
+      interval = floor(.data$time / .data$spiro_interval) + 1,
       kJ = (3.9 * .data$O2 + 1.1 * .data$CO2) * 4.184, # res[, kJ := (3.9 * O2 + 1.1 * CO2) * 4.184]
-      Jrel = 1000 * kJ / demo$weight
+      Jrel = 1000 * .data$kJ / demo$weight
     ) %>%
     group_by(.data$interval) %>%
-    summarise_at(vars(MET, kJ, Jrel), median)
+    summarise_at(vars(.data$MET, .data$kJ, .data$Jrel), median)
 }
 
 #' Read accelerometry + spiro and save to disk in analysis-friendly state
@@ -160,11 +164,11 @@ convert_input_data <- function(
       col_types = vroom::cols("Timestamp" = "c")
     ) %>%
       dplyr::transmute(
-        X = Axis1,
-        Y = Axis2,
-        Z = Axis3,
-        datetime = lubridate::parse_date_time(Timestamp, orders = "%d.%m.%Y %H:%M:%0S"),
-        time = hms::as_hms(datetime) # Time in H:M:S is easier
+        X = .data$Axis1,
+        Y = .data$Axis2,
+        Z = .data$Axis3,
+        datetime = lubridate::parse_date_time(.data$Timestamp, orders = "%d.%m.%Y %H:%M:%0S"),
+        time = hms::as_hms(.data$datetime) # Time in H:M:S is easier
       )
 
   } else if (stringr::str_detect(input_file_accel, "activpal")) {
@@ -175,9 +179,9 @@ convert_input_data <- function(
       col_types = vroom::cols("datetime" = "d")
     ) %>%
       mutate(
-        datetime = datetime * 60 * 60 * 24,
-        datetime = lubridate::as_datetime(datetime, origin = "1899-12-30", tz = "GMT"),
-        time = hms::as_hms(datetime) # Time in H:M:S is easier
+        datetime = .data$datetime * 60 * 60 * 24,
+        datetime = lubridate::as_datetime(.data$datetime, origin = "1899-12-30", tz = "GMT"),
+        time = hms::as_hms(.data$datetime) # Time in H:M:S is easier
       )
 
   } else if (stringr::str_detect(input_file_accel, "geneactiv")) {
@@ -188,9 +192,9 @@ convert_input_data <- function(
       col_types = vroom::cols("datetime" = "c")
     ) %>%
       mutate(
-        datetime = stringr::str_replace(datetime, ":(\\d+)$", ".\\1"), # Thanks Marvin
-        datetime = lubridate::parse_date_time(datetime, orders = "%Y-%m-%d %H:%M:%0S"),
-        time = hms::as_hms(datetime) # Time in H:M:S is easier
+        datetime = stringr::str_replace(.data$datetime, ":(\\d+)$", ".\\1"), # Thanks Marvin
+        datetime = lubridate::parse_date_time(.data$datetime, orders = "%Y-%m-%d %H:%M:%0S"),
+        time = hms::as_hms(.data$datetime) # Time in H:M:S is easier
       )
   }
 
@@ -200,8 +204,8 @@ convert_input_data <- function(
 
   accel_data <- accel_data %>%
     mutate(
-      time = as.numeric(difftime(time, t0, units = "secs")),
-      interval = floor(time / spiro_interval) + 1
+      time = as.numeric(difftime(.data$time, t0, units = "secs")),
+      interval = floor(.data$time / .data$spiro_interval) + 1
     )
 
   # Match spiro to accelerometer time
@@ -210,13 +214,18 @@ convert_input_data <- function(
     file_demo = file_demo,
     t0 = t0, spiro_interval = spiro_interval
   ) %>%
-    filter(!is.na(MET), !is.na(kJ), !is.na(Jrel)) # Drop rows for which all of these are NA
+    filter(
+      !is.na(.data$MET), !is.na(.data$kJ), !is.na(.data$Jrel)
+    ) # Drop rows for which all of these are NA
 
   # Inner join spiro + accel by interval, result contains only data for intervals present in both datasets!
   # Add METs, kJ (AEE), Jrel (REE)
   final_data <- dplyr::inner_join(spiro, accel_data, by = "interval") %>%
     dplyr::mutate(ID = ID) %>%
-    dplyr::select(.data$interval, .data$ID, .data$X, .data$Y, .data$Z, .data$MET, .data$kJ, .data$Jrel)
+    dplyr::select(
+      .data$interval, .data$ID, .data$X, .data$Y, .data$Z,
+      .data$MET, .data$kJ, .data$Jrel
+    )
 
   # Save final data
   out_file <- stringr::str_replace(input_file_accel, "input", "processed")
@@ -229,13 +238,3 @@ convert_input_data <- function(
   # Invisible return for interactive debugging
   invisible(final_data)
 }
-
-# Appease R CMD check (for now)
-globalVariables(c(
-  "CO2", "MET", "O2", "Timestamp", "datetime", "file_accel", "file_spiro",
-  "file_clean_exists",
-  "interval", "median", "model", "placement", "sid", "time",
-  "Axis1", "Axis2", "Axis3", "Jrel", "kJ"
-))
-
-
