@@ -1,20 +1,22 @@
-#' Convert Accelerometer tbl to Array
+#' Defunct because silly: Convert Accelerometer tbl to Array
 #'
 #' @param accel_tbl Input tbl with columns X/Y/Z, one row per measurement.
 #' @inheritParams generate_ts_chunk
 #'
 #' @return An array of dimensions c(chunks_per_tbl, 3, rows_per_chunk)
 #' @export
-#'
+#' @importFrom purrr map
 #' @examples
 #' \dontrun{
 #' convert_tbl_array(accel_tbl, interval_length = 30, res = 20)
 #' }
 convert_tbl_array <- function(accel_tbl, interval_length, res) {
 
+  .Deprecated("keras_reshape_accel")
+
   rows_per_chunk <- interval_length * res
   chunks_per_tbl <- nrow(accel_tbl) / (rows_per_chunk)
-
+  #browser()
   # Generate the chunk ids and but drop potential overhead
   # If too many/too few ids are generated e.g. due to uneven number of measurements
   # in the last chunk, this would otherwise cause recycling issues
@@ -24,14 +26,55 @@ convert_tbl_array <- function(accel_tbl, interval_length, res) {
   index_along_rows <- seq_len(nrow(accel_tbl))
   chunk_ids <- rep(seq_len(chunks_per_tbl), each = rows_per_chunk)[index_along_rows]
 
+  # accel_tbl %>%
+  #   as.matrix() %>%
+  #   split(f = chunk_ids) %>%
+  #   lapply(matrix, nrow = 3) %>%
+  #   # lapply(matrix, nrow = 3, byrow = TRUE) %>%
+  #   unlist() %>%
+  #   array(dim = c(chunks_per_tbl, 3, rows_per_chunk))
+  #   # array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
+
   accel_tbl %>%
-    as.matrix() %>%
     split(f = chunk_ids) %>%
-    lapply(matrix, ncol = 3) %>%
+    purrr::map(~{
+      .x %>%
+        as.matrix(ncol = 3, nrow = rows_per_chunk) %>%
+        t() %>%
+        as.numeric()
+    }) %>%
     unlist() %>%
-    array(dim = c(chunks_per_tbl, 3, rows_per_chunk))
+    array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
 }
 
+#' Convert a tbl of accelerometry to a Keras- / LSTM-friendly-array
+#'
+#' As this function uses [`keras::array_reshape()`], its lack of sophistication
+#' barely justifies its existence and one might as well just use
+#' [`keras::array_reshape()`].
+#' @note
+#' This function uses [`keras::array_reshape()`], which adds a rather daunting
+#' dependency on Python, but at least it has saved the author from hours
+#' of unsuccessful experimentation trying to re-create the correct output
+#' structure using [`array()`].
+#' @param accel_tbl Input tbl with *only* columns X/Y/Z, one row per measurement.
+#' @inheritParams generate_ts_chunk
+#'
+#' @return An [`array()`] of dimensions `c(samples, res * interval_length, 3)`,
+#' wherte `samples` is calculated as `nrow(accel_tbl) / (interval_length * res)`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' keras_reshape_accel}
+keras_reshape_accel <- function(accel_tbl, interval_length = 30, res = 100) {
+  # rows per chunk = interval_length * res
+  chunks_per_tbl <- nrow(accel_tbl) / (interval_length * res)
+
+  keras::array_reshape(
+    as.matrix(accel_tbl), c(chunks_per_tbl, res * interval_length, 3)
+  )
+}
 
 #' Get demographics
 #'

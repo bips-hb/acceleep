@@ -26,4 +26,7 @@ Imports:
     cliapp,
     vroom,
     lubridate,
-    zeallot
+    zeallot,
+    keras
+Suggests: 
+    testthat

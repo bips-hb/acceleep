@@ -2,7 +2,7 @@
 % Please edit documentation in R/convert-data.R
 \name{convert_tbl_array}
 \alias{convert_tbl_array}
-\title{Convert Accelerometer tbl to Array}
+\title{Defunct because silly: Convert Accelerometer tbl to Array}
 \usage{
 convert_tbl_array(accel_tbl, interval_length, res)
 }
@@ -17,7 +17,7 @@ convert_tbl_array(accel_tbl, interval_length, res)
 An array of dimensions c(chunks_per_tbl, 3, rows_per_chunk)
 }
 \description{
-Convert Accelerometer tbl to Array
+Defunct because silly: Convert Accelerometer tbl to Array
 }
 \examples{
 \dontrun{

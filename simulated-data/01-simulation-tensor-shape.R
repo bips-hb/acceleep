@@ -1,29 +1,9 @@
-# As per Marvin ----
-n <- 30 # anzahl kinder (?)
-p <- 3 # No. of accelerometry axes
-t <- 100 # seconds
-res <- 20 # measures/sec
-
-# Original data
-x <- array(rnorm(n * p * t), dim = c(n, p, t))
-y <- matrix(rnorm(n * t), nrow = n)
-
-dim(x)
-dim(y)
-
-# Training data
-xx <- array(rnorm(n * p * t), dim = c(n * res, p, t / res))
-yy <- rnorm(n * t/res) # Labels
-
-dim(xx)
-dim(yy) # TIL vectors don't have a dim()
-
-
 # Objectives: ----
 # - Generating data close to the real thing
 # - Feed this data into keras to determine correct tensor shape
 library(acceleep)
 
+# Simpler approach using keras ----
 res <- 10             # Starting wit 20Hz instead of 100Hz or simplicity
 interval_length <- 30 # 30 seconds seems reasonable due to MET limitation
 n_chunks <- 10        # Arbitrarily chosen, setting 120 results in 1 hour of simulated data
@@ -35,20 +15,29 @@ accel_sim_tbl <- generate_ts_dataset(
   n_chunks = n_chunks
 )
 
-# Ignoring sequence information:
-# One matrix (res * interval_length * n_chunks) x 3
-accel_sim_mat <- as.matrix(accel_sim_tbl[-1])
+accel_mat <- unname(as.matrix(accel_sim_tbl[-1]))
+accel_array <- keras::array_reshape(accel_mat, c(n_chunks, res * interval_length, 3))
 
-# as per 00-array-exp
-accel_array <- split(accel_sim_mat,  (accel_sim_tbl$timestamp - 1) %/% interval_length) %>%
-  lapply(matrix, ncol = 3) %>%
-  unlist() %>%
-  array(dim = c(10, 3, 5)) # intervals, # accel axes, 5 intervals (?)
+dim(accel_array) # c(10, 300, 3)
 
-dim(accel_array)
+accel_array[1, 1:2, ]
+head(accel_mat, 2)
 
-# Now how to convert to appropriate array?
+all.equal(accel_array[1, 1:2, ], head(accel_mat, 2))
 
+accel_array[2, 1:2, ]
+accel_mat[res * interval_length + 1:2, ]
+all.equal(accel_array[2, 1:2, ], )
 
-# Associated METs, one measurement per chunk
-yy <- rnorm(10, 30, 15)
+# base array() ? not as easy
+accel_array_base <- array(as.numeric(accel_mat), c(n_chunks, res * interval_length, 3))
+
+# identical
+accel_mat[1, ]
+accel_array[1, 1, ]
+accel_array_base[1, 1, ]
+
+# Not identical
+accel_mat[2, ]
+accel_array[1, 2, ]
+accel_array_base[1, 2, ]
