@@ -4,14 +4,15 @@
 \alias{generate_ts_chunk}
 \title{Generate a single interval of time-series of accelerometry data}
 \usage{
-generate_ts_chunk(res = 20, interval_length = 30, offset = 0)
+generate_ts_chunk(res = 100, interval_length = 30, offset = 0)
 }
 \arguments{
-\item{res}{Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models}
+\item{res}{\verb{[100]}: Resolution of accelerometry data, in Hz. 20 for activPal,
+100 for other models.}
 
-\item{interval_length}{Number of seconds a chunk covers}
+\item{interval_length}{\verb{[30]} Number of seconds one interval covers.}
 
-\item{offset}{Second offset from previous chunk}
+\item{offset}{Second offset from previous chunk.}
 }
 \value{
 a \link[tibble:tibble-package]{tibble}

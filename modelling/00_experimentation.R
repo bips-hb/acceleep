@@ -9,48 +9,37 @@ library(keras)
 dat_activpal <- combine_clean_data("activpal", "thigh_right")
 
 # Split into train/validation (1/3 of subjects remain for the validation data)
-c(training_data, validation_data) %<-% make_initial_splits(dat_activpal, random_seed = 11235813, val_split = 1/3)
-
+c(training_data, validation_data) %<-% make_initial_splits(
+  dat_activpal, random_seed = 11235813, val_split = 1/3
+)
 
 # Training data and labels
-# The scaling is done wrong, i.e. not using mean/sd from training data (fixed in split_data_labels())
-array_train <- training_data %>%
-  select(X, Y, Z) %>%
-  mutate_all(~as.numeric(scale(.x))) %>%
-  convert_tbl_array(interval_length = 30, res = 20)
+split_data <- split_data_labels(training_data, validation_data, outcome = "Jrel")
 
-labels_train <- as.numeric(scale(extract_outcome(training_data, outcome = "MET", output_type = "numeric")))
+c(train_data, train_labels) %<-% split_data$training
+c(test_data, test_labels) %<-% split_data$validation
+
+
+array_train <- training_data %>%
+  keras_reshape_accel(interval_length = 30, res = 20)
+
 
 # Validation data and labels
 array_validation <- validation_data %>%
-  select(X, Y, Z) %>%
-  mutate_all(~as.numeric(scale(.x))) %>%
-  convert_tbl_array(interval_length = 30, res = 20)
-
-labels_validation <- extract_outcome(validation_data, outcome = "MET", output_type = "numeric", rescale = TRUE)
-
+  keras_reshape_accel(interval_length = 30, res = 20)
 
 # Doing the keras -----
 dim(array_train) # c(2588, 3, 600)
 
-# array_train <- array_reshape(array_train, c(2588, 600, 3))
-# dim(array_train)
-
-# "Normal" regression model: Output is a matrix :(
-# model <- keras_model_sequential() %>%
-#   layer_dense(units = 64, activation = "relu", input_shape = c(NULL)) %>%
-#   layer_dense(units = 64, activation = "relu") %>%
-#   layer_dense(units = 1, activation = "linear", name = "output")
-
-# LSTM model: Correct output shape! ----
+# LSTM model: ----
 model <- keras_model_sequential() %>%
-  layer_lstm(activation = "tanh", units = 128, return_sequences = TRUE) %>%
-  # layer_dropout(rate = 0.2) %>%
-  layer_lstm(activation = "tanh", units = 128) %>%
+  layer_lstm(activation = "relu", units = 64, return_sequences = TRUE) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_lstm(activation = "relu", units = 64) %>%
   layer_dense(units = 1, name = "output")
 
 model %>% compile(
-  loss = "mse",
+  loss = "rmse",
   optimizer = optimizer_rmsprop(),
   metrics = list("mean_absolute_error")
 )
@@ -58,7 +47,7 @@ model %>% compile(
 history <- model %>% fit(
   array_train,
   labels_train,
-  epochs = 20,
+  epochs = 15,
   validation_split = 0.2,
   verbose = 1
 )

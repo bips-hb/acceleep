@@ -21,7 +21,12 @@ A tibble. If combination of \code{model} and \code{placement} is invalid, an emp
 This function collects the datasets (split by subject) for a given model and placement, where the result is a
 single dataset of all measurements across subjects.
 }
-\details{
+\note{
+Note that not every combination of \code{model} and \code{placement} are valid.
+}
+\section{Available Data}{
+
+
 The following combinations of \code{model} and \code{placement} are available:\tabular{ll}{
    model \tab placement \cr
    actigraph \tab hip_left \cr
@@ -32,9 +37,7 @@ The following combinations of \code{model} and \code{placement} are available:\t
    geneactiv \tab wrist_right \cr
 }
 }
-\note{
-Note that not every combination of \code{model} and \code{placement} are valid.
-}
+
 \examples{
 \dontrun{
 combine_clean_data("actigraph", "hip_left")

@@ -23,12 +23,12 @@ by default.}
 \value{
 A nested list of the form\preformatted{list(
   training = list(
-    train_data = training_xyz,
-    train_labels = training_labels
+    data = train_data,
+    labels = train_labels
   ),
   validation = list(
-    val_data = validation_xyz,
-    cal_labels = validation_labels
+    data = test_data,
+    labels = test_labels
   )
 )
 }

@@ -3,6 +3,8 @@
 #' This function collects the datasets (split by subject) for a given model and placement, where the result is a
 #' single dataset of all measurements across subjects.
 #'
+#' @section Available Data:
+#'
 #' The following combinations of `model` and `placement` are available:
 #'
 #' |model     |placement   |
@@ -29,6 +31,10 @@ combine_clean_data <- function(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
 ) {
+
+  model <- match.arg(model)
+  placement <- match.arg(placement)
+
   get_overview_table() %>%
     dplyr::filter(
       .data$file_clean_exists,
@@ -145,12 +151,12 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 #' ```
 #' list(
 #'   training = list(
-#'     train_data = training_xyz,
-#'     train_labels = training_labels
+#'     data = train_data,
+#'     labels = train_labels
 #'   ),
 #'   validation = list(
-#'     val_data = validation_xyz,
-#'     cal_labels = validation_labels
+#'     data = test_data,
+#'     labels = test_labels
 #'   )
 #' )
 #' ```
@@ -172,6 +178,9 @@ split_data_labels <- function(
   training_data, validation_data,
   outcome = c("MET", "kJ", "Jrel"), rescale_labels = FALSE
   ) {
+
+  .Deprecated(rescale_labels, msg = "Rescaling labels should not be necessary")
+  outcome <- match.arg(outcome)
 
   # This is sloppy but at least it gets the job done
   # I can agonize over this later
@@ -216,12 +225,199 @@ split_data_labels <- function(
 
   list(
     training = list(
-      train_data = training_xyz,
-      train_labels = training_labels
+      data = training_xyz,
+      labels = training_labels
     ),
     validation = list(
-      val_data = validation_xyz,
-      val_labels = validation_labels
+      data = validation_xyz,
+      labels = validation_labels
+    )
+  )
+}
+
+#' Defunct because silly: Convert Accelerometer tbl to Array
+#'
+#' @param accel_tbl Input tbl with columns X/Y/Z, one row per measurement.
+#' @inheritParams generate_ts_chunk
+#'
+#' @return An array of dimensions c(chunks_per_tbl, 3, rows_per_chunk)
+#' @export
+#' @importFrom purrr map
+#' @examples
+#' \dontrun{
+#' convert_tbl_array(accel_tbl, interval_length = 30, res = 20)
+#' }
+convert_tbl_array <- function(accel_tbl, interval_length, res) {
+
+  .Deprecated("keras_reshape_accel")
+
+  rows_per_chunk <- interval_length * res
+  chunks_per_tbl <- nrow(accel_tbl) / (rows_per_chunk)
+  #browser()
+  # Generate the chunk ids and but drop potential overhead
+  # If too many/too few ids are generated e.g. due to uneven number of measurements
+  # in the last chunk, this would otherwise cause recycling issues
+  # TLDR make sure it's ok if last chunk has less than exactly 30s of measurements
+  # Wait no is that even sensible? should trailing measurements be dropped?
+  # Check via nrow(accel_tbl) %% (res * interval_length) == 0
+  index_along_rows <- seq_len(nrow(accel_tbl))
+  chunk_ids <- rep(seq_len(chunks_per_tbl), each = rows_per_chunk)[index_along_rows]
+
+  # accel_tbl %>%
+  #   as.matrix() %>%
+  #   split(f = chunk_ids) %>%
+  #   lapply(matrix, nrow = 3) %>%
+  #   # lapply(matrix, nrow = 3, byrow = TRUE) %>%
+  #   unlist() %>%
+  #   array(dim = c(chunks_per_tbl, 3, rows_per_chunk))
+  #   # array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
+
+  accel_tbl %>%
+    split(f = chunk_ids) %>%
+    purrr::map(~{
+      .x %>%
+        as.matrix(ncol = 3, nrow = rows_per_chunk) %>%
+        t() %>%
+        as.numeric()
+    }) %>%
+    unlist() %>%
+    array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
+}
+
+#' Convert a tbl of accelerometry to a Keras- / LSTM-friendly-array
+#'
+#' As this function uses [`keras::array_reshape()`], its lack of sophistication
+#' barely justifies its existence and one might as well just use
+#' [`keras::array_reshape()`].
+#' @note
+#' This function uses [`keras::array_reshape()`], which adds a rather daunting
+#' dependency on Python, but at least it has saved the author from hours
+#' of unsuccessful experimentation trying to re-create the correct output
+#' structure using [`array()`].
+#' @param accel_tbl Input tbl with *only* columns X/Y/Z, one row per measurement.
+#' @inheritParams generate_ts_chunk
+#'
+#' @return An [`array()`] of dimensions `c(samples, res * interval_length, 3)`,
+#' wherte `samples` is calculated as `nrow(accel_tbl) / (interval_length * res)`.
+#' @export
+#' @importFrom keras array_reshape
+#' @examples
+#' \dontrun{
+#' # Aggregating subject data for model/placement
+#' full_data <- combine_clean_data("activpal", "thigh_right")
+#'
+#' # Split into train / validation datasets
+#' c(training_data, validation_data) %<-% make_initial_splits(
+#'   full_data, random_seed = 21421, val_split = 1/3
+#' )
+#'
+#' # Split into data and labels
+#' split_data <- split_data_labels(training_data, validation_data, outcome = "kJ")
+#'
+#' c(train_data, train_labels) %<-% split_data$training
+#' c(test_data, test_labels) %<-% split_data$validation
+#'
+#' # Reshaping to array form
+#' train_data <- keras_reshape_accel(train_data, 30, 20)
+#' test_data <- keras_reshape_accel(test_data, 30, 20)
+#' }
+keras_reshape_accel <- function(accel_tbl, interval_length = 30, res = 100) {
+  # rows per chunk = interval_length * res
+  chunks_per_tbl <- nrow(accel_tbl) / (interval_length * res)
+
+  keras::array_reshape(
+    as.matrix(accel_tbl), c(chunks_per_tbl, res * interval_length, 3)
+  )
+}
+
+#' Do the entire preparation dance
+#'
+#' This function wraps up all steps required to prepare the sample data
+#' for `keras` modelling using RNNs (LSTM/GRU).
+#'
+#' @details
+#' This is a wrapper around the following steps:
+#'
+#' 1. [`combine_clean_data()`]: Aggregate per-subject datasets for a given
+#' accelerometer model and placement.
+#' 2. [`make_initial_splits()`]: Split the data into a training and validation
+#' dataset.
+#' 3. [`split_data_labels()`]: Split the data into accelerometry and calorimetry
+#' data.
+#' 4. [`keras_reshape_accel()`]: Reshape the accelerometry data into an array
+#' (tensor) of shape (number_of_intervals, `res * interval_length`, 3).
+#'
+#' @inheritParams combine_clean_data
+#' @inheritParams extract_outcome
+#' @inheritParams make_initial_splits
+#' @inheritParams keras_reshape_accel
+#' @inheritSection combine_clean_data Available Data
+#'
+#' @return A nested list of the form
+#' ```
+#' list(
+#'   training = list(
+#'     data = train_data,
+#'     labels = train_labels
+#'   ),
+#'   validation = list(
+#'     data = test_data,
+#'     labels = test_labels
+#'   )
+#' )
+#' ```
+#'
+#' Where `train_data` and `test_data` are already converted to a tensor with 3
+#' axes and `train_labels` and `test_labels` are numeric vectors of the same
+#' length as the first axis of the respective `_data` tensor.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
+#'   model = "geneactiv", placement = "hip_right",
+#'   outcome = "kJ", random_seed = 19283, val_split = 1/2,
+#'   interval_length = 30, res = 100
+#' )
+#' }
+keras_prep_lstm <- function(
+  model = c("actigraph", "activpal", "geneactiv"),
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
+  outcome = c("MET", "kJ", "Jrel"),
+  random_seed = 11235813, val_split = 1/3,
+  interval_length = 30, res = 100
+) {
+  # Aggregating subject data for model/placement
+  full_data <- combine_clean_data(model = model, placement = placement)
+
+  # Split into train / validation datasets
+  c(training_data, validation_data) %<-% make_initial_splits(
+    full_data, random_seed = random_seed, val_split = val_split
+  )
+
+  # Split into data and labels
+  split_data <- split_data_labels(training_data, validation_data, outcome = outcome)
+
+  c(train_data, train_labels) %<-% split_data$training
+  c(test_data, test_labels) %<-% split_data$validation
+
+  # Reshaping to array form
+  train_data <- keras_reshape_accel(
+    accel_tbl = train_data, interval_length = interval_length, res = res
+  )
+  test_data <- keras_reshape_accel(
+    accel_tbl = test_data, interval_length = interval_length, res = res
+  )
+
+  list(
+    training = list(
+      data = train_data,
+      labels = train_labels
+    ),
+    validation = list(
+      data = test_data,
+      labels = test_labels
     )
   )
 }

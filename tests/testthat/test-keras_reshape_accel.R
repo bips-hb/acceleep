@@ -1,4 +1,7 @@
 test_that("keras_reshape_accel() reshapes correctly", {
+  # Not worth it to install keras on CI yet, so skip there for now
+  skip_on_ci()
+
   # Sample data
   res <- 10             # Starting wit 20Hz instead of 100Hz or simplicity
   interval_length <- 30 # 30 seconds seems reasonable due to MET limitation

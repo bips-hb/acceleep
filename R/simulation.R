@@ -4,12 +4,13 @@
 #' measured at `res` Hz with normally-distributed X/Y/Z measurements.
 #' Using `offset` (in seconds) allows this function to be called repeatedly to
 #' create consecutive chunks.
-#' @param res Resolution of accelerometry data, in Hz. 20 for Activpal, 100 for other models
-#' @param interval_length Number of seconds a chunk covers
-#' @param offset Second offset from previous chunk
+#' @param res `[100]`: Resolution of accelerometry data, in Hz. 20 for activPal,
+#'   100 for other models.
+#' @param interval_length `[30]` Number of seconds one interval covers.
+#' @param offset Second offset from previous chunk.
 #' @export
 #' @return a [tibble][tibble::tibble-package]
-generate_ts_chunk <- function(res = 20, interval_length = 30, offset = 0) {
+generate_ts_chunk <- function(res = 100, interval_length = 30, offset = 0) {
   tibble::tibble(
     timestamp = seq(offset, (offset + interval_length) - 1/res, by = 1/res),
     x = stats::rnorm(length(timestamp), mean = 0),
