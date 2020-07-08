@@ -46,7 +46,9 @@ A nested list of the form\preformatted{list(
 )
 }
 
-Where \code{train_data}
+Where \code{train_data} and \code{test_data} are already converted to a tensor with 3
+axes and \code{train_labels} and \code{test_labels} are numeric vectors of the same
+length as the first axis of the respective \verb{_data} tensor.
 }
 \description{
 This function wraps up all steps required to prepare the sample data
