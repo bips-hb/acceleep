@@ -24,5 +24,5 @@ reticulate::conda_python()
 install.packages("keras")
 
 library(keras)
-install_keras(method = "conda")
+install_keras(method = "conda", tensorflow = "gpu")
 

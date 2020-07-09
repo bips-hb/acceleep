@@ -8,11 +8,6 @@
       }
     ]
   },
-  "Python": {
-    "Version": "3.6.10",
-    "Type": "conda",
-    "Name": "acceleep"
-  },
   "Packages": {
     "MASS": {
       "Package": "MASS",
