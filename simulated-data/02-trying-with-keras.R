@@ -2,6 +2,8 @@
 library(keras)
 library(acceleep)
 
+keras::array_reshape(1:20, c(2, 5, 2))
+
 res <- 20             # Starting wit 20Hz instead of 100Hz or simplicity
 interval_length <- 30 # 30 seconds seems reasonable due to MET limitation
 n_children <- 20      # 20 "children"
