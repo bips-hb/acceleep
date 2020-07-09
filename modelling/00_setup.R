@@ -6,17 +6,18 @@
 
 # Installs miniconda for the system (_not_ renv specific)
 reticulate::install_miniconda(path = reticulate::miniconda_path())
+reticulate::use_miniconda()
 
-# Uses a specific conda end and records it in lockfile
-renv::use_python(
-  type = "conda", name = "acceleep"
-)
+# # Uses a specific conda env
+reticulate::conda_create(envname = "acceleep")
+reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 
 # Some debug checkups
 # reticulate::use_condaenv()
 reticulate::conda_list()
 reticulate::conda_binary()
 reticulate::conda_python()
+reticulate::conda_version()
 
 # To install r and python packages from lockfile, use renv::restore() as usual
 
@@ -24,5 +25,8 @@ reticulate::conda_python()
 install.packages("keras")
 
 library(keras)
-install_keras(method = "conda", tensorflow = "gpu")
+install_keras(method = "conda", tensorflow = "gpu", envname = "acceleep")
 
+# tensorflow::install_tensorflow(version = "gpu")
+
+reticulate::conda_install(envname = "acceleep", packages = "cudatoolkit")

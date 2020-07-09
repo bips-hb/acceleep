@@ -179,7 +179,7 @@ split_data_labels <- function(
   outcome = c("MET", "kJ", "Jrel"), rescale_labels = FALSE
   ) {
 
-  .Deprecated(rescale_labels, msg = "Rescaling labels should not be necessary")
+  # .Deprecated(rescale_labels, msg = "Rescaling labels should not be necessary")
   outcome <- match.arg(outcome)
 
   # This is sloppy but at least it gets the job done
@@ -388,6 +388,7 @@ keras_prep_lstm <- function(
   random_seed = 11235813, val_split = 1/3,
   interval_length = 30, res = 100
 ) {
+  # browser()
   # Aggregating subject data for model/placement
   full_data <- combine_clean_data(model = model, placement = placement)
 

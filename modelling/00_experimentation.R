@@ -6,30 +6,38 @@ library(acceleep)
 library(keras)
 
 # Assemble all activpal data
-dat_activpal <- combine_clean_data("activpal", "thigh_right")
+# geneactiv_right <- combine_clean_data("geneactiv", "hip_right")
 
-# Split into train/validation (1/3 of subjects remain for the validation data)
-c(training_data, validation_data) %<-% make_initial_splits(
-  dat_activpal, random_seed = 11235813, val_split = 1/3
+
+c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
+  model = "geneactiv", placement = "hip_right",
+  outcome = "kJ", random_seed = 19283, val_split = 1/3,
+  interval_length = 30, res = 100
 )
 
-# Training data and labels
-split_data <- split_data_labels(training_data, validation_data, outcome = "Jrel")
-
-c(train_data, train_labels) %<-% split_data$training
-c(test_data, test_labels) %<-% split_data$validation
-
-
-array_train <- training_data %>%
-  keras_reshape_accel(interval_length = 30, res = 20)
-
-
-# Validation data and labels
-array_validation <- validation_data %>%
-  keras_reshape_accel(interval_length = 30, res = 20)
+#
+# # Split into train/validation (1/3 of subjects remain for the validation data)
+# c(training_data, validation_data) %<-% make_initial_splits(
+#   geneactiv_right, random_seed = 11235813, val_split = 1/3
+# )
+#
+# # Training data and labels
+# split_data <- split_data_labels(training_data, validation_data, outcome = "Jrel")
+#
+# c(train_data, train_labels) %<-% split_data$training
+# c(test_data, test_labels) %<-% split_data$validation
+#
+#
+# array_train <- training_data %>%
+#   keras_reshape_accel(interval_length = 30, res = 20)
+#
+#
+# # Validation data and labels
+# array_validation <- validation_data %>%
+#   keras_reshape_accel(interval_length = 30, res = 20)
 
 # Doing the keras -----
-dim(array_train) # c(2588, 3, 600)
+dim(train_data) # c(2588, 3, 600) // geneactiv hip_right c(2568, 3000, 3)
 
 # LSTM model: ----
 model <- keras_model_sequential() %>%
@@ -45,11 +53,12 @@ model %>% compile(
 )
 
 history <- model %>% fit(
-  array_train,
-  labels_train,
-  epochs = 15,
-  validation_split = 0.2,
+  train_data,
+  train_labels,
+  epochs = 20,
+  validation_split = 0.5,
   verbose = 1
+  # callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
 )
 
 summary(model)
@@ -59,10 +68,10 @@ history
 p_hist <- plot(history)
 ggplot2::ggsave(filename = here::here("output", "model_history_lstm_array_input.png"))
 
-model %>% evaluate(array_validation, labels_validation, verbose = 0)
+# model %>% evaluate(array_validation, labels_validation, verbose = 0)
 
 # some predicted vs. original values
-predict(model, array_train)[1:20, 1]
+predict(model, train_data) %>% head(20)
 
 labels_train[1:20]
 
