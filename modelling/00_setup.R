@@ -27,3 +27,16 @@ install_keras(method = "conda", tensorflow = "gpu")
 # tensorflow::install_tensorflow(envname = "acceleep")
 # Not sure if the below is needed, does not look like it.
 # reticulate::conda_install(envname = "acceleep", packages = "cudatoolkit")
+
+# To release GPU memory manually (see https://github.com/rstudio/keras/issues/739)
+reticulate::conda_install("acceleep", "numba")
+
+cuda_close_device <- function(device = 0) {
+  for (dev in device) {
+    reticulate::py_run_string(
+      glue::glue("from numba import cuda; cuda.select_device({device}); cuda.close()")
+    )
+  }
+}
+
+cuda_close_device(0)

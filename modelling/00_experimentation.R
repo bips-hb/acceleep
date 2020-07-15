@@ -4,6 +4,7 @@
 library(dplyr)
 library(acceleep)
 library(keras)
+reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 
 # Assemble all activpal data
 # geneactiv_right <- combine_clean_data("geneactiv", "hip_right")
@@ -40,16 +41,27 @@ c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
 dim(train_data) # c(2588, 3, 600) // geneactiv hip_right c(2568, 3000, 3)
 
 # LSTM model: ----
+# Requirements to use cuDNN: https://keras.io/api/layers/recurrent_layers/lstm/
+# Still: Fail to find the dnn implementation.
+# -> use layer_cudnn_lstm (different args) -> AttributeError: module 'tensorflow.keras.layers' has no attribute 'CuDNNLSTM'
+# -> Not necessary according to https://stackoverflow.com/a/56772187
+# -> Just uise layer_lstm() with appropriate parameters, seems to work fine after apt-get upgrade.
+
 model <- keras_model_sequential() %>%
-  layer_lstm(activation = "relu", units = 64, return_sequences = TRUE) %>%
+  layer_lstm(
+    units = 32,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    return_sequences = FALSE
+  ) %>%
   layer_dropout(rate = 0.2) %>%
-  layer_lstm(activation = "relu", units = 64) %>%
+  # layer_lstm(activation = "relu", units = 64, return_sequences = FALSE) %>%
   layer_dense(units = 1, name = "output")
 
 model %>% compile(
-  loss = "rmse",
+  loss = "mse",
   optimizer = optimizer_rmsprop(),
-  metrics = list("mean_absolute_error")
+  metrics = "mae"
 )
 
 history <- model %>% fit(
@@ -57,8 +69,8 @@ history <- model %>% fit(
   train_labels,
   epochs = 20,
   validation_split = 0.5,
-  verbose = 1
-  # callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
+  verbose = 1,
+  callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
 )
 
 summary(model)
@@ -72,47 +84,81 @@ ggplot2::ggsave(filename = here::here("output", "model_history_lstm_array_input.
 
 # some predicted vs. original values
 predict(model, train_data) %>% head(20)
+train_labels %>% head(20)
 
 labels_train[1:20]
 
-# Regression model with tbl input maybe? ----
-# Since regression with the array input produced wonky results, trying this just in case
-# This should be somewhat wonky because we're setting the same label for each set of 600 "observations"
+# Second / third attempt ----
+model <- keras_model_sequential() %>%
+  layer_lstm(
+    units = 64,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    return_sequences = TRUE
+  ) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_lstm(
+    units = 64,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    return_sequences = FALSE
+  ) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_dense(units = 1, name = "output")
 
-# Matrix with scales XYZ
-train_dat_matrix <- training_data %>%
-  select(X, Y, Z) %>%
-  mutate_all(~as.numeric(scale(.x))) %>%
-  as.matrix()
-
-# One MET per *row*, not per interval
-train_labels <- training_data$MET
-
-# "Normal" regression model but tbl/matrix input
-model_reg_mat <- keras_model_sequential() %>%
-  layer_dense(units = 64, activation = "relu", input_shape = 3) %>%
-  layer_dense(units = 64, activation = "relu") %>%
-  layer_dense(units = 1, activation = "linear", name = "output")
-
-model_reg_mat %>% compile(
+model %>% compile(
   loss = "mse",
   optimizer = optimizer_rmsprop(),
-  metrics = list("mean_absolute_error")
+  metrics = "mae"
 )
 
-history_reg_mat <- model_reg_mat %>% fit(
-  train_dat_matrix,
+# Trying with longer training w/ early stopping
+history <- model %>% fit(
+  train_data,
+  train_labels,
+  epochs = 40,
+  validation_split = 0.2,
+  verbose = 1,
+  callbacks =
+    list(
+      callback_tensorboard(log_dir = "output/runs/experimental"),
+      # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3),
+      callback_terminate_on_naan()
+    )
+)
+
+
+#  GRU -----
+model <- keras_model_sequential() %>%
+  layer_gru(
+    units = 32,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    reset_after = TRUE,
+    return_sequences = TRUE
+  ) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_gru(
+    units = 32,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    reset_after = TRUE,
+    return_sequences = FALSE
+  ) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_dense(units = 1, name = "output")
+
+model %>% compile(
+  loss = "mse",
+  optimizer = optimizer_rmsprop(),
+  metrics = metric_rmse
+)
+
+history <- model %>% fit(
+  train_data,
   train_labels,
   epochs = 20,
-  validation_split = 0.2,
-  verbose = 1
+  validation_split = 0.5,
+  verbose = 1,
+  callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
 )
-# Training takes approx 30 sek/epoch @ M's machine
-# Validation loss does not look good (not too surprising)
-
-summary(model_reg_mat)
-
-history_reg_mat
-
-p_hist <- plot(history_reg_mat)
-ggplot2::ggsave(filename = here::here("output", "model_history_regression_matrix_input.png"))
