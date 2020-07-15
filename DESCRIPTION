@@ -27,6 +27,8 @@ Imports:
     vroom,
     lubridate,
     zeallot,
-    keras
+    keras,
+    reticulate,
+    glue
 Suggests: 
     testthat
