@@ -2,20 +2,28 @@
 # This file is only here in case there's important tweaks to the keras setup I
 # need to keep track of down the road.
 
-# Okay then, attemp 12039: I don't even know anymore.
+# Okay then, attempt 12039: I don't even know anymore. // But it seems to work fine!
+# Trying to make a conda env maybe
+library(reticulate)
+conda_binary()
 
-reticulate::use_virtualenv(virtualenv = "acceleep", required = TRUE)
-reticulate::virtualenv_list()
-reticulate::py_available()
-reticulate:::ensure_python_initialized()
-reticulate::py_available()
+# Create a new, project specific env
+conda_create("acceleep")
+
+# required = TRUE -> Use *this* env and no other
+use_condaenv(condaenv = "acceleep", required = TRUE)
+
+# Should show a bin/python in an "acceleep" env
+conda_python(envname = "acceleep")
+
 
 # keras ----
 install.packages("keras")
 
 library(keras)
-install_keras(envname = "acceleep")
+install_keras(method = "conda", tensorflow = "gpu")
 
-tensorflow::install_tensorflow(envname = "acceleep")
-
-#reticulate::conda_install(envname = "acceleep", packages = "cudatoolkit")
+# The above includes the tensorflow installation
+# tensorflow::install_tensorflow(envname = "acceleep")
+# Not sure if the below is needed, does not look like it.
+# reticulate::conda_install(envname = "acceleep", packages = "cudatoolkit")
