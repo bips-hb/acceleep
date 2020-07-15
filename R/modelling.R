@@ -422,3 +422,5 @@ keras_prep_lstm <- function(
     )
   )
 }
+
+globalVariables(c("training_data", "validation_data", "train_labels", "test_labels"))

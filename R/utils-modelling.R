@@ -34,11 +34,13 @@ cuda_close_device <- function(device = 0) {
 
 #' Custom metric wrapper for RMSE
 #'
-#' @param y_true,y_pred True and predicted values.
-#'
+#' A wrapper for [`keras::custom_metric()`] to define an RMSE-based metric.
+#  @param y_true,y_pred True and predicted values.
+#' @param ... Used internally.
 #' @return An object of class `"python.builtin.function" "python.builtin.object"`.
 #' @export
 #' @note See https://keras.rstudio.com/reference/metric_binary_accuracy.html
+#
 #' @examples
 #' \dontrun{
 #' model %>% compile(
@@ -50,3 +52,4 @@ cuda_close_device <- function(device = 0) {
 metric_rmse <- keras::custom_metric("rmse", function(y_true, y_pred) {
   keras::k_sqrt(keras::k_mean(keras::k_square(y_true - y_pred)))
 })
+# NULL

@@ -7,13 +7,13 @@
 metric_rmse(...)
 }
 \arguments{
-\item{y_true, y_pred}{True and predicted values.}
+\item{...}{Used internally.}
 }
 \value{
 An object of class \verb{"python.builtin.function" "python.builtin.object"}.
 }
 \description{
-Custom metric wrapper for RMSE
+A wrapper for \code{\link[keras:metric_binary_accuracy]{keras::custom_metric()}} to define an RMSE-based metric.
 }
 \note{
 See https://keras.rstudio.com/reference/metric_binary_accuracy.html
