@@ -9,14 +9,11 @@ reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 reticulate::dict(1)
 # yields: Error in FUN(X[[i]], ...) : subscript out of bounds
 # This ^ is here to ensure the subsequent functions are executed properly
+# Can be "fixed" by calling reticulate:::ensure_python_initialized() first
 
-# metric_rmse <- function(y_true, y_pred) {
-#   sqrt(keras$metrics$mean_squared_error(y_true, y_pred))
-# }
-
-metric_rmse <- custom_metric("rmse", function(y_true, y_pred) {
-  k_sqrt(k_mean(k_square(y_true - y_pred)))
-})
+# metric_rmse <- custom_metric("rmse", function(y_true, y_pred) {
+#   k_sqrt(k_mean(k_square(y_true - y_pred)))
+# })
 
 
 # Assemble all geneactiv_right data, labels = kJ (AEE)
