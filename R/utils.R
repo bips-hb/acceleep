@@ -45,7 +45,8 @@ get_overview_table <- function() {
 #'
 #' This is purely a convenience function for the lazy.
 #'
-#' @param x An R object. The name of the object will be the filename, e.g. "iris" -> `iris.rds`.
+#' @param x An R object. The name of the object will be the filename, e.g.
+#'   "iris" -> `iris.rds`.
 #' @param dir Optional: A subdirectory of `here::here("output")`
 #'
 #' @return Nothing

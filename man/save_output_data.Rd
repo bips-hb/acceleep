@@ -7,7 +7,8 @@
 save_output_data(x, dir = "")
 }
 \arguments{
-\item{x}{An R object. The name of the object will be the filename, e.g. "iris" -> \code{iris.rds}.}
+\item{x}{An R object. The name of the object will be the filename, e.g.
+"iris" -> \code{iris.rds}.}
 
 \item{dir}{Optional: A subdirectory of \code{here::here("output")}}
 }

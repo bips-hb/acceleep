@@ -16,7 +16,7 @@ An object of class \verb{"python.builtin.function" "python.builtin.object"}.
 A wrapper for \code{\link[keras:metric_binary_accuracy]{keras::custom_metric()}} to define an RMSE-based metric.
 }
 \note{
-See https://keras.rstudio.com/reference/metric_binary_accuracy.html
+See \url{https://keras.rstudio.com/reference/metric_binary_accuracy.html}
 }
 \examples{
 \dontrun{

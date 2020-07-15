@@ -25,7 +25,7 @@ via \code{reticulate::conda_install("acceleep", "numba")} in a \code{conda} env
 named \code{"acceleep"}.
 }
 \note{
-See https://github.com/rstudio/keras/issues/739
+See \url{https://github.com/rstudio/keras/issues/739}
 }
 \examples{
 \dontrun{

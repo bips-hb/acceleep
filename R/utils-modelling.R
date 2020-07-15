@@ -7,7 +7,7 @@
 #' installed by e.g. [`keras::install_keras()`]. You can manually install it
 #' via `reticulate::conda_install("acceleep", "numba")` in a `conda` env
 #' named `"acceleep"`.
-#' @note See https://github.com/rstudio/keras/issues/739
+#' @note See <https://github.com/rstudio/keras/issues/739>
 #' @param device `[0]`: The numeric ID of the GPU device to close. To close
 #'   multiple devices, use `device = c(0, 1)`.
 #' @importFrom reticulate py_run_string
@@ -35,11 +35,10 @@ cuda_close_device <- function(device = 0) {
 #' Custom metric wrapper for RMSE
 #'
 #' A wrapper for [`keras::custom_metric()`] to define an RMSE-based metric.
-#  @param y_true,y_pred True and predicted values.
 #' @param ... Used internally.
 #' @return An object of class `"python.builtin.function" "python.builtin.object"`.
 #' @export
-#' @note See https://keras.rstudio.com/reference/metric_binary_accuracy.html
+#' @note See <https://keras.rstudio.com/reference/metric_binary_accuracy.html>
 #
 #' @examples
 #' \dontrun{
