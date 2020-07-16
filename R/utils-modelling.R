@@ -26,29 +26,32 @@
 cuda_close_device <- function(device = 0) {
   for (dev in device) {
     reticulate::py_run_string(
-      glue::glue("from numba import cuda; cuda.select_device({device}); cuda.close()")
+      glue::glue("from numba import cuda; cuda.select_device({dev}); cuda.close()")
     )
   }
 }
 
-
-#' Custom metric wrapper for RMSE
-#'
-#' A wrapper for [`keras::custom_metric()`] to define an RMSE-based metric.
-#' @param ... Used internally.
-#' @return An object of class `"python.builtin.function" "python.builtin.object"`.
-#' @export
-#' @note See <https://keras.rstudio.com/reference/metric_binary_accuracy.html>
+# Custom metric wrapper for RMSE
 #
-#' @examples
-#' \dontrun{
-#' model %>% compile(
-#'   optimizer = optimizer_rmsprop(),
-#'   loss = "mse",
-#'   metrics = metric_rmse
-#' )
-#' }
-metric_rmse <- keras::custom_metric("rmse", function(y_true, y_pred) {
-  keras::k_sqrt(keras::k_mean(keras::k_square(y_true - y_pred)))
-})
-# NULL
+# A wrapper for [`keras::custom_metric()`] to define an RMSE-based metric.
+#@rdname metric_rmse
+# @name metric_rmse
+# @param ... Used internally.
+# @return An object of class `"python.builtin.function" "python.builtin.object"`.
+# @export
+# @note See <https://keras.rstudio.com/reference/metric_binary_accuracy.html>
+#
+# @examples
+# \dontrun{
+#
+# metric_rmse <- keras::custom_metric("rmse", function(y_true, y_pred) {
+#   keras::k_sqrt(keras::k_mean(keras::k_square(y_true - y_pred)))
+# })
+#
+# model %>% compile(
+#   optimizer = optimizer_rmsprop(),
+#   loss = "mse",
+#   metrics = metric_rmse
+# )
+# }
+
