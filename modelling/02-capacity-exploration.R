@@ -143,6 +143,37 @@ cuda_close_device(c(0, 1))
 # Define scope to use all available GPUs
 strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
+# Training loop over param_grid ----
+
+# Define parameter grid to explore
+param_grid <- tidyr::expand_grid(
+  lstm_layers = 1:3,
+  lstm_units = c(64, 128, 256, 512),
+  dense_layers = c(0, 1),
+  dense_units = c(128, 256),
+  batch_size = c(4, 8, 16, 32)
+)
+
+for (row in seq_len(nrow(param_grid))) {
+
+  params <- param_grid[row, ]
+
+  with(strategy$scope(), {
+    train_output <- train_model(
+      sample_meta,
+      lstm_layers = params$lstm_layers, dense_layers = params$dense_layers,
+      lstm_units = params$lstm_units, dense_units = params$dense_units,
+      droput_rate = 0.2, lr = 0.1,
+      epochs = 20, batch_size = params$batch_size, push_notify = FALSE,
+      run_dir = "exploration-pt3", name_custom = "",
+      verbose = 0
+    )
+  })
+}
+pushoverr::pushover("Modelling done!", title = "Modelling hell", priority = 0)
+
+
+# Ad hoc models ----
 with(strategy$scope(), {
   train_output <- train_model(
     sample_meta,
@@ -154,33 +185,6 @@ with(strategy$scope(), {
     push_notify = FALSE, run_dir = "ad-hoc"
   )
 })
-
-# Define parameter grid to explore
-param_grid <- tidyr::expand_grid(
-  lstm_layers = 1,
-  lstm_units = c(128),
-  dense_layers = 1,
-  dense_units = c(128, 256)
-)
-
-# Training loop over param_grid ----
-for (row in seq_len(nrow(param_grid))) {
-
-  params <- param_grid[row, ]
-
-  with(strategy$scope(), {
-    train_output <- train_model(
-      sample_meta,
-      lstm_layers = params$lstm_layers, dense_layers = params$dense_layers,
-      lstm_units = params$lstm_units, dense_units = params$dense_units,
-      droput_rate = 0.2, lr = 0.01,
-      epochs = 15, batch_size = 64, push_notify = TRUE,
-      run_dir = "exploration-pt2", name_custom = "relu-dense-activation"
-    )
-  })
-}
-pushoverr::pushover("Modelling done!", title = "Modelling hell", priority = 1)
-
 
 # Compare predictions to training labels for reference ----
 library(ggplot2)
