@@ -20,17 +20,17 @@ cuda_close_device(c(0, 1))
 #   k_sqrt(k_mean(k_square(y_pred - y_true)))
 # })
 
-# c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
-#   model = "geneactiv", placement = "hip_right",
-#   outcome = "kJ", random_seed = 19283, val_split = 1/3,
-#   interval_length = 30, res = 100
-# )
-
 c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
-  model = "activpal", placement = "thigh_right",
+  model = "geneactiv", placement = "hip_right",
   outcome = "kJ", random_seed = 19283, val_split = 1/3,
-  interval_length = 30, res = 20
+  interval_length = 30, res = 100
 )
+
+# c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
+#   model = "activpal", placement = "thigh_right",
+#   outcome = "kJ", random_seed = 19283, val_split = 1/3,
+#   interval_length = 30, res = 20
+# )
 
 
 # Define scope to use all available GPUs
@@ -89,7 +89,7 @@ hms::hms(seconds = as.numeric(difftime(tock, tick, units = "secs")))
 library(ggplot2)
 
 sample_intervals <- sample(dim(train_data)[[1]], size = 500)
-sample_intervals <- 1:600
+sample_intervals <- 600:1200
 
 model_comparison <- tibble::tibble(
   index = seq_len(length(sample_intervals)),
@@ -110,7 +110,7 @@ model_comparison %>%
     title = "Comparison of predicted and observed labels",
     subtitle = "Using an arbitrary set of intervals from the training data",
     x = "Interval Index", y = "Energy Expenditure (kJ)", fill = "", color = "",
-    caption = "Accelerometer: activPAL, right thigh"
+    caption = "Accelerometer: geneactiv, right hip"
   ) +
   theme_minimal() +
   theme(legend.position = "top")
