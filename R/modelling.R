@@ -44,6 +44,17 @@ combine_clean_data <- function(
     purrr::map_df(readRDS)
 }
 
+#' @rdname combine_clean_data
+get_combined_data <- function(
+  model = c("actigraph", "activpal", "geneactiv"),
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
+) {
+  model <- match.arg(model)
+  placement <- match.arg(placement)
+
+  readRDS(here::here("data/processed-combined", model, paste0(placement, ".rds")))
+}
+
 #' Extract the outcome variables from the working dataset
 #'
 #' The working dataset will have both accelerometry and energy expenditure
@@ -143,9 +154,6 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 #' @note As of now, this function only ever returns one label per interval of accelerometry data.
 #' @param training_data,validation_data Datasets as created by e.g. `[make_initial_splits()]`.
 #' @param outcome `["MET"]`: Outcome variable to be extracted, passed to `[extract_outcome()]`.
-#' @param rescale_labels `[FALSE]`: Whether to re-scale labels to unit
-#'  mean/standard deviation. This should not be necessary, hence it is disabled
-#'  by default.
 #'
 #' @return A nested list of the form
 #' ```
@@ -176,10 +184,9 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
 #' }
 split_data_labels <- function(
   training_data, validation_data,
-  outcome = c("MET", "kJ", "Jrel"), rescale_labels = FALSE
+  outcome = c("MET", "kJ", "Jrel")
   ) {
 
-  # .Deprecated(rescale_labels, msg = "Rescaling labels should not be necessary")
   outcome <- match.arg(outcome)
 
   # This is sloppy but at least it gets the job done
@@ -200,13 +207,6 @@ split_data_labels <- function(
 
   training_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
 
-  if (rescale_labels) {
-    training_labels_mean <- mean(training_labels, na.rm = TRUE)
-    training_labels_sd <- sd(training_labels, na.rm = TRUE)
-
-    training_labels <- (training_labels - training_labels_mean) / training_labels_sd
-  }
-
   # Validation data and labels
   # Scaling XYZ and labels with same mean/sd as training data!
   validation_xyz <- validation_data %>%
@@ -218,10 +218,6 @@ split_data_labels <- function(
     )
 
   validation_labels <- extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
-
-  if (rescale_labels) {
-    validation_labels <- (validation_labels - training_labels_mean) / training_labels_sd
-  }
 
   list(
     training = list(
@@ -386,11 +382,11 @@ keras_prep_lstm <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
   outcome = c("MET", "kJ", "Jrel"),
   random_seed = 11235813, val_split = 1/3,
-  interval_length = 30, res = 100
+  interval_length = 30, res = 100, downsample = FALSE, downsample_frac = 0.1
 ) {
-  # browser()
+  browser()
   # Aggregating subject data for model/placement
-  full_data <- combine_clean_data(model = model, placement = placement)
+  full_data <- get_combined_data(model = model, placement = placement)
 
   # Split into train / validation datasets
   c(training_data, validation_data) %<-% make_initial_splits(

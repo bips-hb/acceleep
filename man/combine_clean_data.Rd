@@ -2,9 +2,15 @@
 % Please edit documentation in R/modelling.R
 \name{combine_clean_data}
 \alias{combine_clean_data}
+\alias{get_combined_data}
 \title{Combine cleaned data for one accelerometer model / placement}
 \usage{
 combine_clean_data(
+  model = c("actigraph", "activpal", "geneactiv"),
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
+)
+
+get_combined_data(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
 )

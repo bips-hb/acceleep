@@ -7,18 +7,13 @@
 split_data_labels(
   training_data,
   validation_data,
-  outcome = c("MET", "kJ", "Jrel"),
-  rescale_labels = FALSE
+  outcome = c("MET", "kJ", "Jrel")
 )
 }
 \arguments{
 \item{training_data, validation_data}{Datasets as created by e.g. \verb{[make_initial_splits()]}.}
 
 \item{outcome}{\verb{["MET"]}: Outcome variable to be extracted, passed to \verb{[extract_outcome()]}.}
-
-\item{rescale_labels}{\verb{[FALSE]}: Whether to re-scale labels to unit
-mean/standard deviation. This should not be necessary, hence it is disabled
-by default.}
 }
 \value{
 A nested list of the form\preformatted{list(

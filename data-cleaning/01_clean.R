@@ -49,3 +49,19 @@ purrr::pwalk(to_read, ~{
   )
 })
 
+
+# Pe-aggregate subject data into one file per accelerometer ----
+get_overview_table() %>%
+  distinct(model, placement) %>%
+  purrr::pwalk(~{
+
+    out_path <- here::here("data/processed-combined", .x, paste0(.y, ".rds"))
+
+    # print(fs::path_dir(out_path))
+    if (!fs::dir_exists(fs::path_dir(out_path))) fs::dir_create(fs::path_dir(out_path))
+
+    print(out_path)
+    combine_clean_data(model = .x, placement = .y) %>%
+      saveRDS(file = out_path)
+  })
+
