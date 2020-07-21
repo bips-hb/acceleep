@@ -1,6 +1,6 @@
 # Downsampling
 
-downsample_full_data <- function(full_data, res, downsample_frac) {
+downsample_full_data <- function(full_data, res, downsample_frac, interval_length = 30) {
   new_res <- res * downsample_frac
 
   full_data %>%
