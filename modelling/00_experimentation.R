@@ -1,14 +1,7 @@
 # Tentative experimentation
 # Goel so far: Make sure the modelling works in practice (re: data structure, basic concept)
 # Actual validation loss reduction is not a concern yet
-library(dplyr)
-library(acceleep)
-library(keras)
-reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
-
-# Assemble all activpal data
-# geneactiv_right <- combine_clean_data("geneactiv", "hip_right")
-
+source(here::here("modelling/_init.R"))
 
 c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
   model = "geneactiv", placement = "hip_right",

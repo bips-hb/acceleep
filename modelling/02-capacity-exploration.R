@@ -1,20 +1,5 @@
 # Systematic capacity exploration
-library(dplyr)
-library(acceleep)
-library(keras)
-library(cliapp)
-reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
-
-# The first python-based action after session restart always fails:
-reticulate::dict(1)
-# yields: Error in FUN(X[[i]], ...) : subscript out of bounds
-# This ^ is here to ensure the subsequent functions are executed properly
-# Can be "fixed" by calling reticulate:::ensure_python_initialized() first
-
-# Close both GPU devices to free up resources just in case.
-# Be careful not to close them on other running CUDA processes!
-cuda_close_device(c(0, 1))
-
+source(here::here("modelling/_init.R"))
 
 # A sample configuration list to collect metadata of current sample data for easier
 # downstream management and logging
@@ -33,10 +18,10 @@ c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
 # Primary model training function ----
 train_model <- function(
   sample_meta,
-  lstm_layers = 1, dense_layers = 1,
+  lstm_layers = 1, dense_layers = 0,
   lstm_units = 128, dense_units = 128,
   dropout_rate = 0.2, lr = 0.1, validation_split = 0.2,
-  epochs = 10, batch_size = 64, verbose = 1,
+  epochs = 10, batch_size = 16, verbose = 1,
   name_custom = "", run_dir = "exploration", push_notify = FALSE
   ) {
 
@@ -116,7 +101,7 @@ train_model <- function(
     callbacks =
       list(
         callback_tensorboard(log_dir = log_path),
-        callback_reduce_lr_on_plateau(patience = 1, factor = 0.5, min_lr = 0.0001),
+        callback_reduce_lr_on_plateau(patience = 2, factor = 0.5, min_lr = 0.0001),
         # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3, mode = "min", restore_best_weights = TRUE),
         callback_terminate_on_naan()
       )
@@ -136,7 +121,7 @@ train_model <- function(
 
 # Close both GPU devices to free up resources just in case.
 # Be careful not to close them on other running CUDA processes!
-cuda_close_device(c(0, 1))
+# cuda_close_device(c(0, 1))
 
 # Model creation is wrapped in a strategy scope
 # to enable distribution across GPUs
@@ -152,7 +137,9 @@ param_grid <- tidyr::expand_grid(
   dense_layers = c(0, 1),
   dense_units = c(128, 256),
   batch_size = c(4, 8, 16, 32)
-)
+) %>%
+  mutate(dense_units = ifelse(dense_layers == 0, 0, dense_units)) %>%
+  distinct()
 
 for (row in seq_len(nrow(param_grid))) {
 
@@ -177,11 +164,11 @@ pushoverr::pushover("Modelling done!", title = "Modelling hell", priority = 0)
 with(strategy$scope(), {
   train_output <- train_model(
     sample_meta,
-    lstm_layers = 2, dense_layers = 0,
+    lstm_layers = 1, dense_layers = 0,
     lstm_units = 128, dense_units = 0,
-    dropout_rate = 0.2, lr = 0.01,
-    epochs = 15, batch_size = 8,
-    name_custom = "with-lr-scheduler",
+    dropout_rate = 0.2, lr = 0.1,
+    epochs = 20, batch_size = 16,
+    name_custom = "",
     push_notify = FALSE, run_dir = "ad-hoc"
   )
 })

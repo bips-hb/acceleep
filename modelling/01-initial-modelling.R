@@ -1,24 +1,5 @@
 # First proper modelling attempts
-library(dplyr)
-library(acceleep)
-library(keras)
-# library(tensorflow)
-reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
-
-# The first python-based action after session restart always fails:
-reticulate::dict(1)
-# yields: Error in FUN(X[[i]], ...) : subscript out of bounds
-# This ^ is here to ensure the subsequent functions are executed properly
-# Can be "fixed" by calling reticulate:::ensure_python_initialized() first
-
-# Close both GPU devices to free up resources just in case.
-# Be careful not to close them on other running CUDA processes!
-cuda_close_device(c(0, 1))
-# cuda_close_device(0)
-
-# metric_rmse <- custom_metric("rmse", function(y_true, y_pred) {
-#   k_sqrt(k_mean(k_square(y_pred - y_true)))
-# })
+source(here::here("modelling/_init.R"))
 
 c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
   model = "geneactiv", placement = "hip_right",
