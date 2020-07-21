@@ -35,7 +35,7 @@ train_model <- function(
   sample_meta,
   lstm_layers = 1, dense_layers = 1,
   lstm_units = 128, dense_units = 128,
-  droput_rate = 0.2, lr = 0.1, validation_split = 0.2,
+  dropout_rate = 0.2, lr = 0.1, validation_split = 0.2,
   epochs = 10, batch_size = 64, verbose = 1,
   name_custom = "", run_dir = "exploration", push_notify = FALSE
   ) {
@@ -56,7 +56,7 @@ train_model <- function(
             recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
             return_sequences = TRUE
           ) %>%
-          layer_dropout(rate = droput_rate)
+          layer_dropout(rate = dropout_rate)
       }
     }
 
@@ -68,14 +68,14 @@ train_model <- function(
         recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
         return_sequences = FALSE
       ) %>%
-      layer_dropout(rate = droput_rate)
+      layer_dropout(rate = dropout_rate)
 
     # Add optional additional dense layers before the last dense layer
     if (dense_layers > 0) {
       for (dense_layer in seq_len(dense_layers)) {
         model %>%
           layer_dense(units = dense_units, activation = "relu") %>%
-          layer_dropout(rate = droput_rate)
+          layer_dropout(rate = dropout_rate)
       }
     }
 
@@ -163,7 +163,7 @@ for (row in seq_len(nrow(param_grid))) {
       sample_meta,
       lstm_layers = params$lstm_layers, dense_layers = params$dense_layers,
       lstm_units = params$lstm_units, dense_units = params$dense_units,
-      droput_rate = 0.2, lr = 0.1,
+      dropout_rate = 0.2, lr = 0.1,
       epochs = 20, batch_size = params$batch_size, push_notify = FALSE,
       run_dir = "exploration-pt3", name_custom = "",
       verbose = 0
@@ -179,7 +179,7 @@ with(strategy$scope(), {
     sample_meta,
     lstm_layers = 2, dense_layers = 0,
     lstm_units = 128, dense_units = 0,
-    droput_rate = 0.2, lr = 0.01,
+    dropout_rate = 0.2, lr = 0.01,
     epochs = 15, batch_size = 8,
     name_custom = "with-lr-scheduler",
     push_notify = FALSE, run_dir = "ad-hoc"
