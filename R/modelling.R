@@ -45,6 +45,7 @@ combine_clean_data <- function(
 }
 
 #' @rdname combine_clean_data
+#' @export
 get_combined_data <- function(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
@@ -382,9 +383,9 @@ keras_prep_lstm <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
   outcome = c("MET", "kJ", "Jrel"),
   random_seed = 11235813, val_split = 1/3,
-  interval_length = 30, res = 100, downsample = FALSE, downsample_frac = 0.1
+  interval_length = 30, res = 100
 ) {
-  browser()
+  # browser()
   # Aggregating subject data for model/placement
   full_data <- get_combined_data(model = model, placement = placement)
 
