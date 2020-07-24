@@ -4,60 +4,56 @@
 
 source(here::here("modelling/_init.R"))
 library(tfruns)
-options(tfruns.runs_dir = here::here("output/runs/downsampled-1Hz"))
+options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
 
 
-# c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
-#   model = "geneactiv", placement = "hip_right",
-#   outcome = "kJ", random_seed = 19283, val_split = 1/3,
-#   interval_length = 30, res = 1
+# Default flags for easier copypasting ----
+# list(
+#   accel_model = "geneactiv",
+#   placement = "hip_right",
+#   outcome = "kJ",
+#   res = 1,
+#   lr = 0.001,
+#   decay = 0,
+#   batch_size = 32,
+#   epochs = 20,
+#   lstm_layers = 2,
+#   lstm_units = 128,
+#   dense_layers = 2,
+#   dense_units = 128,
+#   droput_rate = 0,
+#   validation_split = 0.2,
+#   verbose = 0
 # )
 
-
-# Default flags:
-list(
-  model = "geneactiv",
-  placement = "hip_right",
-  outcome = "kJ",
-  res = 1,
-  lr = 0.001,
-  decay = 0,
-  batch_size = 32,
-  epochs = 20,
-  lstm_layers = 2,
-  lstm_units = 128,
-  dense_layers = 2,
-  dense_units = 128,
-  droput_rate = 0,
-  validation_split = 0.2,
-  verbose = 0,
-  shuffle = TRUE
-)
-
-
-training_run(here::here("modelling/train_model.R"), flags = list(
-  model = "geneactiv",
-  placement = "hip_right",
-  outcome = "kJ",
-  res = 1,
-  lr = 0.001,
-  decay = 0,
-  batch_size = 32,
-  epochs = 30,
-  lstm_layers = 2,
-  lstm_units = 128,
-  dense_layers = 2,
-  dense_units = 128,
-  dropout_rate = 0,
-  validation_split = 0.2,
-  verbose = 1
+# A single ad hoc training run -----
+training_run(
+  file = here::here("modelling/train_model.R"),
+  flags = list(
+    accel_model = "geneactiv",
+    placement = "hip_right",
+    outcome = "kJ",
+    res = 10,
+    lr = 1e-4,
+    decay = 0, # 1e-6,
+    batch_size = 128,
+    epochs = 100,
+    lstm_layers = 2,
+    lstm_units = 128,
+    dense_layers = 2,
+    dense_units = 64,
+    dropout_rate = 0.2,
+    validation_split = 0.2,
+    verbose = 1
 ))
 
-# Now with flags
+# Now with multiple flags ----
 tuning_runs <- tuning_run(
   confirm = FALSE,
   here::here("modelling/train_model.R"),
   flags = list(
+    res = 1,
+    lr = c(1e-4),
     lstm_layers = c(2),
     lstm_units = c(128),
     dense_layers = c(2),
@@ -69,3 +65,18 @@ tuning_runs <- tuning_run(
   ))
 # pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
+view_run("2020-07-24T14-03-07Z")
+
+runs <- ls_runs()
+
+View(runs)
+
+copy_run_files("2020-07-24T14-03-07Z", to = here::here("output/runs", "selected-runs"))
+
+
+###
+
+options(tfruns.runs_dir = here::here("output/runs/downsampled-1hz-tuning"))
+View(ls_runs())
+
+view_run(ls_runs(metric_val_loss == min(metric_val_loss)))

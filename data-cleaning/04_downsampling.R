@@ -22,7 +22,8 @@ downsample_full_data <- function(full_data, res, new_res, interval_length = 30) 
       kJ = unique(kJ),
       Jrel = unique(Jrel)
     ) %>%
-    select(-.data$index)
+    select(-.data$index) %>%
+    ungroup()
 }
 
 # Doing this parallel..ly

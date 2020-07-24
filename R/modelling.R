@@ -61,7 +61,10 @@ get_combined_data <- function(
     stop("File ", file_path, " does not exist. Check your model/placement/resolution arguments.")
   }
 
-  readRDS(file_path)
+  # Read and ungroup data because I forgot to ungroup when saving the downsampled data
+  # and now I have to fix it, but don't want to resave the data just yet.
+  readRDS(file_path) %>%
+    ungroup()
 }
 
 #' Extract the outcome variables from the working dataset
@@ -197,7 +200,7 @@ split_data_labels <- function(
   ) {
 
   outcome <- match.arg(outcome)
-
+  # browser()
   # This is sloppy but at least it gets the job done
   # I can agonize over this later
   training_meansd <- training_data %>%
