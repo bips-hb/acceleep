@@ -177,7 +177,7 @@ with(strategy$scope(), {
 library(ggplot2)
 model <- train_output$model
 
-sample_intervals <- sample(dim(train_data)[[1]], size = 500)
+# sample_intervals <- sample(dim(train_data)[[1]], size = 500)
 sample_intervals <- 600:1200
 
 model_comparison <- tibble::tibble(
