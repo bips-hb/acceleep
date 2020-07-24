@@ -25,13 +25,14 @@
 #' @note Note that not every combination of `model` and `placement` are valid.
 #' @examples
 #' \dontrun{
-#' combine_clean_data("actigraph", "hip_left")
+#' combine_clean_data("actigraph", "hip_left", res = 20)
 #' }
 combine_clean_data <- function(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
 ) {
 
+  # browser()
   model <- match.arg(model)
   placement <- match.arg(placement)
 
@@ -48,12 +49,19 @@ combine_clean_data <- function(
 #' @export
 get_combined_data <- function(
   model = c("actigraph", "activpal", "geneactiv"),
-  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
+  res = 100
 ) {
   model <- match.arg(model)
   placement <- match.arg(placement)
 
-  readRDS(here::here("data/processed-combined", model, paste0(placement, ".rds")))
+  file_path <- here::here("data/processed-combined", model, paste0(placement, "-", res, "hz", ".rds"))
+
+  if (!fs::file_exists(file_path)) {
+    stop("File ", file_path, " does not exist. Check your model/placement/resolution arguments.")
+  }
+
+  readRDS(file_path)
 }
 
 #' Extract the outcome variables from the working dataset
@@ -387,7 +395,7 @@ keras_prep_lstm <- function(
 ) {
   # browser()
   # Aggregating subject data for model/placement
-  full_data <- get_combined_data(model = model, placement = placement)
+  full_data <- get_combined_data(model = model, placement = placement, res = res)
 
   # Split into train / validation datasets
   c(training_data, validation_data) %<-% make_initial_splits(

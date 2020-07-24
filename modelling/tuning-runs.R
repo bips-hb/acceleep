@@ -15,7 +15,7 @@ tuning_run(
     decay = c(0, 0.001, 0.01),
     epochs = 30,
     shuffle = c(TRUE, FALSE),
-    dense_units = c(0, 1)
+    dense_units = c(0, 1) # <- well this was dumb.
 ))
 
 pushoverr::pushover("Modelling done!", title = "Modelling hell")

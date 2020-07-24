@@ -76,4 +76,11 @@ sqrt(latest_run()$metrics$val_loss)
 # Looking at overnight runs -----
 options(tfruns.runs_dir = here::here("output/runs/tfruns-overnight"))
 
+overnight <- ls_runs()
 
+overnight %>%
+  arrange(metric_val_loss)
+
+view_run("2020-07-23T14-51-55Z")
+
+clean_runs(ls_runs(metric_val_loss > 10))

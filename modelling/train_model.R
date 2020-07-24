@@ -116,7 +116,7 @@ cat(cliapp::cli_alert_info("Took {took} -- Minimum validation RMSE: {round(min(s
 library(ggplot2)
 
 # sample_intervals <- sample(dim(train_data)[[1]], size = 500)
-sample_intervals <- 600:1200
+sample_intervals <- 600:800
 
 model_comparison <- tibble::tibble(
   index = seq_len(length(sample_intervals)),
@@ -129,7 +129,7 @@ seq_rmse <- model_comparison %>%
   pull(rmse) %>%
   round(2)
 
-png(filename = "precition-comparison.png", width = 13, height = 8, units = "in", res = 300)
+png(filename = "prediction-comparison.png", width = 13, height = 8, units = "in", res = 300)
 p <- model_comparison %>%
   tidyr::pivot_longer(cols = c(Predicted, Observed)) %>%
   ggplot(aes(x = index, y = value, color = name, fill = name)) +
@@ -138,7 +138,7 @@ p <- model_comparison %>%
   scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
   labs(
     title = "Comparison of predicted and observed labels",
-    subtitle = glue::glue("Using an arbitrary set of successive intervals from the training data\nRMSE in this interval = {seq_rmse}"),
+    subtitle = glue::glue("Using an arbitrary set of {length(sample_intervals)} successive intervals from the training data\nRMSE in this interval = {seq_rmse}"),
     x = "Interval Index", y = glue::glue("Energy Expenditure ({FLAGS$outcome})"), fill = "", color = "",
     caption = glue::glue("Accelerometer: {FLAGS$model}, {FLAGS$placement}")
   ) +

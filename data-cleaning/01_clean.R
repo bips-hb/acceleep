@@ -55,9 +55,12 @@ get_overview_table() %>%
   distinct(model, placement) %>%
   purrr::pwalk(~{
 
-    out_path <- here::here("data/processed-combined", .x, paste0(.y, ".rds"))
+    res <- ifelse(.x == "activpal", 20, 100)
+
+    out_path <- here::here("data/processed-combined", .x, paste0(.y, "-", res, "hz", ".rds"))
 
     # print(fs::path_dir(out_path))
+    # print(out_path)
     if (!fs::dir_exists(fs::path_dir(out_path))) fs::dir_create(fs::path_dir(out_path))
 
     print(out_path)

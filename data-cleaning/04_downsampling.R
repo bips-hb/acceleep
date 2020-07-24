@@ -40,7 +40,7 @@ get_overview_table() %>%
   filter(new_res < res) %>%
   # purrr::pwalk(~{
   future_pmap(~{
-    out_path <- here::here("data/processed-downsampled", ..1, paste0(..2, "-", ..4, "hz", ".rds"))
+    out_path <- here::here("data/processed-combined", ..1, paste0(..2, "-", ..4, "hz", ".rds"))
 
     cliapp::cli_alert_info("Downsampling {..1}-{..2} from {..3} to {..4} to {out_path}")
 
