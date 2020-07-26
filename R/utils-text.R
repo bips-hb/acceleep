@@ -1,5 +1,4 @@
-#' Label accelerometer models for final text
-#'
+#' Label accelerometer models
 #' @param x Name of accelerometer model in the dataset, e.g. `"actigraph"`
 #'
 #' @return A `character()` of the same length as the input
@@ -15,4 +14,21 @@ label_accel_models <- function(x) {
     x == "activpal" ~ "activPAL",
     x == "geneactiv" ~ "GENEActiv"
   )
+}
+
+#' Label accelerometer placements
+#' @param x Placement, e.g. `"hip_right"`
+#'
+#' @return A `character()` of the same length as the input
+#' @export
+#' @importFrom stringr str_split str_c
+#' @examples
+#' label_placement("hip_right") # -> "right hip"
+#' label_placement("thigh_right") # -> "right thigh"
+#' label_placement("wrist_left") # -> "left wrist"
+label_placement <- function(x) {
+  x %>%
+    stringr::str_split("_", simplify = TRUE) %>%
+    rev() %>%
+    stringr::str_c(collapse = " ")
 }

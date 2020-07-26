@@ -12,7 +12,8 @@ combine_clean_data(
 
 get_combined_data(
   model = c("actigraph", "activpal", "geneactiv"),
-  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
+  res = 100
 )
 }
 \arguments{
@@ -46,6 +47,6 @@ The following combinations of \code{model} and \code{placement} are available:\t
 
 \examples{
 \dontrun{
-combine_clean_data("actigraph", "hip_left")
+combine_clean_data("actigraph", "hip_left", res = 20)
 }
 }

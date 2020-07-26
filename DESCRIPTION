@@ -29,6 +29,9 @@ Imports:
     zeallot,
     keras,
     reticulate,
-    glue
+    glue,
+    ggplot2,
+    jsonlite,
+    tidyr
 Suggests: 
     testthat

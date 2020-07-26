@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils-text.R
 \name{label_accel_models}
 \alias{label_accel_models}
-\title{Label accelerometer models for final text}
+\title{Label accelerometer models}
 \usage{
 label_accel_models(x)
 }
@@ -13,7 +13,7 @@ label_accel_models(x)
 A \code{character()} of the same length as the input
 }
 \description{
-Label accelerometer models for final text
+Label accelerometer models
 }
 \examples{
 label_accel_models("actigraph") # -> "Actigraph GT3X"
