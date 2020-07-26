@@ -1,3 +1,28 @@
+#' Read tfruns with minor cleanup
+#'
+#' Read in all runs from a directory, calculate additionale the RMSE loss,
+#' training duration in HMS and sort by ascending RMSE.
+#'
+#' @param runs_dir Directory path used for `tfruns` to collect all the runs.
+#'
+#' @return A tibble
+#' @export
+#' @importFrom tfruns ls_runs
+#' @examples
+#' \dontrun{
+#' ingest_runs("output/runs/downsampled-ad-hoc/")
+#' }
+ingest_runs <- function(runs_dir) {
+  tfruns::ls_runs(runs_dir = runs_dir) %>%
+    dplyr::mutate(
+      rmse = sqrt(metric_val_loss),
+      took = hms::hms(seconds = round(as.numeric(difftime(.data$end, .data$start, units = "secs")))),
+      .after = run_dir
+    ) %>%
+    dplyr::arrange(.data$rmse) %>%
+    tibble::as_tibble()
+}
+
 #' Get tfruns metadata
 #'
 #' @param run_dir Path to a single run's data. Can also be a single row

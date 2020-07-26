@@ -8,3 +8,6 @@ output/runs
 runs
 output/models
 **prediction-comparison.png
+
+run-analysis/*html
+run-analysis/*_files

@@ -1,0 +1,73 @@
+---
+title: "Runs"
+author: "Lukas"
+date: "`r Sys.time()`"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+    fig_width: 9
+    fig_height: 7
+    number_sections: yes
+    self_contained: no
+---
+
+```{r setup, include=FALSE}
+library(acceleep)
+library(tfruns)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+knitr::opts_chunk$set(
+ error = FALSE, warning = FALSE, echo = TRUE
+)
+```
+
+
+```{r first-look}
+runs_dir <- here::here("output/runs/downsampled-ad-hoc/")
+
+runs <- ingest_runs(runs_dir)
+# glimpse(runs)
+
+runs %>%
+  mutate(
+    run_dir = fs::path_file(run_dir),
+    flag_lr = format(flag_lr, scientific = TRUE),
+    flag_decay = format(flag_decay, scientific = TRUE)
+  ) %>%
+  select(run_dir, flag_res, rmse, contains("LSTM"), contains("Dense"), flag_lr, flag_decay, epochs) %>%
+  mutate(across(where(is.numeric), ~round(.x, 2))) %>%
+  head(5) %>%
+  knitr::kable()
+```
+
+```{r run-list, results='asis'}
+for (run in runs$run_dir) {
+  #run <- here::here(run)
+  # browser()
+  run_metrics <- tfrun_get_metrics(run)
+  run_rmse <- round(sqrt(run_metrics$val_loss), 2)
+  # cat(glue::glue("# {fs::path_file(run)}"))
+  cat(glue::glue("# Min RMSE {min(run_rmse)} (Last {last(run_rmse)})"))
+  cat("\n")
+  
+  run_meta <- tfrun_label_summary(run)
+  
+  cat("- ", run_meta$accel, "\n")
+  cat("- ", run_meta$model, "\n")
+  cat("- ", run_meta$training, "\n")
+  cat("\n\n## Training history\n\n")
+  print(plot_loss_history(run))
+  cat("\n\n")
+  
+  pred_plot <- fs::path(run, "prediction-comparison.png")
+  if (fs::file_exists(pred_plot)) {
+    cat("\n## Prediction comparison\n\n")
+    cat(glue::glue('<img src="{pred_plot}" width="864"/>'))
+    cat("\n\n")
+  }
+}
+```
+

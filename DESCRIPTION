@@ -32,6 +32,7 @@ Imports:
     glue,
     ggplot2,
     jsonlite,
-    tidyr
+    tidyr,
+    tfruns
 Suggests: 
     testthat
