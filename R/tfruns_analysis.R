@@ -17,6 +17,7 @@ ingest_runs <- function(runs_dir) {
     dplyr::mutate(
       rmse = sqrt(metric_val_loss),
       took = hms::hms(seconds = round(as.numeric(difftime(.data$end, .data$start, units = "secs")))),
+      capacity = glue::glue("{flag_lstm_layers}xLSTM({flag_lstm_units}), {flag_dense_layers}xDense({flag_dense_units})"),
       .after = run_dir
     ) %>%
     dplyr::arrange(.data$rmse) %>%
