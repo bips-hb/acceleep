@@ -109,7 +109,7 @@ with(strategy$scope(), {
 # Compilation
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_adam(lr = FLAGS$lr, FLAGS$decay),
+  optimizer = optimizer_adam(lr = FLAGS$lr, decay = FLAGS$decay),
   metrics = "mae"
 )
 
