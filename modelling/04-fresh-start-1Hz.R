@@ -27,22 +27,24 @@ options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
 # )
 
 # A single ad hoc training run -----
+# options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
+
 training_run(
   file = here::here("modelling/train_model.R"),
   flags = list(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = 10,
+    res = 1,
     lr = 1e-4,
-    decay = 0, # 1e-6,
+    decay = 0,
     batch_size = 128,
-    epochs = 100,
+    epochs = 50,
     lstm_layers = 2,
-    lstm_units = 128,
+    lstm_units = 256,
     dense_layers = 2,
-    dense_units = 64,
-    dropout_rate = 0.2,
+    dense_units = 128,
+    dropout_rate = 0,
     validation_split = 0.2,
     verbose = 1
 ))

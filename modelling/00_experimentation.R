@@ -42,18 +42,25 @@ dim(train_data) # c(2588, 3, 600) // geneactiv hip_right c(2568, 3000, 3)
 
 model <- keras_model_sequential() %>%
   layer_lstm(
-    units = 32,
+    units = 128,
+    activation = "tanh", recurrent_activation = "sigmoid",
+    recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+    return_sequences = TRUE
+  ) %>%
+  layer_dropout(rate = 0.2) %>%
+  layer_lstm(
+    units = 128,
     activation = "tanh", recurrent_activation = "sigmoid",
     recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
     return_sequences = FALSE
   ) %>%
   layer_dropout(rate = 0.2) %>%
-  # layer_lstm(activation = "relu", units = 64, return_sequences = FALSE) %>%
+  layer_dense(activation = "relu", units = 64) %>%
   layer_dense(units = 1, name = "output")
 
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_rmsprop(),
+  optimizer = optimizer_sgd(lr = 0.001, momentum = 0.9),
   metrics = "mae"
 )
 
@@ -61,7 +68,7 @@ history <- model %>% fit(
   train_data,
   train_labels,
   epochs = 20,
-  validation_split = 0.5,
+  validation_split = 0.2,
   verbose = 1,
   callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
 )

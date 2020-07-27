@@ -40,7 +40,7 @@ with(strategy$scope(), {
 
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_adam(decay = 0.00001), # optimizer_rmsprop(),
+  optimizer = optimizer_adam(lr = 1e-4), # optimizer_rmsprop(),
   metrics = "mae"
 )
 
@@ -53,7 +53,7 @@ history <- model %>% fit(
   verbose = 1,
   callbacks =
     list(
-      callback_tensorboard(log_dir = "output/runs/initial-models"),
+      # callback_tensorboard(log_dir = "output/runs/initial-models"),
       # callback_reduce_lr_on_plateau(),
       # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 5, mode = "min"),
       callback_terminate_on_naan()
