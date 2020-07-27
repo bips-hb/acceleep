@@ -3,6 +3,7 @@
 export("%<-%")
 export("%>%")
 export(aggregate_spiro)
+export(assemble_train_data)
 export(combine_clean_data)
 export(convert_input_data)
 export(convert_tbl_array)

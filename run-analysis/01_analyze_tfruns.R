@@ -7,8 +7,12 @@ library(tidyr)
 
 # Downsampled ad hoc ----
 runs_dir <- "output/runs/downsampled-ad-hoc"
+options(tfruns.runs_dir = here::here(runs_dir))
 
 # tensorboard(runs_dir)
+
+view_run(ls_runs(latest_n = 1))
+compare_runs(ls_runs(latest_n = 2))
 
 runs <- ingest_runs(runs_dir) %>%
   filter(completed)
@@ -53,6 +57,7 @@ view_run("output/runs/downsampled-ad-hoc/2020-07-24T14-26-56Z")
 
 # Downsampled tuning for capacity / batch size ----
 runs_dir <- "output/runs/downsampled-1hz-tuning/"
+options(tfruns.runs_dir = here::here(runs_dir))
 
 runs <- ingest_runs(runs_dir) %>%
   filter(completed)
@@ -95,3 +100,9 @@ runs %>%
   filter(flag_batch_size %in% c(16, 32), flag_lstm_units == 128) %>%
   slice(c(1, 2)) %>%
   plot_loss_history()
+
+
+###
+
+ls_runs()
+

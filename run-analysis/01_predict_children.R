@@ -1,17 +1,11 @@
-# First proper modelling attempts
+#
 source(here::here("modelling/_init.R"))
 
 c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
   model = "geneactiv", placement = "hip_right",
   outcome = "kJ", random_seed = 19283, val_split = 1/3,
-  interval_length = 30, res = 100
+  interval_length = 30, res = 1
 )
-
-# c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
-#   model = "activpal", placement = "thigh_right",
-#   outcome = "kJ", random_seed = 19283, val_split = 1/3,
-#   interval_length = 30, res = 20
-# )
 
 
 # Define scope to use all available GPUs
@@ -42,37 +36,51 @@ with(strategy$scope(), {
 
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_adam(lr = 1e-5), # optimizer_rmsprop(),
+  optimizer = optimizer_adam(lr = 1e-5),
   metrics = "mae"
 )
 
-tick <- Sys.time()
 history <- model %>% fit(
   train_data,
   train_labels,
-  epochs = 100,
+  epochs = 50,
+  batch_size = 128,
   validation_split = 0.2,
   verbose = 1,
   callbacks =
     list(
-      # callback_tensorboard(log_dir = "output/runs/initial-models"),
       # callback_reduce_lr_on_plateau(),
       # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 5, mode = "min"),
       callback_terminate_on_naan()
     )
 )
-tock <- Sys.time()
 
-hms::hms(seconds = as.numeric(difftime(tock, tick, units = "secs")))
-
-# Save model if it seems worth it
-# save_model_hdf5(model, "output/models/genactiv_hip_right_20200716-adam.hdf5")
-
-# Compare predictions to training labels for reference ----
 library(ggplot2)
 
-sample_intervals <- sample(dim(train_data)[[1]], size = 500)
-sample_intervals <- 600:1200
+
+
+c(training_data, train_labels) %<-% assemble_train_data(
+  accel_model = "geneactiv", placement = "hip_right",
+  outcome = "kJ", random_seed = 19283, val_split = 1/3,
+  res = 1
+)
+
+train_predictions <- predict_on_training_set(model, training_data, interval_length = 30, res = 1)
+
+train_labels %>%
+  group_by(ID) %>%
+  mutate(interval = seq_along(ID)) %>%
+  ungroup() %>%
+  left_join(train_predictions, by = c("interval", "ID")) %>%
+  tidyr::pivot_longer(cols = c("kJ", "predicted")) %>%
+  ggplot(aes(x = interval, y = value, color = name, fill = name)) +
+  facet_wrap(~ID) +
+  geom_path() +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+#----
+
 
 model_comparison <- tibble::tibble(
   index = seq_len(length(sample_intervals)),
@@ -97,24 +105,3 @@ model_comparison %>%
   ) +
   theme_minimal() +
   theme(legend.position = "top")
-
-model_comparison %>%
-  mutate(diff = Predicted - Observed) %>%
-  ggplot(aes(x = index, y = diff)) +
-  geom_path() +
-  geom_point(shape = 21, color = "darkgray") +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
-  labs(
-    title = "Comparison of predicted and observed labels",
-    subtitle = "Using an arbitrary set of intervals from the training data",
-    x = "Interval Index", y = "Differenze in Prediction: Energy Expenditure (kJ)", fill = "", color = "",
-    caption = "Accelerometer: activPAL, right thigh"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-
-# model %>%
-#   evaluate(
-#     test_data, test_labels
-#   )

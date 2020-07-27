@@ -36,15 +36,15 @@ training_run(
     placement = "hip_right",
     outcome = "kJ",
     res = 1,
-    lr = 1e-4,
+    lr = 1e-5,
     decay = 0,
-    batch_size = 128,
-    epochs = 50,
+    batch_size = 32,
+    epochs = 100,
     lstm_layers = 2,
-    lstm_units = 256,
+    lstm_units = 128,
     dense_layers = 2,
     dense_units = 128,
-    dropout_rate = 0,
+    dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1
 ))
@@ -54,16 +54,21 @@ tuning_runs <- tuning_run(
   confirm = FALSE,
   here::here("modelling/train_model.R"),
   flags = list(
+    accel_model = "geneactiv",
+    placement = "hip_right",
+    outcome = "kJ",
     res = 1,
-    lr = c(1e-4),
-    lstm_layers = c(2),
-    lstm_units = c(128),
-    dense_layers = c(2),
-    dense_units = c(128),
-    dropout_rate = c(0.2),
-    batch_size = c(32),
+    lr = 1e-5,
     decay = 0,
-    epochs = 30
+    batch_size = 32,
+    epochs = 100,
+    lstm_layers = 2,
+    lstm_units = c(128, 256, 512),
+    dense_layers = 2,
+    dense_units = 128,
+    dropout_rate = 0.2,
+    validation_split = 0.2,
+    verbose = 1
   ))
 # pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 

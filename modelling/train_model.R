@@ -20,7 +20,7 @@ FLAGS <- flags(
   flag_numeric("epochs", 20),
   flag_numeric("verbose", 1),
   flag_numeric("validation_split", 0.2),
-  flag_boolean("shuffle", TRUE),
+  # flag_boolean("shuffle", TRUE),
   flag_numeric("lstm_layers", 2),
   flag_numeric("dense_layers", 2),
   flag_numeric("lstm_units", 128),
@@ -121,7 +121,7 @@ history <- model %>% fit(
   batch_size = FLAGS$batch_size,
   validation_split = FLAGS$validation_split,
   verbose = FLAGS$verbose,
-  shuffle = FLAGS$shuffle,
+  shuffle = TRUE,
   callbacks =
     list(
       # callback_tensorboard(log_dir = log_path),
@@ -176,6 +176,6 @@ took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs")
 log_final <- glue::glue("\nTook {took} -- Minimum validation RMSE: {min_rmse_val}")
 cat(log_final, "\n")
 
-# if (min_rmse_val < 6.5) pushoverr::pushover(log_final, title = "Modelling Hell")
+# if (min_rmse_val < 3.5) pushoverr::pushover(log_final, title = "Modelling Hell")
 # ---
 
