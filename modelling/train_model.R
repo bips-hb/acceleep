@@ -170,6 +170,49 @@ p
 dev.off()
 p
 
+# Predict on full training set -----
+c(training_data, train_labels) %<-% assemble_train_data(
+  accel_model = FLAGS$accel_model, placement = FLAGS$placement,
+  outcome = FLAGS$outcome, random_seed = 19283, val_split = 1/3,
+  res = FLAGS$res
+)
+
+train_predictions <- predict_on_training_set(model, training_data, interval_length = 30, res = 1)
+
+prediction_comparison <- train_labels %>%
+  group_by(ID) %>%
+  mutate(interval = seq_along(ID)) %>%
+  ungroup() %>%
+  left_join(train_predictions, by = c("interval", "ID"))
+
+rmse_per_subject <- prediction_comparison %>%
+  group_by(ID) %>%
+  summarize(rmse = sqrt(mean((predicted - kJ)^2)), .groups = "drop")
+
+png(filename = "rmse-per-child.png", width = 13, height = 8, units = "in", res = 300)
+p <- ggplot(rmse_per_subject, aes(x = ID, y = rmse)) +
+  geom_col()
+p
+dev.off()
+p
+
+png(filename = "prediction-comparison-all.png", width = 13, height = 8, units = "in", res = 300)
+prediction_comparison %>%
+  tidyr::pivot_longer(cols = c(FLAGS$outcome, "predicted")) %>%
+  ggplot(aes(x = interval, y = value, color = name, fill = name)) +
+  facet_wrap(~ID) +
+  geom_path() +
+  labs(
+    title = glue::glue("Predicted and observed labels: {FLAGS$accel_model}, {FLAGS$placement} at {FLAGS$res}Hz"),
+    subtitle = glue::glue("Minimal validation RMSE during training: {min_rmse_val}"),
+    x = "Interval Index", y = glue::glue("Energy Expenditure ({FLAGS$outcome})"), fill = "", color = "",
+    caption = glue::glue("Using all subjects in trainign set")
+  ) +
+  theme_minimal() +
+  theme(legend.position = "top")
+p
+dev.off()
+
 # ----
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))

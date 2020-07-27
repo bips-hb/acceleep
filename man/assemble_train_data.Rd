@@ -32,7 +32,7 @@ expenditure respectively.}
 100 for other models.}
 }
 \value{
-
+Two tibbles for training data and labels
 }
 \description{
 Assemble training data for prediction
