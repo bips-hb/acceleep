@@ -6,21 +6,12 @@ library(dplyr)
 library(tidyr)
 
 # Downsampled ad hoc ----
-runs_dir <- "output/runs/downsampled-ad-hoc/"
+runs_dir <- "output/runs/downsampled-ad-hoc"
+
 # tensorboard(runs_dir)
 
-ingest_runs <- function(runs_dir) {
-  ls_runs(runs_dir = runs_dir) %>%
-    mutate(
-      rmse = sqrt(metric_val_loss),
-      took = hms::hms(seconds = round(as.numeric(difftime(end, start, units = "secs")))),
-      .after = run_dir
-    ) %>%
-    arrange(rmse) %>%
-    as_tibble()
-}
-
-runs <- ingest_runs(runs_dir)
+runs <- ingest_runs(runs_dir) %>%
+  filter(completed)
 
 glimpse(runs)
 
@@ -63,13 +54,14 @@ view_run("output/runs/downsampled-ad-hoc/2020-07-24T14-26-56Z")
 # Downsampled tuning for capacity / batch size ----
 runs_dir <- "output/runs/downsampled-1hz-tuning/"
 
-runs <- ingest_runs(runs_dir)
+runs <- ingest_runs(runs_dir) %>%
+  filter(completed)
 
 glimpse(runs)
 
 # 128 vs 256 LSTM units (but LR too high) ----
 runs %>%
-  filter(flag_batch_size == 64) %>%
+  filter(flag_res == 1) %>%
   slice(c(1, 2)) %>%
   compare_runs()
 
@@ -103,4 +95,3 @@ runs %>%
   filter(flag_batch_size %in% c(16, 32), flag_lstm_units == 128) %>%
   slice(c(1, 2)) %>%
   plot_loss_history()
-
