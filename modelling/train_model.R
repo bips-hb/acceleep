@@ -77,17 +77,6 @@ with(strategy$scope(), {
     }
   }
 
-
-  # # Add the last LSTM layer with return_sequences = FALSE
-  # model %>%
-  #   layer_lstm(
-  #     units = FLAGS$lstm_units,
-  #     activation = "tanh", recurrent_activation = "sigmoid",
-  #     recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
-  #     return_sequences = FALSE
-  #   ) %>%
-  #   layer_dropout(rate = FLAGS$dropout_rate)
-
   # Add optional additional dense layers before the last dense layer
   if (FLAGS$dense_layers > 0) {
     for (dense_layer in seq_len(FLAGS$dense_layers)) {
