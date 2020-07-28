@@ -52,6 +52,7 @@ get_combined_data <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
   res = 100
 ) {
+  #browser()
   model <- match.arg(model)
   placement <- match.arg(placement)
 
@@ -64,7 +65,10 @@ get_combined_data <- function(
   # Read and ungroup data because I forgot to ungroup when saving the downsampled data
   # and now I have to fix it, but don't want to resave the data just yet.
   readRDS(file_path) %>%
-    ungroup()
+    ungroup() %>%
+    group_by(.data$interval, .data$ID) %>%
+    mutate(rowid = seq_along(.data$interval)) %>%
+    arrange(.data$ID, .data$interval, .data$rowid)
 }
 
 #' Extract the outcome variables from the working dataset
@@ -136,7 +140,7 @@ extract_outcome <- function(
 make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1/3) {
   # Extract subject ids present in data and assign them to test / validation sets
   ids <- unique(full_data$ID)
-
+  # browser()
   set.seed(random_seed)
   ids_validation <- sample(ids, size = floor(length(ids) * val_split)) # 1/3 of IDs
   ids_train <- ids[!(ids %in% ids_validation)]
@@ -200,7 +204,7 @@ split_data_labels <- function(
   ) {
 
   outcome <- match.arg(outcome)
-  # browser()
+  browser()
   # This is sloppy but at least it gets the job done
   # I can agonize over this later
   training_meansd <- training_data %>%
@@ -241,55 +245,6 @@ split_data_labels <- function(
       labels = validation_labels
     )
   )
-}
-
-#' Defunct because silly: Convert Accelerometer tbl to Array
-#'
-#' @param accel_tbl Input tbl with columns X/Y/Z, one row per measurement.
-#' @inheritParams generate_ts_chunk
-#'
-#' @return An array of dimensions c(chunks_per_tbl, 3, rows_per_chunk)
-#' @export
-#' @importFrom purrr map
-#' @examples
-#' \dontrun{
-#' convert_tbl_array(accel_tbl, interval_length = 30, res = 20)
-#' }
-convert_tbl_array <- function(accel_tbl, interval_length, res) {
-
-  .Deprecated("keras_reshape_accel")
-
-  rows_per_chunk <- interval_length * res
-  chunks_per_tbl <- nrow(accel_tbl) / (rows_per_chunk)
-  #browser()
-  # Generate the chunk ids and but drop potential overhead
-  # If too many/too few ids are generated e.g. due to uneven number of measurements
-  # in the last chunk, this would otherwise cause recycling issues
-  # TLDR make sure it's ok if last chunk has less than exactly 30s of measurements
-  # Wait no is that even sensible? should trailing measurements be dropped?
-  # Check via nrow(accel_tbl) %% (res * interval_length) == 0
-  index_along_rows <- seq_len(nrow(accel_tbl))
-  chunk_ids <- rep(seq_len(chunks_per_tbl), each = rows_per_chunk)[index_along_rows]
-
-  # accel_tbl %>%
-  #   as.matrix() %>%
-  #   split(f = chunk_ids) %>%
-  #   lapply(matrix, nrow = 3) %>%
-  #   # lapply(matrix, nrow = 3, byrow = TRUE) %>%
-  #   unlist() %>%
-  #   array(dim = c(chunks_per_tbl, 3, rows_per_chunk))
-  #   # array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
-
-  accel_tbl %>%
-    split(f = chunk_ids) %>%
-    purrr::map(~{
-      .x %>%
-        as.matrix(ncol = 3, nrow = rows_per_chunk) %>%
-        t() %>%
-        as.numeric()
-    }) %>%
-    unlist() %>%
-    array(dim = c(chunks_per_tbl, rows_per_chunk, 3))
 }
 
 #' Convert a tbl of accelerometry to a Keras- / LSTM-friendly-array
