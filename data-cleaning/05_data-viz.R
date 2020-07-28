@@ -30,8 +30,8 @@ c(test_data, test_labels) %<-% split_data$validation
 
 # Reshaping to array form
 train_data <- keras_reshape_accel(
-  accel_tbl = train_data, interval_length = interval_length, res = res
+  accel_tbl = train_data, interval_length = 30, res = 1
 )
 test_data <- keras_reshape_accel(
-  accel_tbl = test_data, interval_length = interval_length, res = res
+  accel_tbl = test_data, interval_length = 30, res = 1
 )

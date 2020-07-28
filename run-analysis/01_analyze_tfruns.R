@@ -56,7 +56,7 @@ view_run("output/runs/downsampled-ad-hoc/2020-07-24T13-49-44Z")
 view_run("output/runs/downsampled-ad-hoc/2020-07-24T14-26-56Z")
 
 # Downsampled tuning for capacity / batch size ----
-runs_dir <- "output/runs/downsampled-1hz-tuning/"
+runs_dir <- "output/runs/downsampled-tuning/"
 options(tfruns.runs_dir = here::here(runs_dir))
 
 runs <- ingest_runs(runs_dir) %>%
@@ -64,42 +64,9 @@ runs <- ingest_runs(runs_dir) %>%
 
 glimpse(runs)
 
-# 128 vs 256 LSTM units (but LR too high) ----
 runs %>%
-  filter(flag_res == 1) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-runs %>%
-  filter(flag_batch_size == 32) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-runs %>%
-  filter(flag_batch_size == 16) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-# batch size comparison at fixed units ----
-runs %>%
-  filter(flag_batch_size %in% c(32, 64), flag_lstm_units == 256) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-runs %>%
-  filter(flag_batch_size %in% c(32, 64), flag_lstm_units == 128) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-runs %>%
-  filter(flag_batch_size %in% c(16, 32), flag_lstm_units == 128) %>%
-  slice(c(1, 2)) %>%
-  compare_runs()
-
-runs %>%
-  filter(flag_batch_size %in% c(16, 32), flag_lstm_units == 128) %>%
-  slice(c(1, 2)) %>%
-  plot_loss_history()
+  slice_min(rmse, n = 1) %>%
+  view_run()
 
 
 ###
