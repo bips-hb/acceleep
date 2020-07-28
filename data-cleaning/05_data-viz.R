@@ -2,36 +2,77 @@ library(ggplot2)
 library(dplyr)
 library(acceleep)
 
-full_data <- get_combined_data(model = "geneactiv", placement = "hip_right", res = 1)
+files_overview <- get_overview_table() %>%
+  distinct(model, placement)
 
-full_data %>%
-  select(ID, interval, kJ) %>%
-  group_by(ID, interval) %>%
-  summarize(outcome = unique(kJ), .groups = "drop") %>%
-  group_by(ID) %>%
-  mutate(index = seq_along(ID)) %>%
-  ggplot(aes(x = index, y = outcome)) +
-  facet_wrap(~ID) +
-  geom_path() +
-  theme_minimal()
+# Resolution at which accelerometry is plotted (recommended is 1Hz b/c lots of points)
+res <- 1
 
-## from keras_prep_lstm
+for (row in seq_len(nrow(files_overview))) {
+  # browser()
 
-# Split into train / validation datasets
-c(training_data, validation_data) %<-% make_initial_splits(
-  full_data, random_seed = 11235813, val_split = 1/3
-)
+  model <- files_overview %>%
+    slice(row) %>%
+    pull(model)
 
-# Split into data and labels
-split_data <- split_data_labels(training_data, validation_data, outcome = "kJ")
+  placement <-  files_overview %>%
+    slice(row) %>%
+    pull(placement)
 
-c(train_data, train_labels) %<-% split_data$training
-c(test_data, test_labels) %<-% split_data$validation
+  full_data <- get_combined_data(model = model, placement = placement, res = res)
 
-# Reshaping to array form
-train_data <- keras_reshape_accel(
-  accel_tbl = train_data, interval_length = 30, res = 1
-)
-test_data <- keras_reshape_accel(
-  accel_tbl = test_data, interval_length = 30, res = 1
-)
+  # EE
+  for (outcome in c("kJ", "MET", "Jrel")) {
+    p_ee <- full_data %>%
+      select("ID", "interval", .env$outcome) %>%
+      distinct() %>%
+      group_by(.data$ID) %>%
+      mutate(index = seq_along(.data$ID)) %>%
+      rename(outcome = .env$outcome) %>%
+      ggplot(aes(x = index, y = outcome)) +
+      facet_wrap(~ID) +
+      geom_path() +
+      labs(
+        title = "Per-subject Energy Expenditure",
+        y = outcome
+      ) +
+      theme_minimal()
+
+
+    ggsave(
+      plot = p_ee,
+      filename = glue::glue("orig-data-ee-{outcome}.png"),
+      path = here::here("output"),
+      width = 20, height = 14
+    )
+  }
+
+
+  # Accel
+  p_accel <- full_data %>%
+    # filter(ID == "021") %>%
+    arrange(ID, interval, rowid) %>%
+    group_by(ID) %>%
+    mutate(index = seq_along(ID)) %>%
+    tidyr::pivot_longer(cols = c("X", "Y", "Z"), names_to = "axis", values_to = "value") %>%
+    ggplot(aes(x = index, y = value, color = axis)) +
+    facet_wrap(~ID) +
+    geom_path() +
+    scale_color_brewer(palette = "Dark2") +
+    labs(
+      title = "Per-subject Accelerometry data",
+      subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
+      x = "Time Index", y = "Measurement (not normalized)",
+      color = "Axis"
+    ) +
+    theme_minimal() +
+    theme(legend.position = "top")
+
+    ggsave(
+      plot = p_accel,
+      filename = glue::glue("orig-data-accel-{model}-{placement}-{res}Hz.png"),
+      path = here::here("output"),
+      width = 20, height = 14
+    )
+
+}

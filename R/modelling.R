@@ -71,7 +71,6 @@ get_combined_data <- function(
     group_by(.data$ID, .data$interval) %>%
     # get per-interval row ids just in case
     mutate(rowid = seq_along(.data$interval)) %>%
-    arrange(.data$ID, .data$interval, .data$rowid) %>%
     ungroup()
 }
 
@@ -155,11 +154,13 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
   )
 
   # split data into train/validation sets
-  dat_validation <- full_data %>%
-    dplyr::filter(.data$ID %in% ids_validation)
-
   dat_training <- full_data %>%
-    dplyr::filter(.data$ID %in% ids_train)
+    dplyr::filter(.data$ID %in% ids_train) %>%
+    arrange(.data$ID, .data$interval, .data$rowid)
+
+  dat_validation <- full_data %>%
+    dplyr::filter(.data$ID %in% ids_validation) %>%
+    arrange(.data$ID, .data$interval, .data$rowid)
 
   list(
     training = dat_training,

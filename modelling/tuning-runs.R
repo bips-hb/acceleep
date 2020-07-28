@@ -2,7 +2,7 @@
 
 source(here::here("modelling/_init.R"))
 library(tfruns)
-options(tfruns.runs_dir = here::here("output/runs/downsampled-1hz-tuning"))
+options(tfruns.runs_dir = here::here("output/runs/downsampled-tuning"))
 
 tuning_run(
   confirm = FALSE,
@@ -13,8 +13,8 @@ tuning_run(
     outcome = "kJ",
     res = c(1),
     lr = c(1e-5),
-    lstm_layers = c(2, 3),
-    lstm_units = c(128, 256, 512),
+    lstm_layers = c(2, 3, 4),
+    lstm_units = c(256, 512),
     dense_layers = c(2, 3),
     dense_units = c(64, 128, 256),
     dropout_rate = c(0.2),
