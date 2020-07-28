@@ -28,7 +28,7 @@ knitr::opts_chunk$set(
 # Run overview
 
 ```{r first-look}
-runs_dir <- here::here("output/runs/downsampled-1hz-tuning")
+runs_dir <- here::here("output/runs/downsampled-tuning")
 
 runs <- ingest_runs(runs_dir) %>%
   filter(completed) %>%
@@ -74,7 +74,7 @@ for (run in runs$run_dir) {
   print(plot_loss_history(run))
   cat("\n\n")
   
-  pred_plot <- fs::path(run, "prediction-comparison.png")
+  pred_plot <- fs::path(run, "prediction-comparison-all.png")
   if (fs::file_exists(pred_plot)) {
     cat("\n### Prediction comparison\n\n")
     cat(glue::glue('<img src="{pred_plot}" width="864"/>'))

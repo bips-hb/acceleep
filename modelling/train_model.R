@@ -104,8 +104,8 @@ model %>% compile(
 
 tick <- Sys.time()
 history <- model %>% fit(
-  train_data,
-  train_labels,
+  x = train_data,
+  y = train_labels,
   epochs = FLAGS$epochs,
   batch_size = FLAGS$batch_size,
   validation_split = FLAGS$validation_split,
@@ -126,68 +126,67 @@ history <- model %>% fit(
 library(ggplot2)
 
 min_rmse_val <- round(min(sqrt(history$metrics$val_loss)), 2)
-sample_intervals <- 1:99
-
-model_comparison <- tibble::tibble(
-  index = seq_len(length(sample_intervals)),
-  Predicted = as.numeric(predict(model, train_data[sample_intervals,,])),
-  Observed = train_labels[sample_intervals]
-)
-
-seq_rmse <- model_comparison %>%
-  summarize(rmse = sqrt(mean((Predicted - Observed)^2))) %>%
-  pull(rmse) %>%
-  round(2)
-
-png(filename = "prediction-comparison.png", width = 13, height = 8, units = "in", res = 300)
-p <- model_comparison %>%
-  tidyr::pivot_longer(cols = c(Predicted, Observed)) %>%
-  ggplot(aes(x = index, y = value, color = name, fill = name)) +
-  geom_path() +
-  geom_point(shape = 21, color = "darkgray") +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
-  labs(
-    title = glue::glue("Predicted and observed labels: {FLAGS$accel_model}, {FLAGS$placement} at {FLAGS$res}Hz"),
-    subtitle = glue::glue("RMSE in this interval = {seq_rmse}, minimal validation RMSE during training: {min_rmse_val}"),
-    x = "Interval Index", y = glue::glue("Energy Expenditure ({FLAGS$outcome})"), fill = "", color = "",
-    caption = glue::glue("Using all {length(sample_intervals)} successive intervals of one subject from the training data")
-  ) +
-  theme_minimal() +
-  theme(legend.position = "top")
-
-p
-dev.off()
-p
 
 # Predict on full training set -----
-c(training_data, train_labels) %<-% assemble_train_data(
+# Reassemble full training data with ID information
+# (inefficient but wanted to avoid overhauling the entire pipeline)
+c(training_data_full, .) %<-% assemble_train_data(
   accel_model = FLAGS$accel_model, placement = FLAGS$placement,
   outcome = FLAGS$outcome, random_seed = 19283, val_split = 1/3,
   res = FLAGS$res
 )
 
-train_predictions <- predict_on_training_set(model, training_data, interval_length = 30, res = 1)
+# Predict in the training data
+train_predicted <- as.numeric(predict(model, train_data))
 
-prediction_comparison <- train_labels %>%
+# get the order of IDs in training data for correct matching later
+ID_order <- unique(training_data_full$ID)
+
+ID_counts <- training_data_full %>%
+  select(interval, ID) %>%
+  distinct() %>%
+  count(ID) %>%
+  mutate(ID = factor(ID, levels = ID_order)) %>%
+  arrange(ID) %>%
+  mutate(ID = as.character(ID))
+
+train_ids <- ID_counts %>%
+  purrr::pmap(~{
+    rep(.x, times = .y)
+  }) %>%
+  unlist()
+
+prediction_comparison <- tibble(
+  ID = train_ids,
+  predicted = train_predicted,
+  observed = train_labels
+) %>%
   group_by(ID) %>%
-  mutate(interval = seq_along(ID)) %>%
-  ungroup() %>%
-  left_join(train_predictions, by = c("interval", "ID"))
+  mutate(interval = seq_along(ID))
 
 rmse_per_subject <- prediction_comparison %>%
   group_by(ID) %>%
-  summarize(rmse = sqrt(mean((predicted - kJ)^2)), .groups = "drop")
+  summarize(rmse = sqrt(mean((predicted - observed)^2)), .groups = "drop")
 
 png(filename = "rmse-per-child.png", width = 13, height = 8, units = "in", res = 300)
 p <- ggplot(rmse_per_subject, aes(x = ID, y = rmse)) +
-  geom_col()
+  geom_col() +
+  labs(
+    title = "RMSE of Subjects in Training Set",
+    x = "Subject ID",
+    y = glue::glue("RMSE ({FLAGS$outcome})")
+  ) +
+  theme_minimal()
 p
 dev.off()
 p
 
 png(filename = "prediction-comparison-all.png", width = 13, height = 8, units = "in", res = 300)
-prediction_comparison %>%
-  tidyr::pivot_longer(cols = c(FLAGS$outcome, "predicted")) %>%
+p <- prediction_comparison %>%
+  left_join(rmse_per_subject, by = c("ID")) %>%
+  mutate(ID = glue::glue("{ID} ({round(rmse, 2)})")) %>%
+  select(-rmse) %>%
+  tidyr::pivot_longer(cols = c("observed", "predicted")) %>%
   ggplot(aes(x = interval, y = value, color = name, fill = name)) +
   facet_wrap(~ID) +
   geom_path() +
@@ -195,12 +194,13 @@ prediction_comparison %>%
     title = glue::glue("Predicted and observed labels: {FLAGS$accel_model}, {FLAGS$placement} at {FLAGS$res}Hz"),
     subtitle = glue::glue("Minimal validation RMSE during training: {min_rmse_val}"),
     x = "Interval Index", y = glue::glue("Energy Expenditure ({FLAGS$outcome})"), fill = "", color = "",
-    caption = glue::glue("Using all subjects in trainign set")
+    caption = glue::glue("Strip text: Subject ID (Subject RMSE)")
   ) +
   theme_minimal() +
   theme(legend.position = "top")
 p
 dev.off()
+p
 
 # ----
 tock <- Sys.time()

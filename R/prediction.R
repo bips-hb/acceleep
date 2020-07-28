@@ -26,6 +26,7 @@ assemble_train_data <- function(
   )
 
   training_xyz <- training_data %>%
+    dplyr::ungroup() %>%
     dplyr::select(.data$interval, .data$ID, .data$X, .data$Y, .data$Z) %>%
     mutate(
       X = (.data$X - mean(.data$X, na.rm = TRUE)) / sd(.data$X, na.rm = TRUE),

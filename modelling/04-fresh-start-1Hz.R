@@ -38,10 +38,10 @@ training_run(
     res = 1,
     lr = 1e-5,
     decay = 0,
-    batch_size = 64,
-    epochs = 50,
+    batch_size = 32,
+    epochs = 100,
     lstm_layers = 2,
-    lstm_units = 128,
+    lstm_units = 256,
     dense_layers = 2,
     dense_units = 128,
     dropout_rate = 0.2,
@@ -50,6 +50,8 @@ training_run(
 ))
 
 # Now with multiple flags ----
+options(tfruns.runs_dir = here::here("output/runs/downsampled-tuning"))
+
 tuning_runs <- tuning_run(
   confirm = FALSE,
   here::here("modelling/train_model.R"),
@@ -62,7 +64,7 @@ tuning_runs <- tuning_run(
     decay = 0,
     batch_size = 32,
     epochs = 100,
-    lstm_layers = 2,
+    lstm_layers = c(2, 3),
     lstm_units = c(128, 256, 512),
     dense_layers = 2,
     dense_units = 128,
@@ -70,7 +72,7 @@ tuning_runs <- tuning_run(
     validation_split = 0.2,
     verbose = 1
   ))
-# pushoverr::pushover("Runs are done!", title = "Modelling Hell")
+pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
 view_run("2020-07-24T14-03-07Z")
 

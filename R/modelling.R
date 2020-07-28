@@ -52,7 +52,7 @@ get_combined_data <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
   res = 100
 ) {
-  #browser()
+  # browser()
   model <- match.arg(model)
   placement <- match.arg(placement)
 
@@ -65,10 +65,14 @@ get_combined_data <- function(
   # Read and ungroup data because I forgot to ungroup when saving the downsampled data
   # and now I have to fix it, but don't want to resave the data just yet.
   readRDS(file_path) %>%
+    # Reorder columns to ID, interval - should have done that earlier
+    select(.data$ID, .data$interval, dplyr::everything()) %>%
     ungroup() %>%
-    group_by(.data$interval, .data$ID) %>%
+    group_by(.data$ID, .data$interval) %>%
+    # get per-interval row ids just in case
     mutate(rowid = seq_along(.data$interval)) %>%
-    arrange(.data$ID, .data$interval, .data$rowid)
+    arrange(.data$ID, .data$interval, .data$rowid) %>%
+    ungroup()
 }
 
 #' Extract the outcome variables from the working dataset
@@ -108,7 +112,7 @@ extract_outcome <- function(
   outcome <- match.arg(outcome, choices = c("MET", "kJ", "Jrel"))
 
   ret <- xdf %>%
-    dplyr::select("interval", "ID", outcome) %>%
+    dplyr::select("ID", "interval", outcome) %>%
     dplyr::distinct()
 
   if (output_type == "numeric") {
@@ -204,15 +208,17 @@ split_data_labels <- function(
   ) {
 
   outcome <- match.arg(outcome)
-  browser()
+  # browser()
   # This is sloppy but at least it gets the job done
   # I can agonize over this later
   training_meansd <- training_data %>%
+    dplyr::ungroup() %>% # ungrouping just for safety
     dplyr::summarize_at(
       dplyr::vars(.data$X,.data$Y, .data$Z),
       list(mean = mean, sd = sd), na.rm = TRUE
     )
 
+  # One mean and SD per axis per the entire training set
   training_xyz <- training_data %>%
     dplyr::select(.data$X, .data$Y, .data$Z) %>%
     dplyr::mutate(
