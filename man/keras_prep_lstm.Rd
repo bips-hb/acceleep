@@ -2,6 +2,7 @@
 % Please edit documentation in R/modelling.R
 \name{keras_prep_lstm}
 \alias{keras_prep_lstm}
+\alias{keras_prep_regression}
 \title{Do the entire preparation dance}
 \usage{
 keras_prep_lstm(
@@ -11,7 +12,19 @@ keras_prep_lstm(
   random_seed = 11235813,
   val_split = 1/3,
   interval_length = 30,
-  res = 100
+  res = 100,
+  normalize = TRUE
+)
+
+keras_prep_regression(
+  model = c("actigraph", "activpal", "geneactiv"),
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
+  outcome = c("MET", "kJ", "Jrel"),
+  random_seed = 11235813,
+  val_split = 1/3,
+  interval_length = 30,
+  res = 100,
+  normalize = TRUE
 )
 }
 \arguments{
@@ -49,6 +62,8 @@ A nested list of the form\preformatted{list(
 Where \code{train_data} and \code{test_data} are already converted to a tensor with 3
 axes and \code{train_labels} and \code{test_labels} are numeric vectors of the same
 length as the first axis of the respective \verb{_data} tensor.
+
+
 }
 \description{
 This function wraps up all steps required to prepare the sample data
@@ -86,7 +101,7 @@ The following combinations of \code{model} and \code{placement} are available:\t
 c(c(train_data, train_labels), c(test_data, test_labels)) \%<-\% keras_prep_lstm(
   model = "geneactiv", placement = "hip_right",
   outcome = "kJ", random_seed = 19283, val_split = 1/2,
-  interval_length = 30, res = 100
+  interval_length = 30, res = 1
 )
 }
 }

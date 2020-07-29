@@ -111,7 +111,7 @@ extract_outcome <- function(
   outcome <- match.arg(outcome, choices = c("MET", "kJ", "Jrel"))
 
   ret <- xdf %>%
-    dplyr::select("ID", "interval", outcome) %>%
+    dplyr::select("ID", "interval", dplyr::all_of(outcome)) %>%
     dplyr::distinct()
 
   if (output_type == "numeric") {
@@ -168,10 +168,135 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
   )
 }
 
+#' Normalize accelerometry data
+#'
+#' Standard normalization by subtracting the mean and dividing by standard
+#' deviation. Mean and SD are calculated from the entire training data (across
+#' all subjects/intervals) and is used to standardize both training- and test-
+#' sets with the same parameters.
+#' @inheritParams split_data_labels
+#'
+#' @return A list of two tibbles, ordered same as input arguments.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' normalize_accelerometry(training_data, validation_data)
+#' }
+normalize_accelerometry <- function(training_data, validation_data) {
+  # This is sloppy but at least it gets the job done
+  # I can agonize over this later
+  training_meansd <- training_data %>%
+    dplyr::ungroup() %>% # ungrouping just for safety
+    dplyr::summarize_at(
+      dplyr::vars(.data$X,.data$Y, .data$Z),
+      list(mean = mean, sd = sd), na.rm = TRUE
+    )
+
+  # One mean and SD per axis per the entire training set
+  training_data <- training_data %>%
+    dplyr::mutate(
+      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
+    )
+
+  # Validation data and labels
+  # Scaling XYZ and labels with same mean/sd as training data!
+  validation_data <- validation_data %>%
+    dplyr::mutate(
+      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
+      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
+      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
+    )
+
+  list(
+    training = training_data,
+    validation = validation_data
+  )
+}
+
+#' Summarize accelerometry data
+#'
+#' Statistics calculated:
+#'
+#' - mean
+#' - SD
+#' - lag-1 autocorrelation
+#' - min, max
+#' - quantiles at 10, 25, 50, 75 and 90
+#'
+#' @inheritParams normalize_accelerometry
+#'
+#' @return A list of tibbles
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' summarize_accelerometry(training_data, validation_data)
+#' }
+summarize_accelerometry <- function(training_data, validation_data = NULL) {
+
+  training_data_summarized <- training_data %>%
+    group_by(.data$ID, .data$interval) %>%
+    summarize(across(c(.data$X, .data$Y, .data$Z), list(
+      mean = mean,
+      sd = sd,
+      min = min,
+      max = max,
+      q10 = ~quantile(.x, probs = 0.1),
+      q25 = ~quantile(.x, probs = 0.25),
+      q50 = ~quantile(.x, probs = 0.5),
+      q75 = ~quantile(.x, probs = 0.75),
+      q90 = ~quantile(.x, probs = 0.9),
+      acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
+    ), .names = "{col}_{fn}"), .groups = "drop")
+
+  # Paste EE measures back on the summarized accelerometry
+  training_data <- training_data_summarized %>%
+    left_join(
+      training_data %>%
+        select(-any_of(c("X", "Y", "Z", "rowid"))) %>%
+        distinct(),
+      by = c("ID", "interval")
+    )
+
+  if (!is.null(validation_data)) {
+    # Do the same for the validation data
+    # Just in case later standardization needs to use distinct parameters for train/test set
+    validation_data_summarized <- validation_data %>%
+      group_by(.data$ID, .data$interval) %>%
+      summarize(across(c(.data$X, .data$Y, .data$Z), list(
+        mean = mean,
+        sd = sd,
+        min = min,
+        max = max,
+        q10 = ~quantile(.x, probs = 0.1),
+        q25 = ~quantile(.x, probs = 0.25),
+        q50 = ~quantile(.x, probs = 0.5),
+        q75 = ~quantile(.x, probs = 0.75),
+        q90 = ~quantile(.x, probs = 0.9),
+        acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
+      ), .names = "{col}_{fn}"), .groups = "drop")
+
+    validation_data <- validation_data_summarized %>%
+      left_join(
+        validation_data %>%
+          select(-any_of(c("X", "Y", "Z", "rowid"))) %>%
+          distinct(),
+        by = c("ID", "interval")
+      )
+  }
+
+  list(
+    training = training_data,
+    validation = validation_data
+  )
+}
+
 #' Split training/validation datasets into separate data and labels
 #'
-#' This function also normalizes XYZ and desired outcome, where the validation data is
-#' scaled using the same mean and standard deviation as the training data.
+#' This function only splits accelerometry from energy expenditure.
 #' @note As of now, this function only ever returns one label per interval of accelerometry data.
 #' @param training_data,validation_data Datasets as created by e.g. `[make_initial_splits()]`.
 #' @param outcome `["MET"]`: Outcome variable to be extracted, passed to `[extract_outcome()]`.
@@ -210,35 +335,15 @@ split_data_labels <- function(
 
   outcome <- match.arg(outcome)
   # browser()
-  # This is sloppy but at least it gets the job done
-  # I can agonize over this later
-  training_meansd <- training_data %>%
-    dplyr::ungroup() %>% # ungrouping just for safety
-    dplyr::summarize_at(
-      dplyr::vars(.data$X,.data$Y, .data$Z),
-      list(mean = mean, sd = sd), na.rm = TRUE
-    )
 
-  # One mean and SD per axis per the entire training set
   training_xyz <- training_data %>%
-    dplyr::select(.data$X, .data$Y, .data$Z) %>%
-    dplyr::mutate(
-      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
-      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
-      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
-    )
+    dplyr::select(.data$X, .data$Y, .data$Z)
 
   training_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
 
   # Validation data and labels
-  # Scaling XYZ and labels with same mean/sd as training data!
   validation_xyz <- validation_data %>%
-    dplyr::select(.data$X, .data$Y, .data$Z) %>%
-    dplyr::mutate(
-      X = (.data$X - training_meansd$X_mean) / training_meansd$X_sd,
-      Y = (.data$Y - training_meansd$Y_mean) / training_meansd$Y_sd,
-      Z = (.data$Z - training_meansd$Z_mean) / training_meansd$Z_sd
-    )
+    dplyr::select(.data$X, .data$Y, .data$Z)
 
   validation_labels <- extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
 
@@ -348,7 +453,7 @@ keras_reshape_accel <- function(accel_tbl, interval_length = 30, res = 100) {
 #' c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
 #'   model = "geneactiv", placement = "hip_right",
 #'   outcome = "kJ", random_seed = 19283, val_split = 1/2,
-#'   interval_length = 30, res = 100
+#'   interval_length = 30, res = 1
 #' )
 #' }
 keras_prep_lstm <- function(
@@ -356,7 +461,7 @@ keras_prep_lstm <- function(
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
   outcome = c("MET", "kJ", "Jrel"),
   random_seed = 11235813, val_split = 1/3,
-  interval_length = 30, res = 100
+  interval_length = 30, res = 100, normalize = TRUE
 ) {
   # browser()
   # Aggregating subject data for model/placement
@@ -366,6 +471,10 @@ keras_prep_lstm <- function(
   c(training_data, validation_data) %<-% make_initial_splits(
     full_data, random_seed = random_seed, val_split = val_split
   )
+
+  if (normalize) {
+    c(training_data, validation_data) %<-% normalize_accelerometry(training_data, validation_data)
+  }
 
   # Split into data and labels
   split_data <- split_data_labels(training_data, validation_data, outcome = outcome)
@@ -380,6 +489,59 @@ keras_prep_lstm <- function(
   test_data <- keras_reshape_accel(
     accel_tbl = test_data, interval_length = interval_length, res = res
   )
+
+  list(
+    training = list(
+      data = train_data,
+      labels = train_labels
+    ),
+    validation = list(
+      data = test_data,
+      labels = test_labels
+    )
+  )
+}
+
+
+#'
+#' @rdname keras_prep_lstm
+#' @inheritParams keras_prep_lstm
+#'
+#' @return
+#' @export
+#'
+keras_prep_regression <- function(
+  model = c("actigraph", "activpal", "geneactiv"),
+  placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
+  outcome = c("MET", "kJ", "Jrel"),
+  random_seed = 11235813, val_split = 1/3,
+  interval_length = 30, res = 100, normalize = TRUE
+) {
+
+  # browser()
+  # Aggregating subject data for model/placement
+  full_data <- get_combined_data(model = model, placement = placement, res = res)
+
+  # Split into train / validation datasets
+  c(training_data, validation_data) %<-% make_initial_splits(
+    full_data, random_seed = random_seed, val_split = val_split
+  )
+
+  # Summarization
+  c(training_data, validation_data) %<-% summarize_accelerometry(training_data, validation_data)
+
+  # Split into data and labels
+  # Keep ID and interval for easier predictions afterwards
+  # Drop first two columns when feeding to keras: as.matrix(train_data[-c(1,2)])
+  train_data <- training_data %>%
+    select("ID", "interval", dplyr::starts_with("X"), dplyr::starts_with("Y"), dplyr::starts_with("Z"))
+
+  test_data <- validation_data %>%
+    select("ID", "interval", dplyr::starts_with("X"), dplyr::starts_with("Y"), dplyr::starts_with("Z"))
+
+  train_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
+  test_labels <-  extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
+
 
   list(
     training = list(

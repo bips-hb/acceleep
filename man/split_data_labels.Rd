@@ -29,8 +29,7 @@ A nested list of the form\preformatted{list(
 }
 }
 \description{
-This function also normalizes XYZ and desired outcome, where the validation data is
-scaled using the same mean and standard deviation as the training data.
+This function only splits accelerometry from energy expenditure.
 }
 \note{
 As of now, this function only ever returns one label per interval of accelerometry data.
