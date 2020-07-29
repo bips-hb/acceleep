@@ -22,7 +22,12 @@ FLAGS <- flags(
   flag_numeric("validation_split", 0.2),
   flag_numeric("dense_layers", 2),
   flag_numeric("dense_units", 128),
-  flag_numeric("dropout_rate", 0.2)
+  flag_numeric("dropout_rate", 0.2),
+  flag_boolean("callback_reduce_lr", FALSE),
+  flag_numeric("callback_reduce_lr_patience", 3),
+  flag_numeric("callback_reduce_lr_factor", 0.1),
+  flag_numeric("callback_reduce_lr_min_delta", 0.01),
+  flag_numeric("callback_reduce_lr_min_lr", 1e-8)
 )
 
 # Data Preparation ----
@@ -77,6 +82,25 @@ model %>% compile(
   metrics = "mae"
 )
 
+# Assemble callbacks
+callbacks <- list(
+  callback_terminate_on_naan() # This can't hurt
+)
+
+if (FLAGS$callback_reduce_lr) {
+  callbacks[[2]] <- callback_reduce_lr_on_plateau(
+    monitor = "val_loss",
+    mode = "min", # reduce LR only if loss stops decreasing
+    verbose = FLAGS$verbose,
+    patience = FLAGS$callback_reduce_lr_patience,
+    factor = FLAGS$callback_reduce_lr_factor,
+    min_delta = FLAGS$callback_reduce_lr_min_delta,
+    min_lr = FLAGS$callback_reduce_lr_min_lr
+  )
+}
+
+# callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3, mode = "min", restore_best_weights = TRUE),
+
 tick <- Sys.time()
 history <- model %>% fit(
   x = as.matrix(train_data[-c(1,2)]),
@@ -86,13 +110,7 @@ history <- model %>% fit(
   validation_split = FLAGS$validation_split,
   verbose = FLAGS$verbose,
   shuffle = TRUE,
-  callbacks =
-    list(
-      # callback_tensorboard(log_dir = log_path),
-      # callback_reduce_lr_on_plateau(patience = 2, factor = 0.5, min_lr = 0.0001),
-      # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3, mode = "min", restore_best_weights = TRUE),
-      callback_terminate_on_naan()
-    )
+  callbacks = callbacks
 )
 
 # print(summary(model))

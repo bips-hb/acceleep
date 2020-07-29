@@ -12,12 +12,19 @@
 #' \dontrun{
 #' ingest_runs("output/runs/downsampled-ad-hoc/")
 #' }
-ingest_runs <- function(runs_dir) {
-  tfruns::ls_runs(runs_dir = runs_dir) %>%
+ingest_runs <- function(runs_dir = getOption("tfruns.runs_dir", "runs")) {
+  # browser()
+  runs <- tfruns::ls_runs(runs_dir = runs_dir)
+
+  runs %>%
     dplyr::mutate(
       rmse = sqrt(metric_val_loss),
       took = hms::hms(seconds = round(as.numeric(difftime(.data$end, .data$start, units = "secs")))),
-      capacity = glue::glue("{flag_lstm_layers}xLSTM({flag_lstm_units}), {flag_dense_layers}xDense({flag_dense_units})"),
+      capacity = ifelse(
+        "flag_lstm_layers" %in% names(runs),
+        glue::glue("{flag_lstm_layers}xLSTM({flag_lstm_units}), {flag_dense_layers}xDense({flag_dense_units})"),
+        glue::glue("{flag_dense_layers}xDense({flag_dense_units})")
+      ),
       .after = run_dir
     ) %>%
     dplyr::arrange(.data$rmse) %>%
@@ -74,15 +81,28 @@ tfrun_label_summary <- function(run_dir) {
     "Accelerometer: {label_accel_models(accel_model)} ({label_placement(placement)}) at {res}Hz – Outcome: {outcome}"
   )
 
-  model <- glue::glue_data(
-    flags,
-    "{lstm_layers}xLSTM({lstm_units}), {dense_layers}xDense({dense_units}) w/ {dropout_rate * 100}% dropout"
-  )
+  if ("flag_lstm_layers" %in% flags) {
+    model <- glue::glue_data(
+      flags,
+      "{lstm_layers}xLSTM({lstm_units}), {dense_layers}xDense({dense_units}) w/ {dropout_rate * 100}% dropout"
+    )
+  } else {
+    model <- glue::glue_data(
+      flags,
+      "{dense_layers}xDense({dense_units}) w/ {dropout_rate * 100}% dropout"
+    )
+  }
 
   training <- glue::glue_data(
     flags,
     "Batch size = {batch_size}, LR = {lr} (decay = {decay}), validation split = {validation_split * 100}%"
   )
+
+  if ("callback_reduce_lr" %in% names(flags)) {
+    if (flags$callback_reduce_lr) {
+      training <- glue::glue("{training}\nWith LR reduction on plateau")
+    }
+  }
 
   list(
     accel = as.character(accel), model = as.character(model),
@@ -102,7 +122,7 @@ tfrun_label_summary <- function(run_dir) {
 #' plot_loss_history("output/runs/downsampled-ad-hoc/2020-07-24T14-48-54Z/")
 #' }
 plot_loss_history <- function(run_dir) {
-# browser()
+  # browser()
   if (inherits(run_dir, "data.frame")) {
     run_dir <- run_dir$run_dir
   }
