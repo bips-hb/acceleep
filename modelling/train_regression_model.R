@@ -139,7 +139,7 @@ p <- prediction_comparison %>%
   geom_path() +
   labs(
     title = glue::glue("Predicted and observed labels: {FLAGS$accel_model}, {FLAGS$placement} at {FLAGS$res}Hz"),
-    subtitle = glue::glue("Minimal validation RMSE during training: {min_rmse_val}\nMedian RMSE across subjects: {round(median(rmse_per_subject$rmse), 2)}"),
+    subtitle = glue::glue("Minimal validation RMSE during training: {min_rmse_val}\nMedian RMSE across subjects in training set: {round(median(rmse_per_subject$rmse), 2)}"),
     x = "Interval Index", y = glue::glue("Energy Expenditure ({FLAGS$outcome})"), fill = "", color = "",
     caption = glue::glue("Strip text: Subject ID (Subject RMSE)")
   ) +
