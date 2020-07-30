@@ -140,3 +140,48 @@ history <- model %>% fit(
   verbose = 1,
   callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
 )
+
+
+# Convnet? -----
+source(here::here("modelling/_init.R"))
+c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
+  model = "geneactiv", placement = "hip_right",
+  outcome = "kJ", random_seed = 19283, val_split = 1/3,
+  interval_length = 30, res = 100
+)
+
+dim(train_data) # geneactiv hip_right c(2568, 3000, 3)
+
+strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
+
+with(strategy$scope(), {
+  model <- keras_model_sequential() %>%
+    layer_conv_1d(
+       filters = 32, kernel_size = 7, activation = "relu", input_shape = dim(train_data)[c(2, 3)]
+    ) %>%
+    layer_max_pooling_1d(pool_size = 10) %>%
+    layer_dropout(rate = 0.2) %>%
+    layer_conv_1d(
+      filters = 32, kernel_size = 7, activation = "relu"
+    ) %>%
+    layer_global_max_pooling_1d() %>%
+    layer_dense(activation = "relu", units = 64) %>%
+    layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 1, name = "output")
+})
+
+model %>% compile(
+  loss = "mse",
+  optimizer = optimizer_adam(),
+  metrics = "mae"
+)
+
+history <- model %>% fit(
+  train_data,
+  train_labels,
+  batch_size = 32,
+  epochs = 100,
+  validation_split = 0.2,
+  verbose = 1 #,
+  # callbacks = callback_tensorboard(log_dir = "output/runs/experimental")
+)
