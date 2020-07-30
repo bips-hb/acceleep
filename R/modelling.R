@@ -237,6 +237,7 @@ normalize_accelerometry <- function(training_data, validation_data) {
 #' }
 summarize_accelerometry <- function(training_data, validation_data = NULL) {
 
+  # browser()
   training_data_summarized <- training_data %>%
     group_by(.data$ID, .data$interval) %>%
     summarize(across(c(.data$X, .data$Y, .data$Z), list(
@@ -251,6 +252,56 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
       q90 = ~quantile(.x, probs = 0.9),
       acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
     ), .names = "{col}_{fn}"), .groups = "drop")
+
+  # Get parameters from training set to standarduze training and test set with
+  training_mean_sd <- training_data_summarized %>%
+    summarize(across(matches("^[XYZ]_"), list(mean = mean, sd = sd)))
+
+  # This is the most annoying way to do this but I couldn't think of a smarter one
+  # because I need to apply the same params to the test set
+  training_data_summarized <- training_data_summarized %>%
+    mutate(
+      # means
+      X_mean = (X_mean - training_mean_sd$X_mean_mean) / training_mean_sd$X_mean_sd,
+      Y_mean = (Y_mean - training_mean_sd$Y_mean_mean) / training_mean_sd$Y_mean_sd,
+      Z_mean = (Z_mean - training_mean_sd$Z_mean_mean) / training_mean_sd$Z_mean_sd,
+      # sd's
+      X_sd = (X_sd - training_mean_sd$X_sd_mean) / training_mean_sd$X_sd_sd,
+      Y_sd = (Y_sd - training_mean_sd$Y_sd_mean) / training_mean_sd$Y_sd_sd,
+      Z_sd = (Z_sd - training_mean_sd$Z_sd_mean) / training_mean_sd$Z_sd_sd,
+      # min
+      X_min = (X_min - training_mean_sd$X_min_mean) / training_mean_sd$X_min_sd,
+      Y_min = (Y_min - training_mean_sd$Y_min_mean) / training_mean_sd$Y_min_sd,
+      Z_min = (Z_min - training_mean_sd$Z_min_mean) / training_mean_sd$Z_min_sd,
+      # max
+      X_max = (X_max - training_mean_sd$X_max_mean) / training_mean_sd$X_max_sd,
+      Y_max = (Y_max - training_mean_sd$Y_max_mean) / training_mean_sd$Y_max_sd,
+      Z_max = (Z_max - training_mean_sd$Z_max_mean) / training_mean_sd$Z_max_sd,
+      # q10
+      X_q10 = (X_q10 - training_mean_sd$X_q10_mean) / training_mean_sd$X_q10_sd,
+      Y_q10 = (Y_q10 - training_mean_sd$Y_q10_mean) / training_mean_sd$Y_q10_sd,
+      Z_q10 = (Z_q10 - training_mean_sd$Z_q10_mean) / training_mean_sd$Z_q10_sd,
+      # q25
+      X_q25 = (X_q25 - training_mean_sd$X_q25_mean) / training_mean_sd$X_q25_sd,
+      Y_q25 = (Y_q25 - training_mean_sd$Y_q25_mean) / training_mean_sd$Y_q25_sd,
+      Z_q25 = (Z_q25 - training_mean_sd$Z_q25_mean) / training_mean_sd$Z_q25_sd,
+      # q50
+      X_q50 = (X_q50 - training_mean_sd$X_q50_mean) / training_mean_sd$X_q50_sd,
+      Y_q50 = (Y_q50 - training_mean_sd$Y_q50_mean) / training_mean_sd$Y_q50_sd,
+      Z_q50 = (Z_q50 - training_mean_sd$Z_q50_mean) / training_mean_sd$Z_q50_sd,
+      # q75
+      X_q75 = (X_q75 - training_mean_sd$X_q75_mean) / training_mean_sd$X_q75_sd,
+      Y_q75 = (Y_q75 - training_mean_sd$Y_q75_mean) / training_mean_sd$Y_q75_sd,
+      Z_q75 = (Z_q75 - training_mean_sd$Z_q75_mean) / training_mean_sd$Z_q75_sd,
+      # q90
+      X_q90 = (X_q90 - training_mean_sd$X_q90_mean) / training_mean_sd$X_q90_sd,
+      Y_q90 = (Y_q90 - training_mean_sd$Y_q90_mean) / training_mean_sd$Y_q90_sd,
+      Z_q90 = (Z_q90 - training_mean_sd$Z_q90_mean) / training_mean_sd$Z_q90_sd,
+      # acf
+      X_acf = (X_acf - training_mean_sd$X_acf_mean) / training_mean_sd$X_acf_sd,
+      Y_acf = (Y_acf - training_mean_sd$Y_acf_mean) / training_mean_sd$Y_acf_sd,
+      Z_acf = (Z_acf - training_mean_sd$Z_acf_mean) / training_mean_sd$Z_acf_sd
+    )
 
   # Paste EE measures back on the summarized accelerometry
   training_data <- training_data_summarized %>%
@@ -278,6 +329,51 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
         q90 = ~quantile(.x, probs = 0.9),
         acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
       ), .names = "{col}_{fn}"), .groups = "drop")
+
+    validation_data_summarized <- validation_data_summarized %>%
+      mutate(
+        # means
+        X_mean = (X_mean - training_mean_sd$X_mean_mean) / training_mean_sd$X_mean_sd,
+        Y_mean = (Y_mean - training_mean_sd$Y_mean_mean) / training_mean_sd$Y_mean_sd,
+        Z_mean = (Z_mean - training_mean_sd$Z_mean_mean) / training_mean_sd$Z_mean_sd,
+        # sd's
+        X_sd = (X_sd - training_mean_sd$X_sd_mean) / training_mean_sd$X_sd_sd,
+        Y_sd = (Y_sd - training_mean_sd$Y_sd_mean) / training_mean_sd$Y_sd_sd,
+        Z_sd = (Z_sd - training_mean_sd$Z_sd_mean) / training_mean_sd$Z_sd_sd,
+        # min
+        X_min = (X_min - training_mean_sd$X_min_mean) / training_mean_sd$X_min_sd,
+        Y_min = (Y_min - training_mean_sd$Y_min_mean) / training_mean_sd$Y_min_sd,
+        Z_min = (Z_min - training_mean_sd$Z_min_mean) / training_mean_sd$Z_min_sd,
+        # max
+        X_max = (X_max - training_mean_sd$X_max_mean) / training_mean_sd$X_max_sd,
+        Y_max = (Y_max - training_mean_sd$Y_max_mean) / training_mean_sd$Y_max_sd,
+        Z_max = (Z_max - training_mean_sd$Z_max_mean) / training_mean_sd$Z_max_sd,
+        # q10
+        X_q10 = (X_q10 - training_mean_sd$X_q10_mean) / training_mean_sd$X_q10_sd,
+        Y_q10 = (Y_q10 - training_mean_sd$Y_q10_mean) / training_mean_sd$Y_q10_sd,
+        Z_q10 = (Z_q10 - training_mean_sd$Z_q10_mean) / training_mean_sd$Z_q10_sd,
+        # q25
+        X_q25 = (X_q25 - training_mean_sd$X_q25_mean) / training_mean_sd$X_q25_sd,
+        Y_q25 = (Y_q25 - training_mean_sd$Y_q25_mean) / training_mean_sd$Y_q25_sd,
+        Z_q25 = (Z_q25 - training_mean_sd$Z_q25_mean) / training_mean_sd$Z_q25_sd,
+        # q50
+        X_q50 = (X_q50 - training_mean_sd$X_q50_mean) / training_mean_sd$X_q50_sd,
+        Y_q50 = (Y_q50 - training_mean_sd$Y_q50_mean) / training_mean_sd$Y_q50_sd,
+        Z_q50 = (Z_q50 - training_mean_sd$Z_q50_mean) / training_mean_sd$Z_q50_sd,
+        # q75
+        X_q75 = (X_q75 - training_mean_sd$X_q75_mean) / training_mean_sd$X_q75_sd,
+        Y_q75 = (Y_q75 - training_mean_sd$Y_q75_mean) / training_mean_sd$Y_q75_sd,
+        Z_q75 = (Z_q75 - training_mean_sd$Z_q75_mean) / training_mean_sd$Z_q75_sd,
+        # q90
+        X_q90 = (X_q90 - training_mean_sd$X_q90_mean) / training_mean_sd$X_q90_sd,
+        Y_q90 = (Y_q90 - training_mean_sd$Y_q90_mean) / training_mean_sd$Y_q90_sd,
+        Z_q90 = (Z_q90 - training_mean_sd$Z_q90_mean) / training_mean_sd$Z_q90_sd,
+        # acf
+        X_acf = (X_acf - training_mean_sd$X_acf_mean) / training_mean_sd$X_acf_sd,
+        Y_acf = (Y_acf - training_mean_sd$Y_acf_mean) / training_mean_sd$Y_acf_sd,
+        Z_acf = (Z_acf - training_mean_sd$Z_acf_mean) / training_mean_sd$Z_acf_sd
+      )
+
 
     validation_data <- validation_data_summarized %>%
       left_join(
