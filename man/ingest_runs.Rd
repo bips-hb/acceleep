@@ -4,7 +4,7 @@
 \alias{ingest_runs}
 \title{Read tfruns with minor cleanup}
 \usage{
-ingest_runs(runs_dir)
+ingest_runs(runs_dir = getOption("tfruns.runs_dir", "runs"))
 }
 \arguments{
 \item{runs_dir}{Directory path used for \code{tfruns} to collect all the runs.}
