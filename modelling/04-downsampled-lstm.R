@@ -22,7 +22,7 @@ training_run(
     lstm_units = 256,
     dense_layers = 2,
     dense_units = 64,
-    dropout_rate = 0.2,
+    dropout_rate = 0.1,
     validation_split = 0.2,
     verbose = 1
 ))

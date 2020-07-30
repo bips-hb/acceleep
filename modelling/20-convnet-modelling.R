@@ -8,12 +8,12 @@ options(tfruns.runs_dir = here::here("output/runs/regression-model"))
 
 # A single ad hoc training run -----
 training_run(
-  file = here::here("modelling/train_regression_model.R"),
+  file = here::here("modelling/train_convnet.R"),
   flags = list(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    lr = 1e-6,
+    lr = 1e-4,
     decay = 0, # 0.01,
     batch_size = 32,
     epochs = 100,

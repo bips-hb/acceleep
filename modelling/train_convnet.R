@@ -52,46 +52,27 @@ with(strategy$scope(), {
   model <- keras_model_sequential()
 
   # We need at least one LSTM layer, first one with input_shape, last one with return_sequences = FALSE
-  for (lstm_layer in seq_len(FLAGS$lstm_layers)) {
+  for (conv_layer in seq_len(FLAGS$conv1d_layers)) {
 
-    input_shape <- if (lstm_layer == 1) dim(train_data)[c(2,3)] else NULL
-    return_sequences <- !(lstm_layer == FLAGS$lstm_layers)
+    input_shape <- if (conv_layer == 1) input_shape = dim(train_data)[c(2, 3)] else NULL
 
-    logmsg <- glue::glue("Making LSTM layer {lstm_layer} of {FLAGS$lstm_layers}:\n")
-    cat(logmsg)
-    #if (is.null(input_shape)) cat("input_shape is NULL\n")
-    if (return_sequences) cat("return_sequences is TRUE\n")
-
-
-    model %>%
-      layer_lstm(
-        units = FLAGS$lstm_units, # input_shape = input_shape,
-        activation = "tanh", recurrent_activation = "sigmoid",
-        recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
-        return_sequences = return_sequences
+    model <- keras_model_sequential() %>%
+      layer_conv_1d(
+        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
+        input_shape = input_shape
+      ) %>%
+      layer_max_pooling_1d(pool_size = 10) %>%
+      # layer_dropout(rate = 0.2) %>%
+      layer_conv_1d(
+        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu"
       )
-
-    if (FLAGS$dropout_rate > 0) {
-      model %>%
-        layer_dropout(rate = FLAGS$dropout_rate)
-    }
-  }
-
-  # Add optional additional dense layers before the last dense layer
-  if (FLAGS$dense_layers > 0) {
-    for (dense_layer in seq_len(FLAGS$dense_layers)) {
-      model %>%
-        layer_dense(units = FLAGS$dense_units, activation = "relu")
-
-      if (FLAGS$dropout_rate > 0) {
-        model %>%
-          layer_dropout(rate = FLAGS$dropout_rate)
-      }
-    }
   }
 
   # Every model with have this final dense layer for the output
   model %>%
+    layer_global_max_pooling_1d() %>%
+    layer_dense(activation = "relu", units = 32) %>%
+    layer_dropout(rate = 0.2)
     layer_dense(units = 1, name = "output")
 })
 

@@ -157,22 +157,23 @@ strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 with(strategy$scope(), {
   model <- keras_model_sequential() %>%
     layer_conv_1d(
-       filters = 32, kernel_size = 7, activation = "relu", input_shape = dim(train_data)[c(2, 3)]
+       filters = 64, kernel_size = 7, activation = "relu",
+       input_shape = dim(train_data)[c(2, 3)]
     ) %>%
     layer_max_pooling_1d(pool_size = 10) %>%
-    layer_dropout(rate = 0.2) %>%
+    # layer_dropout(rate = 0.2) %>%
     layer_conv_1d(
-      filters = 32, kernel_size = 7, activation = "relu"
+      filters = 64, kernel_size = 7, activation = "relu"
     ) %>%
     layer_global_max_pooling_1d() %>%
-    layer_dense(activation = "relu", units = 64) %>%
+    layer_dense(activation = "relu", units = 32) %>%
     layer_dropout(rate = 0.2) %>%
     layer_dense(units = 1, name = "output")
 })
 
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_adam(),
+  optimizer = optimizer_adam(lr = 1e-4),
   metrics = "mae"
 )
 
