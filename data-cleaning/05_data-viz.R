@@ -136,7 +136,7 @@ p_sdee <- files_overview %>%
   ) +
   labs(
     title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
-    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardizes",
+    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized",
     x = "Interval Index", y = "Standardized Value",
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
@@ -180,7 +180,7 @@ p_sdee_offset <- files_overview %>%
   ) +
   labs(
     title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
-    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardizes\nkJ offset by 2 intervals",
+    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized\nkJ offset by 2 intervals",
     x = "Interval Index", y = "Standardized Value",
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
