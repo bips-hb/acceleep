@@ -1,5 +1,5 @@
 # Starting "fresh" with lower resolution data
-# Main model script: "train_model.R"
+# Main model script: "train_lstm.R"
 # See https://tensorflow.rstudio.com/tools/tfruns/overview/
 
 source(here::here("modelling/_init.R"))
@@ -8,7 +8,7 @@ options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
 
 # A single ad hoc training run -----
 training_run(
-  file = here::here("modelling/train_model.R"),
+  file = here::here("modelling/train_lstm.R"),
   flags = list(
     accel_model = "geneactiv",
     placement = "hip_right",
@@ -32,7 +32,7 @@ training_run(
 
 tuning_runs <- tuning_run(
   confirm = FALSE,
-  here::here("modelling/train_model.R"),
+  here::here("modelling/train_lstm.R"),
   flags = list(
     accel_model = "geneactiv",
     placement = "hip_right",

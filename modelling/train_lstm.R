@@ -54,18 +54,18 @@ with(strategy$scope(), {
   # We need at least one LSTM layer, first one with input_shape, last one with return_sequences = FALSE
   for (lstm_layer in seq_len(FLAGS$lstm_layers)) {
 
-    input_shape <- if (lstm_layer == 1) dim(train_data)[c(2,3)] else NULL
+    input_shape <- if (lstm_layer == 1) input_shape = dim(train_data)[c(2, 3)] else NULL
     return_sequences <- !(lstm_layer == FLAGS$lstm_layers)
 
     logmsg <- glue::glue("Making LSTM layer {lstm_layer} of {FLAGS$lstm_layers}:\n")
     cat(logmsg)
-    #if (is.null(input_shape)) cat("input_shape is NULL\n")
+    if (is.null(input_shape)) cat("input_shape is NULL\n")
     if (return_sequences) cat("return_sequences is TRUE\n")
 
 
     model %>%
       layer_lstm(
-        units = FLAGS$lstm_units, # input_shape = input_shape,
+        units = FLAGS$lstm_units, input_shape = input_shape,
         activation = "tanh", recurrent_activation = "sigmoid",
         recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
         return_sequences = return_sequences
