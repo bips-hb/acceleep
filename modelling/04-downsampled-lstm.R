@@ -6,39 +6,17 @@ source(here::here("modelling/_init.R"))
 library(tfruns)
 options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
 
-
-# Default flags for easier copypasting ----
-# list(
-#   accel_model = "geneactiv",
-#   placement = "hip_right",
-#   outcome = "kJ",
-#   res = 1,
-#   lr = 0.001,
-#   decay = 0,
-#   batch_size = 32,
-#   epochs = 20,
-#   lstm_layers = 2,
-#   lstm_units = 128,
-#   dense_layers = 2,
-#   dense_units = 128,
-#   droput_rate = 0,
-#   validation_split = 0.2,
-#   verbose = 0
-# )
-
 # A single ad hoc training run -----
-# options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
-
 training_run(
   file = here::here("modelling/train_model.R"),
   flags = list(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = 100,
+    res = 1,
     lr = 1e-5,
     decay = 0,
-    batch_size = 128,
+    batch_size = 32,
     epochs = 100,
     lstm_layers = 2,
     lstm_units = 256,
@@ -50,7 +28,7 @@ training_run(
 ))
 
 # Now with multiple flags ----
-options(tfruns.runs_dir = here::here("output/runs/downsampled-tuning"))
+#options(tfruns.runs_dir = here::here("output/runs/downsampled-tuning"))
 
 tuning_runs <- tuning_run(
   confirm = FALSE,
@@ -59,16 +37,16 @@ tuning_runs <- tuning_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = 1,
-    lr = 1e-6,
+    res = c(50, 10, 1),
+    lr = 1e-5,
     decay = 0,
-    batch_size = 8,
-    epochs = 500,
-    lstm_layers = 2,
+    batch_size = 4,
+    epochs = 150,
+    lstm_layers = 4,
     lstm_units = 256,
     dense_layers = 2,
     dense_units = 64,
-    dropout_rate = 0, # 0.2,
+    dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1
   ))
@@ -88,4 +66,10 @@ copy_run_files("2020-07-24T14-03-07Z", to = here::here("output/runs", "selected-
 options(tfruns.runs_dir = here::here("output/runs/downsampled-1hz-tuning"))
 View(ls_runs())
 
+clean_runs(ls_runs(completed == FALSE))
+
 view_run(ls_runs(metric_val_loss == min(metric_val_loss)))
+
+
+runs <- ingest_runs()
+
