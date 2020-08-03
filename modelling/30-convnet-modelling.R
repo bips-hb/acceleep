@@ -4,7 +4,7 @@
 
 source(here::here("modelling/_init.R"))
 library(tfruns)
-options(tfruns.runs_dir = here::here("output/runs/regression-model"))
+options(tfruns.runs_dir = here::here("output/runs/convnet"))
 
 # A single ad hoc training run -----
 training_run(
@@ -13,12 +13,44 @@ training_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    lr = 1e-4,
+    lr = 1e-5,
     decay = 0, # 0.01,
     batch_size = 32,
     epochs = 100,
-    dense_layers = 5,
-    dense_units = 256,
+    conv1d_layers = 3,
+    conv1d_filters = 64,
+    conv1d_kernel_size = 16,
+    conv1d_pool_size = 10,
+    dense_layers = 1,
+    dense_units = 32,
+    dropout_rate = 0.2,
+    validation_split = 0.2,
+    verbose = 1,
+    callback_reduce_lr = FALSE,
+    callback_reduce_lr_patience = 5,
+    callback_reduce_lr_factor = 0.5,
+    callback_reduce_lr_min_delta = 0.05
+))
+
+pushoverr::pushover("Runs are done!", title = "Modelling Hell")
+
+# Now with multiple flags ----
+tuning_runs <- tuning_run(
+  confirm = FALSE,
+  file = here::here("modelling/train_convnet.R"),
+  flags = list(
+    accel_model = "geneactiv",
+    placement = "hip_right",
+    outcome = "kJ",
+    lr = 1e-5,
+    decay = 0, # 0.01,
+    batch_size = 32,
+    epochs = 200,
+    conv1d_filters = c(32, 64, 128),
+    conv1d_kernel_size = c(4, 8, 16),
+    conv1d_pool_size = 16,
+    dense_layers = 1,
+    dense_units = 32,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1,
@@ -29,27 +61,14 @@ training_run(
   ))
 pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
-# Now with multiple flags ----
-tuning_runs <- tuning_run(
-  confirm = FALSE,
-  file = here::here("modelling/train_regression_model.R"),
-  flags = list(
-    accel_model = "geneactiv",
-    placement = "hip_right",
-    outcome = "kJ",
-    lr = 1e-5,
-    decay = 0,
-    batch_size = 32,
-    epochs = 150,
-    dense_layers = c(2,3,4),
-    dense_units = c(64, 128, 256, 512),
-    dropout_rate = 0.2,
-    validation_split = 0.2,
-    verbose = 1
-  ))
-pushoverr::pushover("Runs are done!", title = "Modelling Hell")
-
 # Quick look at runs ----
+
+# Just the latest
+view_run(ls_runs(latest_n = 1))
+compare_runs(ls_runs(latest_n = 2))
+
+
+
 runs <- ingest_runs()
 
 runs %>%

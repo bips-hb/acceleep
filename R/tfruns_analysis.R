@@ -13,18 +13,18 @@
 #' ingest_runs("output/runs/downsampled-ad-hoc/")
 #' }
 ingest_runs <- function(runs_dir = getOption("tfruns.runs_dir", "runs")) {
-  # browser()
+# browser()
   runs <- tfruns::ls_runs(runs_dir = runs_dir)
 
   runs %>%
     dplyr::mutate(
       rmse = sqrt(metric_val_loss),
       took = hms::hms(seconds = round(as.numeric(difftime(.data$end, .data$start, units = "secs")))),
-      capacity = ifelse(
-        "flag_lstm_layers" %in% names(runs),
-        glue::glue("{flag_lstm_layers}xLSTM({flag_lstm_units}), {flag_dense_layers}xDense({flag_dense_units})"),
-        glue::glue("{flag_dense_layers}xDense({flag_dense_units})")
-      ),
+      # capacity = dplyr::case_when(
+      #   "flag_conv1d_layers" %in% names(runs) ~ glue::glue("{flag_conv1d_layers}xConv1D({flag_conv1d_filters}), {flag_dense_layers}xDense({flag_dense_units})"),
+      #   "flag_lstm_layers" %in% names(runs) ~ glue::glue("{flag_lstm_layers}xLSTM({flag_lstm_units}), {flag_dense_layers}xDense({flag_dense_units})"),
+      #   TRUE ~ glue::glue("{flag_dense_layers}xDense({flag_dense_units})")
+      # ),
       .after = run_dir
     ) %>%
     dplyr::arrange(.data$rmse) %>%
@@ -85,6 +85,11 @@ tfrun_label_summary <- function(run_dir) {
     model <- glue::glue_data(
       flags,
       "{lstm_layers}xLSTM({lstm_units}), {dense_layers}xDense({dense_units}) w/ {dropout_rate * 100}% dropout"
+    )
+  } else if ("flag_conv1d_layers" %in% flags) {
+    model <- glue::glue_data(
+      flags,
+      "{conv1d_layers}xConv1D({conv1d_filters}), {dense_layers}xDense({dense_units}) w/ {dropout_rate * 100}% dropout"
     )
   } else {
     model <- glue::glue_data(

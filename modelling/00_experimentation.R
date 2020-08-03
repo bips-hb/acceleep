@@ -157,7 +157,7 @@ strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 with(strategy$scope(), {
   model <- keras_model_sequential() %>%
     layer_conv_1d(
-       filters = 64, kernel_size = 7, activation = "relu",
+       filters = 128, kernel_size = 7, activation = "relu",
        input_shape = dim(train_data)[c(2, 3)]
     ) %>%
     layer_max_pooling_1d(pool_size = 10) %>%

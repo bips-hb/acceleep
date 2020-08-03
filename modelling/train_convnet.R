@@ -24,8 +24,15 @@ FLAGS <- flags(
   flag_numeric("dense_layers", 2),
   flag_numeric("conv1d_filters", 32),
   flag_numeric("conv1d_kernel_size", 7),
+  flag_numeric("conv1d_pool_size", 10),
   flag_numeric("dense_units", 64),
-  flag_numeric("dropout_rate", 0.2)
+  flag_numeric("dropout_rate", 0.2),
+  flag_boolean("callback_reduce_lr", FALSE),
+  flag_numeric("callback_reduce_lr_patience", 3),
+  flag_numeric("callback_reduce_lr_factor", 0.1),
+  flag_numeric("callback_reduce_lr_min_delta", 0.01),
+  flag_numeric("callback_reduce_lr_min_lr", 1e-8),
+  flag_string("model_kind", "CNN") # Dummy flag just in case for sorting later
 )
 
 # Data Preparation ----
@@ -51,28 +58,54 @@ strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 with(strategy$scope(), {
   model <- keras_model_sequential()
 
-  # We need at least one LSTM layer, first one with input_shape, last one with return_sequences = FALSE
   for (conv_layer in seq_len(FLAGS$conv1d_layers)) {
 
-    input_shape <- if (conv_layer == 1) input_shape = dim(train_data)[c(2, 3)] else NULL
+    # For some reason explicitly supplying input_shape = NULL is something different
+    # than not supplying the argument at all, which is why I have to do this weird
+    # dance to ensure the input_shape argument is provided, otherwise the output of
+    # summary(model) will not appear in the results, which is kind of a bummer
+    cat("conv_layer: ", conv_layer, "\n")
+    input_shape <- NULL
+    if (conv_layer == 1) input_shape <- dim(train_data)[c(2, 3)]
+    cat("input_shape = ", paste0(input_shape, collapse = ","), "\n")
 
-    model <- keras_model_sequential() %>%
-      layer_conv_1d(
-        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
-        input_shape = input_shape
-      ) %>%
-      layer_max_pooling_1d(pool_size = 10) %>%
-      # layer_dropout(rate = 0.2) %>%
-      layer_conv_1d(
-        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu"
-      )
+    # if (conv_layer == 1)  {
+      model %>%
+        layer_conv_1d(
+          filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
+          input_shape = input_shape
+        )
+    # } else {
+    #   model <- keras_model_sequential() %>%
+    #     layer_conv_1d(
+    #       filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu"
+    #     )
+    #
+    # }
+
+    # Every conv layer *but* the last layer gets a pooling layer
+    if (conv_layer < FLAGS$conv1d_layers) {
+      model %>%
+        layer_max_pooling_1d(pool_size = FLAGS$conv1d_pool_size)
+    }
   }
 
-  # Every model with have this final dense layer for the output
+  # Max pooling after the convnets, not sure if global or "regular"?
   model %>%
-    layer_global_max_pooling_1d() %>%
-    layer_dense(activation = "relu", units = 32) %>%
-    layer_dropout(rate = 0.2)
+    layer_global_max_pooling_1d()
+
+  for (dense_layer in seq_len(FLAGS$dense_layers)) {
+
+    model %>%
+      layer_dense(units = FLAGS$dense_units, activation = "relu")
+
+    if (FLAGS$dropout_rate > 0) {
+      model %>%
+        layer_dropout(rate = FLAGS$dropout_rate)
+    }
+  }
+
+  model %>%
     layer_dense(units = 1, name = "output")
 })
 
@@ -83,6 +116,26 @@ model %>% compile(
   metrics = "mae"
 )
 
+# Assemble callbacks
+callbacks <- list(
+  callback_terminate_on_naan(), # This can't hurt
+  callback_model_checkpoint(
+    filepath = "best-model.hdf5", monitor = "val_loss", save_best_only = TRUE, save_freq = "epoch", save_weights_only = FALSE
+  )
+)
+
+if (FLAGS$callback_reduce_lr) {
+  callbacks[[3]] <- callback_reduce_lr_on_plateau(
+    monitor = "val_loss",
+    mode = "min", # reduce LR only if loss stops decreasing
+    verbose = FLAGS$verbose,
+    patience = FLAGS$callback_reduce_lr_patience,
+    factor = FLAGS$callback_reduce_lr_factor,
+    min_delta = FLAGS$callback_reduce_lr_min_delta,
+    min_lr = FLAGS$callback_reduce_lr_min_lr
+  )
+}
+
 tick <- Sys.time()
 history <- model %>% fit(
   x = train_data,
@@ -92,21 +145,13 @@ history <- model %>% fit(
   validation_split = FLAGS$validation_split,
   verbose = FLAGS$verbose,
   shuffle = TRUE,
-  callbacks =
-    list(
-      # callback_tensorboard(log_dir = log_path),
-      # callback_reduce_lr_on_plateau(patience = 2, factor = 0.5, min_lr = 0.0001),
-      # callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3, mode = "min", restore_best_weights = TRUE),
-      callback_terminate_on_naan()
-    )
+  callbacks = callbacks
 )
 
-# print(summary(model))
+print(summary(model))
 
 # Compare predictions to training labels for reference ----
 library(ggplot2)
-
-min_rmse_val <- round(min(sqrt(history$metrics$val_loss)), 2)
 
 # Predict on full training set -----
 # Reassemble full training data with ID information
@@ -119,6 +164,8 @@ c(training_data_full, .) %<-% assemble_train_data(
 
 # Predict in the training data
 train_predicted <- as.numeric(predict(model, train_data))
+
+min_rmse_val <- round(min(sqrt(history$metrics$val_loss)), 2)
 
 # get the order of IDs in training data for correct matching later
 ID_order <- unique(training_data_full$ID)

@@ -27,7 +27,9 @@ FLAGS <- flags(
   flag_numeric("callback_reduce_lr_patience", 3),
   flag_numeric("callback_reduce_lr_factor", 0.1),
   flag_numeric("callback_reduce_lr_min_delta", 0.01),
-  flag_numeric("callback_reduce_lr_min_lr", 1e-8)
+  flag_numeric("callback_reduce_lr_min_lr", 1e-8),
+  flag_string("model_kind", "DNN") # Dummy flag just in case for sorting later
+
 )
 
 # Data Preparation ----
@@ -98,8 +100,6 @@ if (FLAGS$callback_reduce_lr) {
     min_lr = FLAGS$callback_reduce_lr_min_lr
   )
 }
-
-# callback_early_stopping(monitor = "val_loss", min_delta = 0.0001, patience = 3, mode = "min", restore_best_weights = TRUE),
 
 tick <- Sys.time()
 history <- model %>% fit(

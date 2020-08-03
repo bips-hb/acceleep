@@ -24,7 +24,9 @@ FLAGS <- flags(
   flag_numeric("dense_layers", 2),
   flag_numeric("lstm_units", 128),
   flag_numeric("dense_units", 128),
-  flag_numeric("dropout_rate", 0.2)
+  flag_numeric("dropout_rate", 0.2),
+  flag_string("model_kind", "RNN") # Dummy flag just in case for sorting later
+
 )
 
 # Data Preparation ----
@@ -53,7 +55,8 @@ with(strategy$scope(), {
   # We need at least one LSTM layer, first one with input_shape, last one with return_sequences = FALSE
   for (lstm_layer in seq_len(FLAGS$lstm_layers)) {
 
-    input_shape <- if (lstm_layer == 1) input_shape = dim(train_data)[c(2, 3)] else NULL
+    input_shape <- NULL
+    if (lstm_layer == 1) input_shape <- dim(train_data)[c(2, 3)]
     return_sequences <- !(lstm_layer == FLAGS$lstm_layers)
 
     logmsg <- glue::glue("Making LSTM layer {lstm_layer} of {FLAGS$lstm_layers}:\n")
