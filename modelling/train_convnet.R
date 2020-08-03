@@ -27,6 +27,8 @@ FLAGS <- flags(
   flag_numeric("conv1d_pool_size", 10),
   flag_numeric("dense_units", 64),
   flag_numeric("dropout_rate", 0.2),
+  flag_boolean("batch_normalize", TRUE),
+  flag_string("conv1d_reduction", "maxpooling"),
   flag_boolean("callback_reduce_lr", FALSE),
   flag_numeric("callback_reduce_lr_patience", 3),
   flag_numeric("callback_reduce_lr_factor", 0.1),
@@ -69,19 +71,16 @@ with(strategy$scope(), {
     if (conv_layer == 1) input_shape <- dim(train_data)[c(2, 3)]
     cat("input_shape = ", paste0(input_shape, collapse = ","), "\n")
 
-    # if (conv_layer == 1)  {
+    model %>%
+      layer_conv_1d(
+        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
+        input_shape = input_shape
+      )
+
+    if (FLAGS$batch_normalize) {
       model %>%
-        layer_conv_1d(
-          filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
-          input_shape = input_shape
-        )
-    # } else {
-    #   model <- keras_model_sequential() %>%
-    #     layer_conv_1d(
-    #       filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu"
-    #     )
-    #
-    # }
+        layer_batch_normalization()
+    }
 
     # Every conv layer *but* the last layer gets a pooling layer
     if (conv_layer < FLAGS$conv1d_layers) {
@@ -90,14 +89,25 @@ with(strategy$scope(), {
     }
   }
 
-  # Max pooling after the convnets, not sure if global or "regular"?
-  model %>%
-    layer_global_max_pooling_1d()
+  # Flatten the conv1d layers either by max pooling or "just" flattening
+  if (FLAGS$conv1d_reduction == "maxpooling") {
+    model %>%
+      layer_global_max_pooling_1d()
+  } else if (FLAGS$conv1d_reduction == "flatten") {
+    model %>%
+      layer_flatten()
+  }
+
 
   for (dense_layer in seq_len(FLAGS$dense_layers)) {
 
     model %>%
       layer_dense(units = FLAGS$dense_units, activation = "relu")
+
+    if (FLAGS$batch_normalize) {
+      model %>%
+        layer_batch_normalization()
+    }
 
     if (FLAGS$dropout_rate > 0) {
       model %>%
@@ -120,7 +130,8 @@ model %>% compile(
 callbacks <- list(
   callback_terminate_on_naan(), # This can't hurt
   callback_model_checkpoint(
-    filepath = "best-model.hdf5", monitor = "val_loss", save_best_only = TRUE, save_freq = "epoch", save_weights_only = FALSE
+    filepath = "best-model.hdf5", monitor = "val_loss",
+    save_best_only = TRUE, save_freq = "epoch", save_weights_only = FALSE
   )
 )
 
