@@ -161,7 +161,6 @@ with(strategy$scope(), {
        input_shape = dim(train_data)[c(2, 3)]
     ) %>%
     layer_max_pooling_1d(pool_size = 10) %>%
-    # layer_dropout(rate = 0.2) %>%
     layer_conv_1d(
       filters = 64, kernel_size = 7, activation = "relu"
     ) %>%

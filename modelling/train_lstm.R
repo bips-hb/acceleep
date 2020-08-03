@@ -20,7 +20,6 @@ FLAGS <- flags(
   flag_numeric("epochs", 20),
   flag_numeric("verbose", 1),
   flag_numeric("validation_split", 0.2),
-  # flag_boolean("shuffle", TRUE),
   flag_numeric("lstm_layers", 2),
   flag_numeric("dense_layers", 2),
   flag_numeric("lstm_units", 128),

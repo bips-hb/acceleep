@@ -12,4 +12,5 @@ output/models
 run-analysis/*html
 run-analysis/*_files
 
+output/*pdf
 *png
