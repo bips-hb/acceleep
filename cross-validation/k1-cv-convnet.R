@@ -27,7 +27,7 @@ for (row in seq_len(nrow(metadata))) {
   # resolution is small here because it doesn't matter, actual training data is read later
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_lstm(
     model = metaparams$model, placement = metaparams$placement,
-    outcome = outcome, random_seed = 19283, val_split = 1/3,
+    outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
     interval_length = 30, res = 1
   )
 
