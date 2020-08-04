@@ -25,7 +25,7 @@ training_run(
     conv1d_pool_size = 50,
     conv1d_reduction = "maxpooling",
     dense_layers = 2,
-    dense_units = 64,
+    dense_units = 32,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1,
@@ -36,6 +36,15 @@ training_run(
 ))
 
 pushoverr::pushover("Runs are done!", title = "Modelling Hell")
+
+
+temp <- tempfile()
+
+cat(summary(model), file = temp)
+writeLines(text = as.character(summary(model)), con = temp)
+readLines(temp)
+
+capture.output(summary(model), file = temp)
 
 # Now with multiple flags ----
 tuning_runs <- tuning_run(
