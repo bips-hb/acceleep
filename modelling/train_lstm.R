@@ -25,8 +25,8 @@ FLAGS <- flags(
   flag_numeric("lstm_units", 128),
   flag_numeric("dense_units", 128),
   flag_numeric("dropout_rate", 0.2),
+  flag_boolean("batch_normalize", TRUE),
   flag_string("model_kind", "RNN") # Dummy flag just in case for sorting later
-
 )
 
 # Data Preparation ----
@@ -81,6 +81,11 @@ with(strategy$scope(), {
         return_sequences = return_sequences
       )
 
+    if (FLAGS$batch_normalize) {
+      model %>%
+        layer_batch_normalization()
+    }
+
     if (FLAGS$dropout_rate > 0) {
       model %>%
         layer_dropout(rate = FLAGS$dropout_rate)
@@ -92,6 +97,11 @@ with(strategy$scope(), {
     for (dense_layer in seq_len(FLAGS$dense_layers)) {
       model %>%
         layer_dense(units = FLAGS$dense_units, activation = "relu")
+
+      if (FLAGS$batch_normalize) {
+        model %>%
+          layer_batch_normalization()
+      }
 
       if (FLAGS$dropout_rate > 0) {
         model %>%

@@ -32,7 +32,7 @@ runs_dir <- here::here("output/runs/convnet")
 
 runs <- ingest_runs(runs_dir) %>%
   filter(completed, !is.na(rmse)) %>%
-  arrange(-rmse)
+  arrange(rmse)
 
 runs %>%
   mutate(

@@ -4,7 +4,7 @@
 
 source(here::here("modelling/_init.R"))
 library(tfruns)
-options(tfruns.runs_dir = here::here("output/runs/downsampled-ad-hoc"))
+options(tfruns.runs_dir = here::here("output/runs/lstm-models"))
 
 # A single ad hoc training run -----
 training_run(
@@ -17,9 +17,10 @@ training_run(
     lr = 1e-5,
     decay = 0,
     batch_size = 32,
+    batch_normalize = FALSE,
     epochs = 100,
     lstm_layers = 2,
-    lstm_units = 256,
+    lstm_units = 128,
     dense_layers = 2,
     dense_units = 64,
     dropout_rate = 0.1,
@@ -52,14 +53,7 @@ tuning_runs <- tuning_run(
   ))
 pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
-view_run("2020-07-24T14-03-07Z")
-
-runs <- ls_runs()
-
-View(runs)
-
-copy_run_files("2020-07-24T14-03-07Z", to = here::here("output/runs", "selected-runs"))
-
+compare_runs(ls_runs(latest_n = 2))
 
 ###
 
