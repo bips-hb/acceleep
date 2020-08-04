@@ -13,6 +13,7 @@ training_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
+    res = 100,
     lr = 1e-3,
     decay = 0, # 0.01,
     batch_size = 32,
@@ -21,7 +22,7 @@ training_run(
     conv1d_layers = 2,
     conv1d_filters = 64,
     conv1d_kernel_size = 18,
-    conv1d_pool_size = 100,
+    conv1d_pool_size = 50,
     conv1d_reduction = "maxpooling",
     dense_layers = 2,
     dense_units = 64,
@@ -44,16 +45,19 @@ tuning_runs <- tuning_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    lr = 1e-5,
+    res = c(50, 100),
+    lr = 1e-3,
     decay = 0, # 0.01,
     batch_size = 32,
-    epochs = 100,
-    conv1d_layers = 4,
+    epochs = 50,
+    batch_normalize = TRUE,
+    conv1d_layers = 2,
     conv1d_filters = 64,
-    conv1d_kernel_size = c(14, 16, 18),
-    conv1d_pool_size = 5,
-    dense_layers = c(1, 2),
-    dense_units = c(32, 64),
+    conv1d_kernel_size = 18,
+    conv1d_pool_size = c(2, 5, 10),
+    conv1d_reduction = c("maxpooling", "flatten"),
+    dense_layers = 2,
+    dense_units = 64,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1,
@@ -81,6 +85,8 @@ runs %>%
 runs %>%
   slice_min(rmse, n = 1) %>%
   view_run()
+
+view_run("2020-08-04T12-38-18Z")
 
 # Cleanup
 clean_runs(ls_runs(metric_val_loss > 6))

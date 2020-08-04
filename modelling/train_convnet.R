@@ -80,10 +80,8 @@ with(strategy$scope(), {
     # than not supplying the argument at all, which is why I have to do this weird
     # dance to ensure the input_shape argument is provided, otherwise the output of
     # summary(model) will not appear in the results, which is kind of a bummer
-    cat("conv_layer: ", conv_layer, "\n")
     input_shape <- NULL
     if (conv_layer == 1) input_shape <- dim(train_data)[c(2, 3)]
-    cat("input_shape = ", paste0(input_shape, collapse = ","), "\n")
 
     model %>%
       layer_conv_1d(
