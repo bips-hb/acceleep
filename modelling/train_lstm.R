@@ -32,14 +32,22 @@ FLAGS <- flags(
 # Data Preparation ----
 
 # Collecting data
-c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
+c(c(train_data_full, train_labels), c(test_data, test_labels)) %<-% keras_prep_lstm(
   model = FLAGS$accel_model, placement = FLAGS$placement,
   outcome = FLAGS$outcome, random_seed = 19283, val_split = 1/3,
   interval_length = 30, res = FLAGS$res
 )
 
+# Reshaping to array form, keep train_data_full for later prediction
+train_data <- keras_reshape_accel(
+  accel_tbl = train_data_full, interval_length = 30, res = FLAGS$res
+)
+
 dim(train_data)
+dim(train_data_full)
+
 dim(test_data)
+
 length(train_labels)
 length(test_labels)
 
@@ -125,47 +133,25 @@ history <- model %>% fit(
 # print(summary(model))
 
 # Compare predictions to training labels for reference ----
+# Compare predictions to training labels for reference ----
 library(ggplot2)
 
-min_rmse_val <- round(min(sqrt(history$metrics$val_loss)), 2)
-
 # Predict on full training set -----
-# Reassemble full training data with ID information
-# (inefficient but wanted to avoid overhauling the entire pipeline)
-c(training_data_full, .) %<-% assemble_train_data(
-  accel_model = FLAGS$accel_model, placement = FLAGS$placement,
-  outcome = FLAGS$outcome, random_seed = 19283, val_split = 1/3,
-  res = FLAGS$res
-)
+
+min_rmse_val <- round(min(sqrt(history$metrics$val_loss)), 2)
 
 # Predict in the training data
 train_predicted <- as.numeric(predict(model, train_data))
 
-# get the order of IDs in training data for correct matching later
-ID_order <- unique(training_data_full$ID)
-
-ID_counts <- training_data_full %>%
-  select(interval, ID) %>%
+prediction_comparison <- train_data_full %>%
+  select(ID, interval, observed = FLAGS$outcome) %>%
   distinct() %>%
-  count(ID) %>%
-  mutate(ID = factor(ID, levels = ID_order)) %>%
-  arrange(ID) %>%
-  mutate(ID = as.character(ID))
-
-train_ids <- ID_counts %>%
-  purrr::pmap(~{
-    rep(.x, times = .y)
-  }) %>%
-  unlist()
-
-prediction_comparison <- tibble(
-  ID = train_ids,
-  predicted = train_predicted,
-  observed = train_labels
-) %>%
+  mutate(predicted = train_predicted) %>%
   group_by(ID) %>%
-  mutate(interval = seq_along(ID))
+  mutate(interval_index = seq_along(ID)) %>%
+  ungroup()
 
+# Per subject RMSEs for the plot
 rmse_per_subject <- prediction_comparison %>%
   group_by(ID) %>%
   summarize(rmse = sqrt(mean((predicted - observed)^2)), .groups = "drop")
@@ -189,7 +175,7 @@ p <- prediction_comparison %>%
   mutate(ID = glue::glue("{ID} ({round(rmse, 2)})")) %>%
   select(-rmse) %>%
   tidyr::pivot_longer(cols = c("observed", "predicted")) %>%
-  ggplot(aes(x = interval, y = value, color = name, fill = name)) +
+  ggplot(aes(x = interval_index, y = value, color = name, fill = name)) +
   facet_wrap(~ID) +
   geom_path() +
   labs(

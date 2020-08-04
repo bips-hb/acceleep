@@ -432,14 +432,14 @@ split_data_labels <- function(
   outcome <- match.arg(outcome)
   # browser()
 
-  training_xyz <- training_data %>%
-    dplyr::select(.data$X, .data$Y, .data$Z)
+  training_xyz <- training_data# %>%
+    #dplyr::select(.data$X, .data$Y, .data$Z)
 
   training_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
 
   # Validation data and labels
-  validation_xyz <- validation_data %>%
-    dplyr::select(.data$X, .data$Y, .data$Z)
+  validation_xyz <- validation_data# %>%
+    # dplyr::select(.data$X, .data$Y, .data$Z)
 
   validation_labels <- extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
 
@@ -493,11 +493,15 @@ split_data_labels <- function(
 #' test_data <- keras_reshape_accel(test_data, 30, 20)
 #' }
 keras_reshape_accel <- function(accel_tbl, interval_length = 30, res = 100) {
+  # browser()
   # rows per chunk = interval_length * res
   chunks_per_tbl <- nrow(accel_tbl) / (interval_length * res)
+  # In case the input tbl still has subject metadata or something else
+  accel_tbl <- accel_tbl %>%
+    dplyr::select(dplyr::any_of(c("X", "Y", "Z")))
 
   keras::array_reshape(
-    as.matrix(accel_tbl), c(chunks_per_tbl, res * interval_length, 3)
+    as.matrix(accel_tbl), c(chunks_per_tbl, res * interval_length, ncol(accel_tbl))
   )
 }
 
@@ -578,13 +582,14 @@ keras_prep_lstm <- function(
   c(train_data, train_labels) %<-% split_data$training
   c(test_data, test_labels) %<-% split_data$validation
 
-  # Reshaping to array form
-  train_data <- keras_reshape_accel(
-    accel_tbl = train_data, interval_length = interval_length, res = res
-  )
-  test_data <- keras_reshape_accel(
-    accel_tbl = test_data, interval_length = interval_length, res = res
-  )
+  # Don't reshape to array anymore, makes later prediction annoying
+  # # Reshaping to array form
+  # train_data <- keras_reshape_accel(
+  #   accel_tbl = train_data, interval_length = interval_length, res = res
+  # )
+  # test_data <- keras_reshape_accel(
+  #   accel_tbl = test_data, interval_length = interval_length, res = res
+  # )
 
   list(
     training = list(
