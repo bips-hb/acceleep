@@ -104,14 +104,14 @@ for (row in seq_len(nrow(metadata))) {
           units = 256, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
-          return_sequences = return_sequences
+          return_sequences = TRUE
         ) %>%
         layer_dropout(rate = 0.2)  %>%
         layer_lstm(
           units = 256, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
-          return_sequences = return_sequences
+          return_sequences = FALSE
         ) %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 64)  %>%
