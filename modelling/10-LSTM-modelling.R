@@ -20,17 +20,15 @@ training_run(
     batch_normalize = FALSE,
     epochs = 100,
     lstm_layers = 2,
-    lstm_units = 128,
+    lstm_units = 256,
     dense_layers = 2,
     dense_units = 64,
-    dropout_rate = 0.1,
+    dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1
 ))
 
 # Now with multiple flags ----
-#options(tfruns.runs_dir = here::here("output/runs/downsampled-tuning"))
-
 tuning_runs <- tuning_run(
   confirm = FALSE,
   here::here("modelling/train_lstm.R"),
@@ -38,7 +36,7 @@ tuning_runs <- tuning_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = c(50, 10, 1),
+    res = 1,
     lr = 1e-5,
     decay = 0,
     batch_size = 4,
@@ -57,7 +55,6 @@ compare_runs(ls_runs(latest_n = 2))
 
 ###
 
-options(tfruns.runs_dir = here::here("output/runs/downsampled-1hz-tuning"))
 View(ls_runs())
 
 clean_runs(ls_runs(completed == FALSE))

@@ -10,17 +10,14 @@ reticulate:::ensure_python_initialized()
 
 tick <- Sys.time()
 # Declaring metadata ----
-model_kind <- "CNN"
+model_kind <- "RNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 
 metadata <- get_overview_table() %>%
-  # Needs lower pooling value
-  # filter(model != "activpal") %>%
+#  filter(model == "geneactiv", placement == "hip_right") %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
-  mutate(res = 100) %>%
-  # Just for testing
-  filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+  mutate(res = 1)
 
 # Big loop over accelerometers, placements, outcomes
 for (row in seq_len(nrow(metadata))) {
@@ -28,7 +25,7 @@ for (row in seq_len(nrow(metadata))) {
   metaparams <- metadata[row, ]
   # browser()
 
-  # Collecting original training data only tpo get it's subject IDs
+  # Collecting original training data only to get it's subject IDs
   # resolution is small here because it doesn't matter, actual training data is read later
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_lstm(
     model = metaparams$model, placement = metaparams$placement,
@@ -103,37 +100,30 @@ for (row in seq_len(nrow(metadata))) {
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
-        layer_conv_1d(
-          filters = 64, kernel_size = 18, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01),
-          input_shape = dim(train_data_array)[c(2, 3)]
-        )  %>%
-        # layer_batch_normalization() %>%
-        layer_max_pooling_1d(pool_size = 10) %>%
-        layer_conv_1d(
-          filters = 64, kernel_size = 18, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01)
-        )  %>%
-        # layer_batch_normalization() %>%
-        layer_global_max_pooling_1d() %>%
-        layer_dense(
-          activation = "relu", units = 64,
-          kernel_regularizer = regularizer_l2(l = 0.01)
-        )  %>%
-        # layer_batch_normalization() %>%
-        layer_dropout(rate = 0.2)  %>%
-        # layer_batch_normalization() %>%
-        layer_dense(
-          activation = "relu", units = 64,
-          kernel_regularizer = regularizer_l2(l = 0.01)
+        layer_lstm(
+          units = 256, input_shape = dim(train_data_array)[c(2, 3)],
+          activation = "tanh", recurrent_activation = "sigmoid",
+          recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+          return_sequences = return_sequences
         ) %>%
+        layer_dropout(rate = 0.2)  %>%
+        layer_lstm(
+          units = 256, input_shape = dim(train_data_array)[c(2, 3)],
+          activation = "tanh", recurrent_activation = "sigmoid",
+          recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
+          return_sequences = return_sequences
+        ) %>%
+        layer_dropout(rate = 0.2)  %>%
+        layer_dense(activation = "relu", units = 64)  %>%
+        layer_dropout(rate = 0.2)  %>%
+        layer_dense(activation = "relu", units = 64) %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output")
     })
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-4),
+      optimizer = optimizer_adam(lr = 1e-5),
       metrics = "mae"
     )
 
@@ -141,7 +131,7 @@ for (row in seq_len(nrow(metadata))) {
       train_data_array,
       train_labels,
       batch_size = 32,
-      epochs = 100,
+      epochs = 150,
       validation_split = 0,
       verbose = 0
     )
@@ -189,5 +179,5 @@ for (row in seq_len(nrow(metadata))) {
 
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
-pushoverr::pushover(glue::glue("Cross validation is done! Took {took}"), title = "Modelling Hell")
+pushoverr::pushover(glue::glue("{model_kind} Cross validation is done! Took {took}"), title = "Modelling Hell")
 

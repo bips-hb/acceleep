@@ -200,12 +200,10 @@ p
 dev.off()
 p
 
-# ----
+# sign off ----
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
 log_final <- glue::glue("\nTook {took} -- Minimum validation RMSE: {min_rmse_val}")
 cat(log_final, "\n")
-
-# if (min_rmse_val < 3.5) pushoverr::pushover(log_final, title = "Modelling Hell")
 # ---
 

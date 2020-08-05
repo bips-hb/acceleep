@@ -28,6 +28,8 @@ FLAGS <- flags(
   flag_numeric("dense_units", 64),
   flag_numeric("dropout_rate", 0.2),
   flag_boolean("batch_normalize", TRUE),
+  flag_numeric("weight_decay_conv", 0.01), # default value for regularize_l2()
+  flag_numeric("weight_decay_dense", 0.01), # default value for regularize_l2()
   flag_string("conv1d_reduction", "maxpooling"),
   flag_boolean("callback_reduce_lr", FALSE),
   flag_numeric("callback_reduce_lr_patience", 3),
@@ -85,7 +87,9 @@ with(strategy$scope(), {
 
     model %>%
       layer_conv_1d(
-        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size, activation = "relu",
+        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size,
+        kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_conv),
+        activation = "relu",
         input_shape = input_shape
       )
 
@@ -114,7 +118,11 @@ with(strategy$scope(), {
   for (dense_layer in seq_len(FLAGS$dense_layers)) {
 
     model %>%
-      layer_dense(units = FLAGS$dense_units, activation = "relu")
+      layer_dense(
+        units = FLAGS$dense_units,
+        kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_dense),
+        activation = "relu"
+        )
 
     if (FLAGS$batch_normalize) {
       model %>%
@@ -230,12 +238,10 @@ p
 dev.off()
 p
 
-# ----
+# sign off ----
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
 log_final <- glue::glue("\nTook {took} -- Minimum validation RMSE: {min_rmse_val}")
 cat(log_final, "\n")
-
-# if (min_rmse_val < 3.5) pushoverr::pushover(log_final, title = "Modelling Hell")
 # ---
 

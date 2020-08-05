@@ -1,6 +1,7 @@
 library(acceleep)
 library(ggplot2)
 library(dplyr)
+library(kableExtra)
 
 rf_results_paper <- tibble::tribble(
   ~outcome, ~model,      ~placement,    ~mean_rmse, ~sd_rmse,
@@ -21,7 +22,7 @@ rf_results_paper <- tibble::tribble(
   "MET",    "geneactiv", "wrist_right", 1.48,       0.37
 )
 
-cv_files <- fs::dir_ls(here::here("output/cross-validation"), glob = "*.rds")
+cv_files <- fs::dir_ls(here::here("output/cross-validation/20200805143724/"), glob = "*.rds")
 
 results <- purrr::map_df(cv_files, ~{
   tibble::tibble(
@@ -40,7 +41,6 @@ results <- purrr::map_df(cv_files, ~{
     into = c("folds", "method", "model_kind", "model", "placement", "outcome", "res", "timestamp"),
     sep = "-"
   ) %>%
-  filter(timestamp != "20200804163926") %>%
   mutate(
     model = label_accel_models(model),
     placement = purrr::map_chr(placement, label_placement),
@@ -49,7 +49,7 @@ results <- purrr::map_df(cv_files, ~{
 
 # A plot ----
 results %>%
-  tidyr::unnest(data) %>% View()
+  tidyr::unnest(data) %>%
   ggplot(aes(x = accel, y = rmse)) +
   facet_grid(rows = vars(outcome), scales = "free_y") +
   geom_boxplot() +
@@ -64,8 +64,8 @@ results %>%
   ) %>%
   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
   slice(c(3, 1, 2)) %>%
-  knitr::kable(caption = "First LOSO-CV results (CNN), Mean RMSE (SD)") %>%
-  kableExtra::kable_styling()
+  kable(caption = "First LOSO-CV results (CNN), Mean RMSE (SD)") %>%
+  kable_styling()
 
 
 
