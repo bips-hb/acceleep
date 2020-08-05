@@ -11,8 +11,12 @@ reticulate:::ensure_python_initialized()
 tick <- Sys.time()
 # Declaring metadata ----
 model_kind <- "CNN"
+run_start <- format(tick, '%Y%m%d%H%M%S')
 
 metadata <- get_overview_table() %>%
+  # Needs lower pooling value
+  # filter(model != "activpal") %>%
+  filter(model == "geneactiv", placement == "hip_right") %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
   mutate(res = 100)
@@ -21,7 +25,7 @@ metadata <- get_overview_table() %>%
 for (row in seq_len(nrow(metadata))) {
   # hold current metadata
   metaparams <- metadata[row, ]
-
+  # browser()
 
   # Collecting original training data only tpo get it's subject IDs
   # resolution is small here because it doesn't matter, actual training data is read later
@@ -37,7 +41,7 @@ for (row in seq_len(nrow(metadata))) {
     sort()
 
   # Initialize empty tibble to collect results
-  cv_result <- tibble::tibble(.rows = length(IDs_full))
+  cv_result <- tibble::tibble()
 
   prog <- cli_progress_bar(
     format = ":current of :total [:bar] (:percent, :elapsedfull)",
@@ -76,7 +80,7 @@ for (row in seq_len(nrow(metadata))) {
 
     # Reshaping to array form, keep train_data_full for later prediction
     train_data_array <- keras_reshape_accel(
-      accel_tbl = train_data, interval_length = 30, res = metadata$res
+      accel_tbl = train_data, interval_length = 30, res = metaparams$res
     )
 
     test_data_array <- keras_reshape_accel(
@@ -102,18 +106,17 @@ for (row in seq_len(nrow(metadata))) {
           filters = 64, kernel_size = 18, activation = "relu",
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 100) %>%
         layer_conv_1d(
           filters = 64, kernel_size = 18, activation = "relu"
         )  %>%
-        layer_batch_normalization() %>%
-        # layer_max_pooling_1d(pool_size = 100) %>%
+        # layer_batch_normalization() %>%
         layer_global_max_pooling_1d() %>%
         layer_dense(activation = "relu", units = 64)  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dense(activation = "relu", units = 64) %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output")
@@ -129,7 +132,7 @@ for (row in seq_len(nrow(metadata))) {
       train_data_array,
       train_labels,
       batch_size = 32,
-      epochs = 50,
+      epochs = 100,
       validation_split = 0,
       verbose = 0
     )
@@ -152,14 +155,14 @@ for (row in seq_len(nrow(metadata))) {
   # Save result tibble
   filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{format(Sys.time(), '%Y%m%d%H%M%S')}.rds")
 
-  out_dir <- here::here("output", "cross-validation")
+  out_dir <- here::here("output", "cross-validation", run_start)
   if (!fs::dir_exists(out_dir)) fs::dir_create(out_dir)
 
   # Save CV RMSE results
   saveRDS(object = cv_result, file = fs::path(out_dir, filename))
 
   # Write model structure to plain text file
-  capture.output(summary(model), file = fs::path_ext_set(filename, "txt"))
+  capture.output(summary(model), file =  fs::path(out_dir, fs::path_ext_set(filename, "txt")))
 }
 
 tock <- Sys.time()
