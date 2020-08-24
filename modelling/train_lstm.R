@@ -22,8 +22,14 @@ FLAGS <- flags(
   flag_numeric("validation_split", 0.2),
   flag_numeric("lstm_layers", 2),
   flag_numeric("dense_layers", 2),
-  flag_numeric("lstm_units", 128),
-  flag_numeric("dense_units", 128),
+  flag_numeric("lstm_units", 128), # unused
+  flag_numeric("lstm_units_1", 128), # lstm units in layer 1
+  flag_numeric("lstm_units_2", 128), # lstm units in layer 2
+  flag_numeric("lstm_units_3", 128), # lstm units in layer 3
+  flag_numeric("dense_units", 128), # unused
+  flag_numeric("dense_units_1", 128), # dense units in layer 1
+  flag_numeric("dense_units_2", 128), # dense units in layer 2
+  flag_numeric("dense_units_3", 128), # dense units in layer 3
   flag_numeric("dropout_rate", 0.2),
   flag_boolean("batch_normalize", TRUE),
   flag_string("model_kind", "RNN") # Dummy flag just in case for sorting later
@@ -73,6 +79,9 @@ with(strategy$scope(), {
     if (return_sequences) cat("return_sequences is TRUE\n")
 
 
+    # layer_lstm_units <- FLAGS$lstm_units
+    layer_lstm_units <- FLAGS[[glue::glue("lstm_units_{lstm_layer}")]]
+
     model %>%
       layer_lstm(
         units = FLAGS$lstm_units, input_shape = input_shape,
@@ -95,8 +104,12 @@ with(strategy$scope(), {
   # Add optional additional dense layers before the last dense layer
   if (FLAGS$dense_layers > 0) {
     for (dense_layer in seq_len(FLAGS$dense_layers)) {
+
+      # layer_dense_units <- FLAGS$dense_units
+      layer_dense_units <- FLAGS[[glue::glue("dense_units_{dense_layer}")]]
+
       model %>%
-        layer_dense(units = FLAGS$dense_units, activation = "relu")
+        layer_dense(units = layer_dense_units, activation = "relu")
 
       if (FLAGS$batch_normalize) {
         model %>%
@@ -112,7 +125,7 @@ with(strategy$scope(), {
 
   # Every model with have this final dense layer for the output
   model %>%
-    layer_dense(units = 1, name = "output")
+    layer_dense(units = 1, name = "output", activation = "linear")
 })
 
 # Compilation

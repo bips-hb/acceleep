@@ -1,4 +1,4 @@
-# Starting "fresh" with lower resolution data
+# Trying to make LSTM models that work
 # Main model script: "train_lstm.R"
 # See https://tensorflow.rstudio.com/tools/tfruns/overview/
 
@@ -13,16 +13,20 @@ training_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = 1,
+    res = 10,
     lr = 1e-5,
     decay = 0,
     batch_size = 32,
     batch_normalize = FALSE,
     epochs = 100,
     lstm_layers = 2,
-    lstm_units = 256,
+    # lstm_units = 256,
+    lstm_units_1 = 256,
+    lstm_units_2 = 256,
     dense_layers = 2,
-    dense_units = 64,
+    # dense_units = 64,
+    dense_units_1 = 64,
+    dense_units_2 = 64,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1
@@ -39,12 +43,17 @@ tuning_runs <- tuning_run(
     res = 1,
     lr = 1e-5,
     decay = 0,
-    batch_size = 4,
-    epochs = 150,
-    lstm_layers = 4,
-    lstm_units = 256,
+    batch_size = 32,
+    batch_normalize = FALSE,
+    epochs = 100,
+    lstm_layers = 2,
+    # lstm_units = 256,
+    lstm_units_1 = 256,
+    lstm_units_2 = c(128, 256),
     dense_layers = 2,
-    dense_units = 64,
+    # dense_units = 64,
+    dense_units_1 = c(64, 128),
+    dense_units_2 = 64,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1
@@ -64,3 +73,7 @@ view_run(ls_runs(metric_val_loss == min(metric_val_loss)))
 
 runs <- ingest_runs()
 
+runs %>%
+  arrange(rmse) %>%
+  head(1) %>%
+  glimpse()

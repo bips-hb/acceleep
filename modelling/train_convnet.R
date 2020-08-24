@@ -22,10 +22,19 @@ FLAGS <- flags(
   flag_numeric("validation_split", 0.2),
   flag_numeric("conv1d_layers", 2),
   flag_numeric("dense_layers", 2),
-  flag_numeric("conv1d_filters", 32),
+  flag_numeric("conv1d_filters", 32),   # Unused
+  flag_numeric("conv1d_filters_1", 32), # filters in layer 1
+  flag_numeric("conv1d_filters_2", 32), # filters in layer 2
+  flag_numeric("conv1d_filters_3", 32), # filters in layer 3
   flag_numeric("conv1d_kernel_size", 7),
+  flag_numeric("conv1d_kernel_size_1", 7), # kernel size in layer 1
+  flag_numeric("conv1d_kernel_size_2", 7), # ..layer 2
+  flag_numeric("conv1d_kernel_size_3", 7), # ..layer 3
   flag_numeric("conv1d_pool_size", 10),
-  flag_numeric("dense_units", 64),
+  flag_numeric("dense_units", 64),   # Unused
+  flag_numeric("dense_units_1", 64), # Units in dense layer 1
+  flag_numeric("dense_units_2", 64), # ... in layer 2
+  flag_numeric("dense_units_3", 64), # ... 3
   flag_numeric("dropout_rate", 0.2),
   flag_boolean("batch_normalize", TRUE),
   flag_numeric("weight_decay_conv", 0.01), # default value for regularize_l2()
@@ -85,9 +94,17 @@ with(strategy$scope(), {
     input_shape <- NULL
     if (conv_layer == 1) input_shape <- dim(train_data)[c(2, 3)]
 
+    # layer_filters <- FLAGS$conv1d_filters
+    # layer_kernel_size <- FLAGS$conv1d_kernel_size
+
+    layer_filters <- FLAGS[[glue::glue("conv1d_kernel_size_{conv_layer}")]]
+    layer_kernel_size <- FLAGS[[glue::glue("conv1d_kernel_size_{conv_layer}")]]
+
+
     model %>%
       layer_conv_1d(
-        filters = FLAGS$conv1d_filters, kernel_size = FLAGS$conv1d_kernel_size,
+        filters = layer_filters,
+        kernel_size = layer_kernel_size,
         kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_conv),
         activation = "relu",
         input_shape = input_shape
@@ -117,9 +134,12 @@ with(strategy$scope(), {
 
   for (dense_layer in seq_len(FLAGS$dense_layers)) {
 
+    # layer_dense_units <- FLAGS$dense_units
+    layer_dense_units <- FLAGS[[glue::glue("dense_units_{dense_layer}")]]
+
     model %>%
       layer_dense(
-        units = FLAGS$dense_units,
+        units = layer_dense_units,
         kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_dense),
         activation = "relu"
         )
@@ -136,7 +156,7 @@ with(strategy$scope(), {
   }
 
   model %>%
-    layer_dense(units = 1, name = "output")
+    layer_dense(units = 1, name = "output",  activation = "linear")
 })
 
 # Compilation

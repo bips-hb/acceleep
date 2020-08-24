@@ -1,5 +1,5 @@
 ---
-title: "Runs"
+title: "LSTM Models"
 author: "Lukas"
 date: "`r Sys.time()`"
 output: 
@@ -28,23 +28,21 @@ knitr::opts_chunk$set(
 # Run overview
 
 ```{r first-look}
-runs_dir <- here::here("output/runs/downsampled-ad-hoc/")
+runs_dir <- here::here("output/runs/lstm-models/")
 
 runs <- ingest_runs(runs_dir) %>%
   filter(completed) %>%
-  arrange(flag_res, capacity, flag_batch_size, flag_lr)
-# glimpse(runs)
+  filter(!is.na(flag_lstm_units_1))
 
 runs %>%
   mutate(
     run_dir = fs::path_file(run_dir),
-    capacity = factor(capacity),
+    # capacity = factor(capacity),
     flag_res = factor(flag_res),
     flag_batch_size = factor(flag_batch_size),
-    flag_lr = format(flag_lr, scientific = TRUE),
-    flag_decay = format(flag_decay, scientific = TRUE)
+    flag_lr = format(flag_lr, scientific = TRUE)
   ) %>%
-  select(run_dir, capacity, flag_res, rmse, flag_batch_size, flag_lr, flag_decay, epochs) %>%
+  select(run_dir, flag_res, rmse, flag_batch_size, flag_lr, epochs) %>%
   mutate(across(where(is.numeric), ~round(.x, 2))) %>%
   #head(5) %>%
   datatable(
