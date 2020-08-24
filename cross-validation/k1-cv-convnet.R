@@ -14,8 +14,6 @@ model_kind <- "CNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 
 metadata <- get_overview_table() %>%
-  # Needs lower pooling value
-  # filter(model != "activpal") %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
   mutate(res = ifelse(model == "activpal", 20, 100))
@@ -136,7 +134,7 @@ for (row in seq_len(nrow(metadata))) {
         ) %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
-        layer_dense(units = 1, name = "output")
+        layer_dense(units = 1, name = "output", activation = "linear")
     })
 
     model %>% compile(

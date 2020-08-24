@@ -118,7 +118,7 @@ for (row in seq_len(nrow(metadata))) {
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 64) %>%
         layer_dropout(rate = 0.2) %>%
-        layer_dense(units = 1, name = "output")
+        layer_dense(units = 1, name = "output", activation = "linear")
     })
 
     model %>% compile(

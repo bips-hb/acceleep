@@ -67,5 +67,3 @@ results %>%
   kable(caption = "First LOSO-CV results (CNN), Mean RMSE (SD)") %>%
   kable_styling()
 
-
-
