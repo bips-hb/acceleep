@@ -18,9 +18,9 @@ metadata <- get_overview_table() %>%
   # filter(model != "activpal") %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
-  mutate(res = 100) %>%
+  mutate(res = ifelse(model == "activpal", 20, 100))
   # Just for testing
-  filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+  # filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
 
 # Big loop over accelerometers, placements, outcomes
 for (row in seq_len(nrow(metadata))) {
@@ -33,7 +33,8 @@ for (row in seq_len(nrow(metadata))) {
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_lstm(
     model = metaparams$model, placement = metaparams$placement,
     outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
-    interval_length = 30, res = 1
+    interval_length = 30,
+    res = 1 # This is on purposes, just for speedier data ingestion
   )
 
   IDs_full <- train_data_full %>%
@@ -62,8 +63,15 @@ for (row in seq_len(nrow(metadata))) {
     training_data <- full_data %>%
       filter(.data$ID %in% IDs_full, .data$ID != i)
 
+    # Fail if for some reason left out ID is in training set
+    stopifnot(!(i %in% unique(training_data$ID)))
+
     validation_data <- full_data %>%
       filter(.data$ID == i)
+
+    # Fail if left out ID is _not_ in validation data where it belongs
+    stopifnot(i %in% unique(validation_data$ID))
+
 
     # Check
     unique(training_data$ID)
@@ -104,36 +112,36 @@ for (row in seq_len(nrow(metadata))) {
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 18, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01),
+          filters = 32, kernel_size = 20, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.05),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         # layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 18, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01)
+          filters = 16, kernel_size = 10, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.05)
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_global_max_pooling_1d() %>%
         layer_dense(
           activation = "relu", units = 64,
-          kernel_regularizer = regularizer_l2(l = 0.01)
+          kernel_regularizer = regularizer_l2(l = 0.05)
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # layer_batch_normalization() %>%
         layer_dense(
-          activation = "relu", units = 64,
-          kernel_regularizer = regularizer_l2(l = 0.01)
+          activation = "relu", units = 32,
+          kernel_regularizer = regularizer_l2(l = 0.05)
         ) %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output")
     })
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-4),
+      optimizer = optimizer_adam(lr = 1e-3),
       metrics = "mae"
     )
 
@@ -145,6 +153,9 @@ for (row in seq_len(nrow(metadata))) {
       validation_split = 0,
       verbose = 0
     )
+
+    # To check in with LOO model results
+    # browser()
 
     # Evaluate, save results
     eval_result <- model %>%
