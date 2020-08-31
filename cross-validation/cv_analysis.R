@@ -70,6 +70,6 @@ results %>%
   ) %>%
   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
   slice(c(3, 1, 2)) %>%
-  kable(caption = "First LOSO-CV results (CNN), Mean RMSE (SD)") %>%
+  kable(caption = "LOSO-CV results (CNN), Mean RMSE (SD)") %>%
   kable_styling()
 

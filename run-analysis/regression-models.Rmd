@@ -31,20 +31,18 @@ knitr::opts_chunk$set(
 runs_dir <- here::here("output/runs/regression-model")
 
 runs <- ingest_runs(runs_dir) %>%
-  filter(completed) %>%
-  arrange(-rmse, capacity, flag_batch_size, flag_lr) %>%
-  slice_min(rmse, top_n = 100)
+  filter(completed, !is.na(rmse))
 # glimpse(runs)
 
 runs %>%
   mutate(
     run_dir = fs::path_file(run_dir),
-    capacity = factor(capacity),
+    # capacity = factor(capacity),
     flag_res = factor(flag_res),
     flag_batch_size = factor(flag_batch_size),
     flag_lr = format(flag_lr, scientific = TRUE)
   ) %>%
-  select(run_dir, capacity, flag_res, rmse, flag_batch_size, flag_lr, epochs, flag_callback_reduce_lr) %>%
+  select(run_dir, flag_res, rmse, flag_batch_size, flag_lr, epochs, flag_callback_reduce_lr) %>%
   mutate(across(where(is.numeric), ~round(.x, 2))) %>%
   #head(5) %>%
   datatable(
