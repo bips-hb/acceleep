@@ -8,6 +8,9 @@ reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 # The first python-based action after session restart always fails:
 reticulate:::ensure_python_initialized()
 
+# If this is true, only geneactive hip_right / kJ will be CV'd for quicker iteration
+MINI_RUN <- TRUE
+
 tick <- Sys.time()
 # Declaring metadata ----
 model_kind <- "CNN"
@@ -17,8 +20,13 @@ metadata <- get_overview_table() %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
   mutate(res = ifelse(model == "activpal", 20, 100))
-  # Just for testing
-  # filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+
+if (MINI_RUN) {
+  cliapp::cli_alert_warning("Only running on GENEActiv (right hip) with kJ!")
+
+  metadata <- metadata %>%
+    filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+}
 
 # Big loop over accelerometers, placements, outcomes
 for (row in seq_len(nrow(metadata))) {
@@ -32,7 +40,7 @@ for (row in seq_len(nrow(metadata))) {
     model = metaparams$model, placement = metaparams$placement,
     outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
     interval_length = 30,
-    res = 1 # This is on purposes, just for speedier data ingestion
+    res = 1 # This is on purposes, just for speedier data ingestion to get the training subject IDs etc.
   )
 
   IDs_full <- train_data_full %>%
@@ -114,23 +122,23 @@ for (row in seq_len(nrow(metadata))) {
           kernel_regularizer = regularizer_l2(l = 0.05),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 16, kernel_size = 10, activation = "relu",
+          filters = 24, kernel_size = 10, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.05)
         )  %>%
         layer_batch_normalization() %>%
         layer_global_max_pooling_1d() %>%
         layer_dense(
-          activation = "relu", units = 64,
-          kernel_regularizer = regularizer_l2(l = 0.05)
+          activation = "relu", units = 64# ,
+          # kernel_regularizer = regularizer_l2(l = 0.05)
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(
-          activation = "relu", units = 32,
-          kernel_regularizer = regularizer_l2(l = 0.05)
+          activation = "relu", units = 32# ,
+          # kernel_regularizer = regularizer_l2(l = 0.05)
         ) %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
@@ -180,6 +188,10 @@ for (row in seq_len(nrow(metadata))) {
     )
 
     cv_result <- bind_rows(cv_result, current_result)
+
+    # Save per-subject model maybe?
+    filename_model <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-LOSO_{i}-{run_start}.hdf5")
+    save_model_hdf5(model, filename_model)
   }
 
 
@@ -191,6 +203,7 @@ for (row in seq_len(nrow(metadata))) {
 
   # Save CV RMSE results
   saveRDS(object = cv_result, file = fs::path(out_dir, filename))
+
 
   # Write model structure to plain text file
   capture.output(summary(model), file =  fs::path(out_dir, fs::path_ext_set(filename, "txt")))

@@ -22,7 +22,7 @@ rf_results_paper <- tibble::tribble(
   "MET",    "geneactiv", "wrist_right", 1.48,       0.37
 )
 
-cv_files <- fs::dir_ls(here::here("output/cross-validation/20200805143724/"), glob = "*.rds")
+cv_files <- fs::dir_ls(here::here("output/cross-validation/20200824165148/"), glob = "*.rds")
 
 results <- purrr::map_df(cv_files, ~{
   tibble::tibble(
@@ -54,6 +54,12 @@ results %>%
   facet_grid(rows = vars(outcome), scales = "free_y") +
   geom_boxplot() +
   theme_minimal()
+
+results %>%
+  tidyr::unnest(data) %>%
+  mutate(prediction_diff = (rmse - prediction_rmse)^2) %>%
+  arrange(desc(prediction_diff))
+  summarize(rmse_rmse = sqrt(mean(prediction_diff)))
 
 # A table ----
 results %>%

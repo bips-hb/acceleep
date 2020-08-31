@@ -13,7 +13,7 @@ training_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    res = 10,
+    res = 1,
     lr = 1e-5,
     decay = 0,
     batch_size = 32,

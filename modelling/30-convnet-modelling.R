@@ -10,12 +10,12 @@ options(tfruns.runs_dir = here::here("output/runs/convnet"))
 training_run(
   file = here::here("modelling/train_convnet.R"),
   flags = list(
-    # accel_model = "activpal",
-    # placement = "thigh_right",
-    # res = 20,
-    accel_model = "geneactiv",
-    placement = "hip_right",
-    res = 100,
+    accel_model = "activpal",
+    placement = "thigh_right",
+    res = 20,
+    # accel_model = "geneactiv",
+    # placement = "hip_right",
+    # res = 100,
     outcome = "kJ",
     lr = 1e-3,
     decay = 0,
@@ -51,13 +51,6 @@ training_run(
 pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
 
-temp <- tempfile()
-
-cat(summary(model), file = temp)
-writeLines(text = as.character(summary(model)), con = temp)
-readLines(temp)
-
-capture.output(summary(model), file = temp)
 
 # Now with multiple flags ----
 tuning_runs <- tuning_run(
