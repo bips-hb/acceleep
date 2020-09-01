@@ -114,25 +114,25 @@ for (row in seq_len(nrow(metadata))) {
         layer_dense(
           activation = "relu", units = 256
         )  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L2
         layer_dense(
           activation = "relu", units = 256
         )  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L3
         layer_dense(
           activation = "relu", units = 128
         )  %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L4
         layer_dense(
           activation = "relu", units = 64
         ) %>%
-        layer_batch_normalization() %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output", activation = "linear")
     })
@@ -149,7 +149,7 @@ for (row in seq_len(nrow(metadata))) {
       batch_size = 32,
       epochs = 100,
       validation_split = 0,
-      verbose = 1
+      verbose = 0
     )
 
     # To check in with LOO model results

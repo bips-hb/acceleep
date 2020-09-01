@@ -54,3 +54,26 @@ get_overview_table() %>%
   })
 tock <- Sys.time()
 
+
+# Create summarized dataset for regression/RF models -----
+
+###
+### Doesn't pan out because train/test data should be summarized separately but with shared params,
+### pre-aggregating would also require pre-defining train/test sets :(
+###
+
+# get_overview_table() %>%
+#   distinct(model, placement) %>%
+#   mutate(res = ifelse(model == "activpal", 20, 100)) %>%
+#   purrr::pwalk(~{
+#     browser()
+#
+#     out_path <- here::here("data/processed-combined", ..1, paste0(..2, "-", "summarized", ".rds"))
+#     cliapp::cli_alert_info("Summarizing {..1}-{..2} to {out_path}")
+#
+#     full_data <- get_combined_data(model = ..1, placement = ..2, res = ..3)
+#
+#   })
+#
+#
+# get_combined_data()
