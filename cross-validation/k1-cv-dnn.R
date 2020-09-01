@@ -27,6 +27,8 @@ if (MINI_RUN) {
 
   metadata <- metadata %>%
     filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+} else {
+  cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
 }
 
 # Big loop over accelerometers, placements, outcomes
@@ -118,19 +120,19 @@ for (row in seq_len(nrow(metadata))) {
         layer_dropout(rate = 0.2)  %>%
         # L2
         layer_dense(
-          activation = "relu", units = 256
+          activation = "relu", units = 128
         )  %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L3
         layer_dense(
-          activation = "relu", units = 128
+          activation = "relu", units = 64
         )  %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L4
         layer_dense(
-          activation = "relu", units = 128
+          activation = "relu", units = 32
         ) %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%

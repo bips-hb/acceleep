@@ -27,6 +27,8 @@ if (MINI_RUN) {
 
   metadata <- metadata %>%
     filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+} else {
+  cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
 }
 
 # Big loop over accelerometers, placements, outcomes
@@ -119,14 +121,14 @@ for (row in seq_len(nrow(metadata))) {
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
-          filters = 32, kernel_size = 20, activation = "relu",
+          filters = 64, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.05),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 24, kernel_size = 10, activation = "relu",
+          filters = 32, kernel_size = 10, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.05)
         )  %>%
         layer_batch_normalization() %>%
@@ -153,7 +155,7 @@ for (row in seq_len(nrow(metadata))) {
     history <- model %>% fit(
       train_data_array,
       train_labels,
-      batch_size = 32,
+      batch_size = 16,
       epochs = 100,
       validation_split = 0,
       verbose = 0
