@@ -13,7 +13,7 @@ FLAGS <- flags(
   flag_string("accel_model", "geneactiv"),
   flag_string("placement", "hip_right"),
   flag_string("outcome", "kJ"),
-  flag_numeric("res", 100), # When summarizing anyway, this seems rather pointless to set below max res
+  # flag_numeric("res", 100), # When summarizing anyway, this seems rather pointless to set below max res
   flag_numeric("lr", 0.001),
   flag_numeric("decay", 0),
   flag_numeric("batch_size", 32),
@@ -43,7 +43,7 @@ FLAGS <- flags(
 c(c(train_data, train_labels), c(test_data, test_labels)) %<-% keras_prep_regression(
   model = FLAGS$accel_model, placement = FLAGS$placement,
   outcome = FLAGS$outcome, random_seed = 19283, val_split = 1/3,
-  interval_length = 30, res = FLAGS$res
+  interval_length = 30, res = 100, normalize = TRUE
 )
 
 dim(train_data)

@@ -42,11 +42,13 @@ for (row in seq_len(nrow(metadata))) {
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_regression(
     model = metaparams$model, placement = metaparams$placement,
     outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
-    interval_length = 30, res = metaparams$res
+    interval_length = 30, res = metaparams$res, normalize = FALSE
   )
 
   # This is easier for later subject-splitting I assume.
   train_data_full$outcome <- train_labels_full
+  train_data_full <- train_data_full %>%
+    select(ID, interval, outcome, everything())
 
   IDs_full <- train_data_full %>%
     pull(.data$ID) %>%
@@ -87,11 +89,20 @@ for (row in seq_len(nrow(metadata))) {
     unique(training_data$ID)
     unique(test_data$ID)
 
-    # Normalize
-    # c(training_data, test_data) %<-% normalize_accelerometry(training_data, test_data)
+    # Normalize data
+    training_means <- training_data %>%
+      select(-c("ID", "interval")) %>%
+      purrr::map_dbl(mean)
+
+    training_sds <- training_data %>%
+      select(-c("ID", "interval")) %>%
+      purrr::map_dbl(sd)
+
+    training_data[-c(1:2)] <- scale(training_data[-c(1:2)], center = training_means, scale =  training_sds)
+    test_data[-c(1:2)] <- scale(test_data[-c(1:2)], center = training_means, scale =  training_sds)
 
 
-    # # Split into data and labels
+    # Split into data and labels
     train_labels <- train_data_full %>%
       filter(.data$ID %in% IDs_full, .data$ID != i) %>%
       pull(.data$outcome)

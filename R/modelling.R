@@ -46,32 +46,48 @@ combine_clean_data <- function(
 }
 
 #' @rdname combine_clean_data
+#' @param summarized `[FALSE]` If `TRUE`, `res` is ignored and the pre-summarized data is loaded,
+#'   which is suitable for regular regression models.
 #' @export
 get_combined_data <- function(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
-  res = 100
+  res = 100, summarized = FALSE
 ) {
   # browser()
   model <- match.arg(model)
   placement <- match.arg(placement)
 
-  file_path <- here::here("data/processed-combined", model, paste0(placement, "-", res, "hz", ".rds"))
+  if (!summarized) {
+    # Return (and fix up) raw data
+    file_path <- here::here("data/processed-combined", model, paste0(placement, "-", res, "hz", ".rds"))
 
-  if (!fs::file_exists(file_path)) {
-    stop("File ", file_path, " does not exist. Check your model/placement/resolution arguments.")
+    if (!fs::file_exists(file_path)) {
+      stop("File ", file_path, " does not exist. Check your model/placement/resolution arguments.")
+    }
+
+    # Read and ungroup data because I forgot to ungroup when saving the downsampled data
+    # and now I have to fix it, but don't want to resave the data just yet.
+    readRDS(file_path) %>%
+      # Reorder columns to ID, interval - should have done that earlier
+      select(.data$ID, .data$interval, dplyr::everything()) %>%
+      ungroup() %>%
+      group_by(.data$ID, .data$interval) %>%
+      # get per-interval row ids just in case
+      mutate(rowid = seq_along(.data$interval)) %>%
+      ungroup()
+
+  } else {
+    # Return summarized data
+    file_path <- here::here("data/processed-combined", model, paste0(placement, "-", "summarized", ".rds"))
+
+    if (!fs::file_exists(file_path)) {
+      stop("File ", file_path, " does not exist. Check your model/placement/resolution arguments.")
+    }
+
+    readRDS(file_path)
   }
 
-  # Read and ungroup data because I forgot to ungroup when saving the downsampled data
-  # and now I have to fix it, but don't want to resave the data just yet.
-  readRDS(file_path) %>%
-    # Reorder columns to ID, interval - should have done that earlier
-    select(.data$ID, .data$interval, dplyr::everything()) %>%
-    ungroup() %>%
-    group_by(.data$ID, .data$interval) %>%
-    # get per-interval row ids just in case
-    mutate(rowid = seq_along(.data$interval)) %>%
-    ungroup()
 }
 
 #' Extract the outcome variables from the working dataset
@@ -153,14 +169,27 @@ make_initial_splits <- function(full_data, random_seed = 11235813, val_split = 1
     identical(sort(c(ids_validation, ids_train)), sort(ids))
   )
 
-  # split data into train/validation sets
+  # split data into train/validation sets, only sort by rowid if available
+  # Not the case in summarized data
   dat_training <- full_data %>%
-    dplyr::filter(.data$ID %in% ids_train) %>%
-    arrange(.data$ID, .data$interval, .data$rowid)
+    dplyr::filter(.data$ID %in% ids_train)
 
   dat_validation <- full_data %>%
-    dplyr::filter(.data$ID %in% ids_validation) %>%
-    arrange(.data$ID, .data$interval, .data$rowid)
+    dplyr::filter(.data$ID %in% ids_validation)
+
+  if ("rowid" %in% names(full_data)) {
+    dat_training <- dat_training %>%
+      arrange(.data$ID, .data$interval, .data$rowid)
+
+    dat_validation <- dat_validation %>%
+      arrange(.data$ID, .data$interval, .data$rowid)
+  } else {
+    dat_training <- dat_training %>%
+      arrange(.data$ID, .data$interval)
+
+    dat_validation <- dat_validation %>%
+      arrange(.data$ID, .data$interval)
+  }
 
   list(
     training = dat_training,
@@ -235,7 +264,7 @@ normalize_accelerometry <- function(training_data, validation_data) {
 #' \dontrun{
 #' summarize_accelerometry(training_data, validation_data)
 #' }
-summarize_accelerometry <- function(training_data, validation_data = NULL) {
+summarize_accelerometry <- function(training_data, validation_data = NULL, normalize = TRUE) {
 
   # browser()
   training_data_summarized <- training_data %>%
@@ -263,86 +292,10 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
   training_mean_sd <- training_data_summarized %>%
     summarize(across(matches("^[XYZ]_"), list(mean = ~mean(.x, na.rm = TRUE), sd = ~sd(.x, na.rm = TRUE))))
 
-  # This is the most annoying way to do this but I couldn't think of a smarter one
-  # because I need to apply the same params to the test set
-  training_data_summarized <- training_data_summarized %>%
-    mutate(
-      # means
-      X_mean = (X_mean - training_mean_sd$X_mean_mean) / training_mean_sd$X_mean_sd,
-      Y_mean = (Y_mean - training_mean_sd$Y_mean_mean) / training_mean_sd$Y_mean_sd,
-      Z_mean = (Z_mean - training_mean_sd$Z_mean_mean) / training_mean_sd$Z_mean_sd,
-      # sd's
-      X_sd = (X_sd - training_mean_sd$X_sd_mean) / training_mean_sd$X_sd_sd,
-      Y_sd = (Y_sd - training_mean_sd$Y_sd_mean) / training_mean_sd$Y_sd_sd,
-      Z_sd = (Z_sd - training_mean_sd$Z_sd_mean) / training_mean_sd$Z_sd_sd,
-      # min
-      X_min = (X_min - training_mean_sd$X_min_mean) / training_mean_sd$X_min_sd,
-      Y_min = (Y_min - training_mean_sd$Y_min_mean) / training_mean_sd$Y_min_sd,
-      Z_min = (Z_min - training_mean_sd$Z_min_mean) / training_mean_sd$Z_min_sd,
-      # max
-      X_max = (X_max - training_mean_sd$X_max_mean) / training_mean_sd$X_max_sd,
-      Y_max = (Y_max - training_mean_sd$Y_max_mean) / training_mean_sd$Y_max_sd,
-      Z_max = (Z_max - training_mean_sd$Z_max_mean) / training_mean_sd$Z_max_sd,
-      # q10
-      X_q10 = (X_q10 - training_mean_sd$X_q10_mean) / training_mean_sd$X_q10_sd,
-      Y_q10 = (Y_q10 - training_mean_sd$Y_q10_mean) / training_mean_sd$Y_q10_sd,
-      Z_q10 = (Z_q10 - training_mean_sd$Z_q10_mean) / training_mean_sd$Z_q10_sd,
-      # q25
-      X_q25 = (X_q25 - training_mean_sd$X_q25_mean) / training_mean_sd$X_q25_sd,
-      Y_q25 = (Y_q25 - training_mean_sd$Y_q25_mean) / training_mean_sd$Y_q25_sd,
-      Z_q25 = (Z_q25 - training_mean_sd$Z_q25_mean) / training_mean_sd$Z_q25_sd,
-      # q50
-      X_q50 = (X_q50 - training_mean_sd$X_q50_mean) / training_mean_sd$X_q50_sd,
-      Y_q50 = (Y_q50 - training_mean_sd$Y_q50_mean) / training_mean_sd$Y_q50_sd,
-      Z_q50 = (Z_q50 - training_mean_sd$Z_q50_mean) / training_mean_sd$Z_q50_sd,
-      # q75
-      X_q75 = (X_q75 - training_mean_sd$X_q75_mean) / training_mean_sd$X_q75_sd,
-      Y_q75 = (Y_q75 - training_mean_sd$Y_q75_mean) / training_mean_sd$Y_q75_sd,
-      Z_q75 = (Z_q75 - training_mean_sd$Z_q75_mean) / training_mean_sd$Z_q75_sd,
-      # q90
-      X_q90 = (X_q90 - training_mean_sd$X_q90_mean) / training_mean_sd$X_q90_sd,
-      Y_q90 = (Y_q90 - training_mean_sd$Y_q90_mean) / training_mean_sd$Y_q90_sd,
-      Z_q90 = (Z_q90 - training_mean_sd$Z_q90_mean) / training_mean_sd$Z_q90_sd,
-      # acf
-      X_acf = (X_acf - training_mean_sd$X_acf_mean) / training_mean_sd$X_acf_sd,
-      Y_acf = (Y_acf - training_mean_sd$Y_acf_mean) / training_mean_sd$Y_acf_sd,
-      Z_acf = (Z_acf - training_mean_sd$Z_acf_mean) / training_mean_sd$Z_acf_sd
-    )
-
-  # Paste EE measures back on the summarized accelerometry
-  training_data <- training_data_summarized %>%
-    left_join(
-      training_data %>%
-        select(-any_of(c("X", "Y", "Z", "rowid"))) %>%
-        distinct(),
-      by = c("ID", "interval")
-    )
-
-  if (!is.null(validation_data)) {
-    # Do the same for the validation data
-    # Just in case later standardization needs to use distinct parameters for train/test set
-    validation_data_summarized <- validation_data %>%
-      group_by(.data$ID, .data$interval) %>%
-      summarize(across(c(.data$X, .data$Y, .data$Z), list(
-        mean = mean,
-        sd = sd,
-        min = min,
-        max = max,
-        q10 = ~quantile(.x, probs = 0.1),
-        q25 = ~quantile(.x, probs = 0.25),
-        q50 = ~quantile(.x, probs = 0.5),
-        q75 = ~quantile(.x, probs = 0.75),
-        q90 = ~quantile(.x, probs = 0.9),
-        acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
-      ), .names = "{col}_{fn}"), .groups = "drop")
-
-    # acf can be NaN which then causes errors for LM models, so set them to 0 as Steenbock et al did.
-    validation_data_summarized <- validation_data_summarized %>%
-      mutate(across(c(.data$X_acf, .data$Y_acf, .data$Z_acf), ~{
-        ifelse(is.nan(.x), 0, .x)
-      }))
-
-    validation_data_summarized <- validation_data_summarized %>%
+  if (normalize) {
+    # This is the most annoying way to do this but I couldn't think of a smarter one
+    # because I need to apply the same params to the test set
+    training_data_summarized <- training_data_summarized %>%
       mutate(
         # means
         X_mean = (X_mean - training_mean_sd$X_mean_mean) / training_mean_sd$X_mean_sd,
@@ -385,7 +338,88 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
         Y_acf = (Y_acf - training_mean_sd$Y_acf_mean) / training_mean_sd$Y_acf_sd,
         Z_acf = (Z_acf - training_mean_sd$Z_acf_mean) / training_mean_sd$Z_acf_sd
       )
+  }
 
+
+
+  # Paste EE measures back on the summarized accelerometry
+  training_data <- training_data_summarized %>%
+    left_join(
+      training_data %>%
+        select(-any_of(c("X", "Y", "Z", "rowid"))) %>%
+        distinct(),
+      by = c("ID", "interval")
+    )
+
+  if (!is.null(validation_data)) {
+    # Do the same for the validation data
+    # Just in case later standardization needs to use distinct parameters for train/test set
+    validation_data_summarized <- validation_data %>%
+      group_by(.data$ID, .data$interval) %>%
+      summarize(across(c(.data$X, .data$Y, .data$Z), list(
+        mean = mean,
+        sd = sd,
+        min = min,
+        max = max,
+        q10 = ~quantile(.x, probs = 0.1),
+        q25 = ~quantile(.x, probs = 0.25),
+        q50 = ~quantile(.x, probs = 0.5),
+        q75 = ~quantile(.x, probs = 0.75),
+        q90 = ~quantile(.x, probs = 0.9),
+        acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
+      ), .names = "{col}_{fn}"), .groups = "drop")
+
+    # acf can be NaN which then causes errors for LM models, so set them to 0 as Steenbock et al did.
+    validation_data_summarized <- validation_data_summarized %>%
+      mutate(across(c(.data$X_acf, .data$Y_acf, .data$Z_acf), ~{
+        ifelse(is.nan(.x), 0, .x)
+      }))
+
+    if (normalize) {
+      validation_data_summarized <- validation_data_summarized %>%
+        mutate(
+          # means
+          X_mean = (X_mean - training_mean_sd$X_mean_mean) / training_mean_sd$X_mean_sd,
+          Y_mean = (Y_mean - training_mean_sd$Y_mean_mean) / training_mean_sd$Y_mean_sd,
+          Z_mean = (Z_mean - training_mean_sd$Z_mean_mean) / training_mean_sd$Z_mean_sd,
+          # sd's
+          X_sd = (X_sd - training_mean_sd$X_sd_mean) / training_mean_sd$X_sd_sd,
+          Y_sd = (Y_sd - training_mean_sd$Y_sd_mean) / training_mean_sd$Y_sd_sd,
+          Z_sd = (Z_sd - training_mean_sd$Z_sd_mean) / training_mean_sd$Z_sd_sd,
+          # min
+          X_min = (X_min - training_mean_sd$X_min_mean) / training_mean_sd$X_min_sd,
+          Y_min = (Y_min - training_mean_sd$Y_min_mean) / training_mean_sd$Y_min_sd,
+          Z_min = (Z_min - training_mean_sd$Z_min_mean) / training_mean_sd$Z_min_sd,
+          # max
+          X_max = (X_max - training_mean_sd$X_max_mean) / training_mean_sd$X_max_sd,
+          Y_max = (Y_max - training_mean_sd$Y_max_mean) / training_mean_sd$Y_max_sd,
+          Z_max = (Z_max - training_mean_sd$Z_max_mean) / training_mean_sd$Z_max_sd,
+          # q10
+          X_q10 = (X_q10 - training_mean_sd$X_q10_mean) / training_mean_sd$X_q10_sd,
+          Y_q10 = (Y_q10 - training_mean_sd$Y_q10_mean) / training_mean_sd$Y_q10_sd,
+          Z_q10 = (Z_q10 - training_mean_sd$Z_q10_mean) / training_mean_sd$Z_q10_sd,
+          # q25
+          X_q25 = (X_q25 - training_mean_sd$X_q25_mean) / training_mean_sd$X_q25_sd,
+          Y_q25 = (Y_q25 - training_mean_sd$Y_q25_mean) / training_mean_sd$Y_q25_sd,
+          Z_q25 = (Z_q25 - training_mean_sd$Z_q25_mean) / training_mean_sd$Z_q25_sd,
+          # q50
+          X_q50 = (X_q50 - training_mean_sd$X_q50_mean) / training_mean_sd$X_q50_sd,
+          Y_q50 = (Y_q50 - training_mean_sd$Y_q50_mean) / training_mean_sd$Y_q50_sd,
+          Z_q50 = (Z_q50 - training_mean_sd$Z_q50_mean) / training_mean_sd$Z_q50_sd,
+          # q75
+          X_q75 = (X_q75 - training_mean_sd$X_q75_mean) / training_mean_sd$X_q75_sd,
+          Y_q75 = (Y_q75 - training_mean_sd$Y_q75_mean) / training_mean_sd$Y_q75_sd,
+          Z_q75 = (Z_q75 - training_mean_sd$Z_q75_mean) / training_mean_sd$Z_q75_sd,
+          # q90
+          X_q90 = (X_q90 - training_mean_sd$X_q90_mean) / training_mean_sd$X_q90_sd,
+          Y_q90 = (Y_q90 - training_mean_sd$Y_q90_mean) / training_mean_sd$Y_q90_sd,
+          Z_q90 = (Z_q90 - training_mean_sd$Z_q90_mean) / training_mean_sd$Z_q90_sd,
+          # acf
+          X_acf = (X_acf - training_mean_sd$X_acf_mean) / training_mean_sd$X_acf_sd,
+          Y_acf = (Y_acf - training_mean_sd$Y_acf_mean) / training_mean_sd$Y_acf_sd,
+          Z_acf = (Z_acf - training_mean_sd$Z_acf_mean) / training_mean_sd$Z_acf_sd
+        )
+    }
 
     validation_data <- validation_data_summarized %>%
       left_join(
@@ -633,7 +667,7 @@ keras_prep_regression <- function(
 
   # browser()
   # Aggregating subject data for model/placement
-  full_data <- get_combined_data(model = model, placement = placement, res = res)
+  full_data <- get_combined_data(model = model, placement = placement, res = res, summarized = TRUE)
 
   # Split into train / validation datasets
   c(training_data, validation_data) %<-% make_initial_splits(
@@ -641,7 +675,7 @@ keras_prep_regression <- function(
   )
 
   # Summarization
-  c(training_data, validation_data) %<-% summarize_accelerometry(training_data, validation_data)
+  # c(training_data, validation_data) %<-% summarize_accelerometry(training_data, validation_data)
 
   # Split into data and labels
   # Keep ID and interval for easier predictions afterwards
@@ -654,6 +688,20 @@ keras_prep_regression <- function(
 
   train_labels <- extract_outcome(training_data, outcome = outcome, output_type = "numeric")
   test_labels <-  extract_outcome(validation_data, outcome = outcome, output_type = "numeric")
+
+  # Normalize
+  if (normalize) {
+    training_means <- training_data %>%
+      select(-c("ID", "interval")) %>%
+      purrr::map_dbl(mean)
+
+    training_sds <- training_data %>%
+      select(-c("ID", "interval")) %>%
+      purrr::map_dbl(sd)
+
+    training_data[-c(1, 2)] <- scale(training_data[-c(1, 2)], center = training_means, scale =  training_sds)
+    validation_data[-c(1, 2)] <- scale(validation_data[-c(1, 2)], center = training_means, scale =  training_sds)
+  }
 
 
   list(

@@ -15,7 +15,7 @@ training_run(
     outcome = "kJ",
     lr = 1e-3,
     decay = 0, # 0.01,
-    batch_normalize = FALSE,
+    batch_normalize = TRUE,
     batch_size = 32,
     epochs = 100,
     dense_layers = 4,

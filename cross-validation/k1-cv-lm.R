@@ -37,11 +37,13 @@ for (row in seq_len(nrow(metadata))) {
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_regression(
     model = metaparams$model, placement = metaparams$placement,
     outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
-    interval_length = 30, res = metaparams$res
+    interval_length = 30, res = metaparams$res, normalize = FALSE
   )
 
   # This is easier for later subject-splitting I assume.
   train_data_full$outcome <- train_labels_full
+  train_data_full <- train_data_full %>%
+    select(ID, interval, outcome, everything())
 
   IDs_full <- train_data_full %>%
     pull(.data$ID) %>%
@@ -75,6 +77,18 @@ for (row in seq_len(nrow(metadata))) {
     # Fail if left out ID is _not_ in validation data where it belongs
     stopifnot(i %in% unique(test_data$ID))
 
+    # Normalize data
+    training_means <- training_data %>%
+      select(-c("ID", "interval", "outcome")) %>%
+      purrr::map_dbl(mean)
+
+    training_sds <- training_data %>%
+      select(-c("ID", "interval", "outcome")) %>%
+      purrr::map_dbl(sd)
+
+    training_data[-c(1:3)] <- scale(training_data[-c(1:3)], center = training_means, scale =  training_sds)
+    test_data[-c(1:3)] <- scale(test_data[-c(1:3)], center = training_means, scale =  training_sds)
+
 
     # Check
     unique(training_data$ID)
@@ -85,7 +99,7 @@ for (row in seq_len(nrow(metadata))) {
 
     # Modelling ----
 
-    model <- lm(outcome ~ ., data = training_data[-c(1, 2)])
+    model <- lm(outcome ~ ., data = training_data[-c(1:2)])
 
     # To check in with LOO model results
     # browser()
@@ -95,7 +109,7 @@ for (row in seq_len(nrow(metadata))) {
     predicted_obs <- test_data %>%
       select(ID, interval, outcome) %>%
       mutate(
-        predicted = as.numeric(predict(model, test_data[-c(1, 2)]))
+        predicted = as.numeric(predict(model, test_data[-c(1:2)]))
       )
 
     # prediction rmse differs from result of evaluate() o_O
