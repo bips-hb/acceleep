@@ -179,8 +179,8 @@ for (row in seq_len(nrow(metadata))) {
 
     current_result <- tibble::tibble(
       left_out = i,
-      rmse = sqrt(eval_result[["loss"]]),
-      prediction_rmse = prediction_rmse,
+      rmse = prediction_rmse,
+      eval_rmse = sqrt(eval_result[["loss"]]),
       # mse = eval_result[["loss"]],
       # mae = eval_result[["mae"]],
       predicted_obs = list(predicted_obs)
