@@ -253,9 +253,15 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
       acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
     ), .names = "{col}_{fn}"), .groups = "drop")
 
-  # Get parameters from training set to standarduze training and test set with
+  # acf can be NaN which then causes errors for LM models, so set them to 0 as Steenbock et al did.
+  training_data_summarized <- training_data_summarized %>%
+    mutate(across(c(.data$X_acf, .data$Y_acf, .data$Z_acf), ~{
+      ifelse(is.nan(.x), 0, .x)
+    }))
+
+  # Get parameters from training set to standardize training and test set with
   training_mean_sd <- training_data_summarized %>%
-    summarize(across(matches("^[XYZ]_"), list(mean = mean, sd = sd)))
+    summarize(across(matches("^[XYZ]_"), list(mean = ~mean(.x, na.rm = TRUE), sd = ~sd(.x, na.rm = TRUE))))
 
   # This is the most annoying way to do this but I couldn't think of a smarter one
   # because I need to apply the same params to the test set
@@ -329,6 +335,12 @@ summarize_accelerometry <- function(training_data, validation_data = NULL) {
         q90 = ~quantile(.x, probs = 0.9),
         acf = ~acf(.x, plot = FALSE, lag.max = 1)[["acf"]][2,,]
       ), .names = "{col}_{fn}"), .groups = "drop")
+
+    # acf can be NaN which then causes errors for LM models, so set them to 0 as Steenbock et al did.
+    validation_data_summarized <- validation_data_summarized %>%
+      mutate(across(c(.data$X_acf, .data$Y_acf, .data$Z_acf), ~{
+        ifelse(is.nan(.x), 0, .x)
+      }))
 
     validation_data_summarized <- validation_data_summarized %>%
       mutate(
