@@ -22,7 +22,7 @@ rf_results_paper <- tibble::tribble(
   "MET",    "geneactiv", "wrist_right", 1.48,       0.37
 )
 
-cv_files <- fs::dir_ls(here::here("output/cross-validation/20200824165148/"), glob = "*.rds")
+cv_files <- fs::dir_ls(here::here("output/cross-validation/LM/20200901142633/"), glob = "*.rds")
 
 results <- purrr::map_df(cv_files, ~{
   tibble::tibble(
@@ -58,7 +58,7 @@ results %>%
 results %>%
   tidyr::unnest(data) %>%
   mutate(prediction_diff = (rmse - prediction_rmse)^2) %>%
-  arrange(desc(prediction_diff))
+  arrange(desc(prediction_diff)) %>%
   summarize(rmse_rmse = sqrt(mean(prediction_diff)))
 
 # A table ----
@@ -70,6 +70,6 @@ results %>%
   ) %>%
   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
   slice(c(3, 1, 2)) %>%
-  kable(caption = "LOSO-CV results (CNN), Mean RMSE (SD)") %>%
+  kable(caption = glue::glue("{unique(results$model_kind)} LOSO-CV results, Mean RMSE (SD)")) %>%
   kable_styling()
 
