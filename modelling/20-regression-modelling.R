@@ -13,12 +13,17 @@ training_run(
     accel_model = "geneactiv",
     placement = "hip_right",
     outcome = "kJ",
-    lr = 1e-6,
+    lr = 1e-3,
     decay = 0, # 0.01,
+    batch_normalize = FALSE,
     batch_size = 32,
     epochs = 100,
-    dense_layers = 5,
-    dense_units = 256,
+    dense_layers = 4,
+    dense_units_1 = 256,
+    dense_units_1 = 256,
+    dense_units_1 = 128,
+    dense_units_1 = 64,
+    # dense_units_1 = 256,
     dropout_rate = 0.2,
     validation_split = 0.2,
     verbose = 1,
@@ -55,3 +60,5 @@ runs <- ingest_runs()
 runs %>%
   slice_min(rmse, n = 1) %>%
   plot_loss_history()
+
+compare_runs()

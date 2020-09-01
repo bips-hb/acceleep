@@ -144,12 +144,12 @@ for (row in seq_len(nrow(metadata))) {
     )
 
     history <- model %>% fit(
-      train_data[-c(1, 2)], # Make sure to exclude ID and interval columns (1, 2)
+      as.matrix(training_data[-c(1, 2)]), # Make sure to exclude ID and interval columns (1, 2)
       train_labels,
       batch_size = 32,
       epochs = 100,
       validation_split = 0,
-      verbose = 0
+      verbose = 1
     )
 
     # To check in with LOO model results
@@ -157,13 +157,16 @@ for (row in seq_len(nrow(metadata))) {
 
     # Evaluate, save results
     eval_result <- model %>%
-      evaluate(test_data[-c(1, 2)], test_labels, verbose = 0)
+      evaluate(as.matrix(test_data[-c(1, 2)]), test_labels, verbose = 0)
 
     # Make predictions
     predicted_obs <- test_data %>%
-      select(ID, interval, outcome = metaparams$outcome) %>%
-      distinct() %>%
-      mutate(predicted = as.numeric(predict(model, test_data[-c(1, 2)])))
+      select(ID, interval) %>%
+      # distinct() %>%
+      mutate(
+        outcome = test_labels,
+        predicted = as.numeric(predict(model, as.matrix(test_data[-c(1, 2)])))
+      )
 
     # prediction rmse differs from result of evaluate() o_O
     prediction_rmse <- predicted_obs %>%
@@ -205,5 +208,5 @@ for (row in seq_len(nrow(metadata))) {
 
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
-pushoverr::pushover(glue::glue("Cross validation is done! Took {took}"), title = "Modelling Hell")
+pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
 

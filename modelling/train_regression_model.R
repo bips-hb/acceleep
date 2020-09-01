@@ -20,8 +20,13 @@ FLAGS <- flags(
   flag_numeric("epochs", 20),
   flag_numeric("verbose", 1),
   flag_numeric("validation_split", 0.2),
+  flag_boolean("batch_normalize", TRUE),
   flag_numeric("dense_layers", 2),
-  flag_numeric("dense_units", 128),
+  flag_numeric("dense_units_1", 128), # Units in dense layer 1
+  flag_numeric("dense_units_2", 128), # ... layer 2...
+  flag_numeric("dense_units_3", 128), # etc.
+  flag_numeric("dense_units_4", 128), # ...
+  flag_numeric("dense_units_5", 128), # layer 5
   flag_numeric("dropout_rate", 0.2),
   flag_boolean("callback_reduce_lr", FALSE),
   flag_numeric("callback_reduce_lr_patience", 3),
@@ -58,12 +63,20 @@ with(strategy$scope(), {
   # Add additional dense layers before the last dense layer
   for (dense_layer in seq_len(FLAGS$dense_layers)) {
 
+    # layer_dense_units <- FLAGS$dense_units
+    layer_dense_units <- FLAGS[[glue::glue("dense_units_{dense_layer}")]]
+
     if (dense_layer == 1) {
       model %>%
-        layer_dense(units = FLAGS$dense_units, activation = "relu", input_shape = 30)
+        layer_dense(units = layer_dense_units, activation = "relu", input_shape = 30)
     } else {
       model %>%
-        layer_dense(units = FLAGS$dense_units, activation = "relu")
+        layer_dense(units = layer_dense_units, activation = "relu")
+    }
+
+    if (FLAGS$batch_normalize) {
+      model %>%
+        layer_batch_normalization()
     }
 
     if (FLAGS$dropout_rate > 0) {

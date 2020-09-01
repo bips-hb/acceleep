@@ -212,5 +212,4 @@ for (row in seq_len(nrow(metadata))) {
 
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
-pushoverr::pushover(glue::glue("Cross validation is done! Took {took}"), title = "Modelling Hell")
-
+pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
