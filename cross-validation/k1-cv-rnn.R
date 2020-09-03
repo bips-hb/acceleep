@@ -7,6 +7,10 @@ reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 
 # The first python-based action after session restart always fails:
 reticulate:::ensure_python_initialized()
+reticulate::dict(python = "says okay")
+
+# If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
+MINI_RUN <- TRUE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -14,10 +18,19 @@ model_kind <- "RNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 
 metadata <- get_overview_table() %>%
-#  filter(model == "geneactiv", placement == "hip_right") %>%
   distinct(model, placement) %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
   mutate(res = 1)
+
+if (MINI_RUN) {
+  cliapp::cli_alert_warning("Only running on GENEActiv (right hip) with kJ!")
+
+  metadata <- metadata %>%
+    filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+} else {
+  cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
+}
+
 
 # Big loop over accelerometers, placements, outcomes
 for (row in seq_len(nrow(metadata))) {
@@ -114,7 +127,7 @@ for (row in seq_len(nrow(metadata))) {
           return_sequences = FALSE
         ) %>%
         layer_dropout(rate = 0.2)  %>%
-        layer_dense(activation = "relu", units = 64)  %>%
+        layer_dense(activation = "relu", units = 128)  %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 64) %>%
         layer_dropout(rate = 0.2) %>%
@@ -153,21 +166,25 @@ for (row in seq_len(nrow(metadata))) {
 
     current_result <- tibble::tibble(
       left_out = i,
-      rmse = sqrt(eval_result[["loss"]]),
-      prediction_rmse = prediction_rmse,
-      # mse = eval_result[["loss"]],
-      # mae = eval_result[["mae"]],
+      rmse = prediction_rmse,
+      eval_rmse = sqrt(eval_result[["loss"]]),
       predicted_obs = list(predicted_obs)
     )
 
     cv_result <- bind_rows(cv_result, current_result)
+
+    # Save per-subject model maybe?
+    out_dir_models <- here::here("output", "cross-validation", model_kind, run_start, "models")
+    if (!fs::dir_exists(out_dir_models)) fs::dir_create(out_dir_models)
+    filename_model <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-LOSO_{i}-{run_start}.hdf5")
+    save_model_hdf5(model, filepath = fs::path(out_dir_models, filename_model))
   }
 
 
   # Save result tibble
   filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{run_start}.rds")
 
-  out_dir <- here::here("output", "cross-validation", run_start)
+  out_dir <- here::here("output", "cross-validation", model_kind, run_start)
   if (!fs::dir_exists(out_dir)) fs::dir_create(out_dir)
 
   # Save CV RMSE results
@@ -179,5 +196,5 @@ for (row in seq_len(nrow(metadata))) {
 
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
-pushoverr::pushover(glue::glue("{model_kind} Cross validation is done! Took {took}"), title = "Modelling Hell")
+pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
 

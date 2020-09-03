@@ -183,8 +183,6 @@ for (row in seq_len(nrow(metadata))) {
       left_out = i,
       rmse = prediction_rmse,
       eval_rmse = sqrt(eval_result[["loss"]]),
-      # mse = eval_result[["loss"]],
-      # mae = eval_result[["mae"]],
       predicted_obs = list(predicted_obs)
     )
 
