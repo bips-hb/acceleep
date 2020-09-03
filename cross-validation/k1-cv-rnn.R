@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -120,6 +120,7 @@ for (row in seq_len(nrow(metadata))) {
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = TRUE
         ) %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_lstm(
           units = 256, input_shape = dim(train_data_array)[c(2, 3)],
@@ -127,10 +128,13 @@ for (row in seq_len(nrow(metadata))) {
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = FALSE
         ) %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 128)  %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 64) %>%
+        # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output", activation = "linear")
     # })
@@ -146,13 +150,14 @@ for (row in seq_len(nrow(metadata))) {
       y = train_labels,
       batch_size = 16,
       epochs = 100,
-      # validation_split = 0,
-      validation_data =
-        list(
-          test_data_array,
-          test_labels
-        ),
-      verbose = 1
+      validation_split = 0,
+      # Uncomment the following to monitor validation error during training w/ verbose = 1
+      # validation_data =
+      #   list(
+      #     test_data_array,
+      #     test_labels
+      #   ),
+      verbose = 0
     )
 
     # Evaluate, save results
@@ -204,3 +209,4 @@ tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
 pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
 
+cuda_close_device()

@@ -123,30 +123,31 @@ for (row in seq_len(nrow(metadata))) {
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
-        # L1
+        # L1 --
         layer_dense(
           activation = "relu", units = 256
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # L2
+        # L2 --
         layer_dense(
           activation = "relu", units = 128
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # L3
+        # L3 --
         layer_dense(
           activation = "relu", units = 64
         )  %>%
-        # layer_batch_normalization() %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # L4
-        layer_dense(
-          activation = "relu", units = 32
-        ) %>%
+        # L4 --
+        # layer_dense(
+        #   activation = "relu", units = 64
+        # ) %>%
         # layer_batch_normalization() %>%
-        layer_dropout(rate = 0.2) %>%
+        # layer_dropout(rate = 0.2) %>%
+        # Output layer
         layer_dense(units = 1, name = "output", activation = "linear")
     })
 
@@ -214,7 +215,6 @@ for (row in seq_len(nrow(metadata))) {
   # Save CV RMSE results
   saveRDS(object = cv_result, file = fs::path(out_dir, filename))
 
-
   # Write model structure to plain text file
   capture.output(summary(model), file =  fs::path(out_dir, fs::path_ext_set(filename, "txt")))
 }
@@ -223,3 +223,4 @@ tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
 pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
 
+cuda_close_device()

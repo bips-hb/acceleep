@@ -62,8 +62,15 @@ with(strategy$scope(), {
   # Add additional dense layers before the last dense layer
   for (dense_layer in seq_len(FLAGS$dense_layers)) {
 
+    cliapp::cli_alert_info("Dense layer {dense_layer} of {FLAGS$dense_layers}")
+
     # layer_dense_units <- FLAGS$dense_units
     layer_dense_units <- FLAGS[[glue::glue("dense_units_{dense_layer}")]]
+
+    # If this layer has no units, skip to the next bit
+    if (layer_dense_units == 0) {
+      next
+    }
 
     if (dense_layer == 1) {
       model %>%
