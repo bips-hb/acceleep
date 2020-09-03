@@ -16,6 +16,7 @@ tick <- Sys.time()
 # Declaring metadata ----
 model_kind <- "DNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
+cliapp::cli_alert_info("Starting {model_kind} LOSO-CV on {run_start}")
 
 metadata <- get_overview_table() %>%
   distinct(model, placement) %>%

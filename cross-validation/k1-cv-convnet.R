@@ -10,12 +10,13 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
 model_kind <- "CNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
+cliapp::cli_alert_info("Starting {model_kind} LOSO-CV on {run_start}")
 
 metadata <- get_overview_table() %>%
   distinct(model, placement) %>%
