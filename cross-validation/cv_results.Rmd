@@ -1,0 +1,68 @@
+---
+title: "LOSO-CV Results"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(acceleep)
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+
+theme_set(hrbrthemes::theme_ipsum())
+```
+
+```{r read-data}
+cv_files_lm <- fs::dir_ls(here::here("output/cross-validation/LM/20200901170538/"), glob = "*.rds")
+
+read_cv_results <- function(path) {
+  results <- purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
+  tibble::tibble(
+    file = .x,
+    data = list(readRDS(.x) %>% filter(!is.na(left_out)))
+  )
+}) %>%
+  mutate(
+    file = fs::path_file(file) %>% fs::path_ext_remove(),
+    mean_rmse = purrr::map_dbl(data, ~mean(.x$rmse)),
+    median_rmse = purrr::map_dbl(data, ~median(.x$rmse)),
+    sd_rmse = purrr::map_dbl(data, ~sd(.x$rmse))
+  ) %>%
+  tidyr::separate(
+    col = file,
+    into = c("folds", "method", "model_kind", "model", "placement", "outcome", "res", "timestamp"),
+    sep = "-"
+  ) %>%
+  mutate(
+    model = label_accel_models(model),
+    placement = purrr::map_chr(placement, label_placement),
+    accel = glue::glue("{model} ({placement})")
+  )
+}
+
+cv_results_lm <- read_cv_results(here::here("output/cross-validation/LM/20200901170538/"))
+cv_results_dnn <- read_cv_results(here::here("output/cross-validation/DNN/20200901170611/"))
+
+cv_results <- bind_rows(
+  cv_results_lm,
+  cv_results_dnn
+) %>%
+  mutate(
+    accel_model = glue::glue("{model} ({placement})")
+  )
+
+```
+
+## Boxplot
+
+```{r boxplot}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = model_kind, y = rmse)) +
+  facet_grid(cols = vars(accel_model), rows = vars(outcome), scales = "free_y") +
+  geom_boxplot() +
+  stat_summary(geom = "point", fun = mean, color = "red")
+```
+

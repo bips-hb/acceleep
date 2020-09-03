@@ -38,7 +38,7 @@ FLAGS <- flags(
   flag_numeric("dropout_rate", 0.2),
   flag_boolean("batch_normalize", TRUE),
   flag_numeric("weight_decay_conv", 0.01), # default value for regularize_l2()
-  flag_numeric("weight_decay_dense", 0.01), # default value for regularize_l2()
+  # flag_numeric("weight_decay_dense", 0.01), # default value for regularize_l2()
   flag_string("conv1d_reduction", "maxpooling"),
   flag_boolean("callback_reduce_lr", FALSE),
   flag_numeric("callback_reduce_lr_patience", 3),
@@ -140,7 +140,7 @@ with(strategy$scope(), {
     model %>%
       layer_dense(
         units = layer_dense_units,
-        kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_dense),
+        # kernel_regularizer = regularizer_l2(l = FLAGS$weight_decay_dense),
         activation = "relu"
         )
 

@@ -674,9 +674,6 @@ keras_prep_regression <- function(
     full_data, random_seed = random_seed, val_split = val_split
   )
 
-  # Summarization
-  # c(training_data, validation_data) %<-% summarize_accelerometry(training_data, validation_data)
-
   # Split into data and labels
   # Keep ID and interval for easier predictions afterwards
   # Drop first two columns when feeding to keras: as.matrix(train_data[-c(1,2)])
@@ -699,6 +696,7 @@ keras_prep_regression <- function(
       select(-c("ID", "interval")) %>%
       purrr::map_dbl(sd)
 
+    # Important to exclude columns 1 + 2 (ID, interval), quadruple check column ordering
     training_data[-c(1, 2)] <- scale(training_data[-c(1, 2)], center = training_means, scale =  training_sds)
     validation_data[-c(1, 2)] <- scale(validation_data[-c(1, 2)], center = training_means, scale =  training_sds)
   }

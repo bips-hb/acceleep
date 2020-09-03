@@ -122,14 +122,14 @@ for (row in seq_len(nrow(metadata))) {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
           filters = 64, kernel_size = 20, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.05),
+          kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 32, kernel_size = 10, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.05)
+          filters = 64, kernel_size = 20, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
         layer_global_max_pooling_1d() %>%
@@ -191,7 +191,7 @@ for (row in seq_len(nrow(metadata))) {
     cv_result <- bind_rows(cv_result, current_result)
 
     # Save per-subject model maybe?
-    out_dir_models <- here::here("output", "cross-validation", run_start, "models")
+    out_dir_models <- here::here("output", "cross-validation", model_kind, run_start, "models")
     if (!fs::dir_exists(out_dir_models)) fs::dir_create(out_dir_models)
     filename_model <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-LOSO_{i}-{run_start}.hdf5")
     save_model_hdf5(model, filepath = fs::path(out_dir_models, filename_model))
@@ -201,7 +201,7 @@ for (row in seq_len(nrow(metadata))) {
   # Save result tibble
   filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{run_start}.rds")
 
-  out_dir <- here::here("output", "cross-validation", run_start)
+  out_dir <- here::here("output", "cross-validation", model_kind, run_start)
   if (!fs::dir_exists(out_dir)) fs::dir_create(out_dir)
 
   # Save CV RMSE results

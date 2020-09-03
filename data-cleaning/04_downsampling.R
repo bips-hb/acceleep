@@ -57,11 +57,6 @@ tock <- Sys.time()
 
 # Create summarized dataset for regression/RF models -----
 
-###
-### Doesn't pan out because train/test data should be summarized separately but with shared params,
-### pre-aggregating would also require pre-defining train/test sets :(
-###
-
 get_overview_table() %>%
   distinct(model, placement) %>%
   mutate(res = ifelse(model == "activpal", 20, 100)) %>%

@@ -22,7 +22,7 @@ rf_results_paper <- tibble::tribble(
   "MET",    "geneactiv", "wrist_right", 1.48,       0.37
 )
 
-cv_files <- fs::dir_ls(here::here("output/cross-validation/LM/20200901142633/"), glob = "*.rds")
+cv_files <- fs::dir_ls(here::here("output/cross-validation/LM/20200901170538/"), glob = "*.rds")
 
 results <- purrr::map_df(cv_files, ~{
   tibble::tibble(
