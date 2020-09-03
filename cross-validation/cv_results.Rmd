@@ -15,9 +15,11 @@ theme_set(hrbrthemes::theme_ipsum())
 ```
 
 ```{r read-data}
-cv_files_lm <- fs::dir_ls(here::here("output/cross-validation/LM/20200901170538/"), glob = "*.rds")
-
 read_cv_results <- function(path) {
+  # browser()
+  # get latest run
+  path <- sort(fs::dir_ls(path))[[1]]
+  
   results <- purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
   tibble::tibble(
     file = .x,
@@ -42,16 +44,15 @@ read_cv_results <- function(path) {
   )
 }
 
-cv_results_lm <- read_cv_results(here::here("output/cross-validation/LM/20200901170538/"))
-cv_results_dnn <- read_cv_results(here::here("output/cross-validation/DNN/20200901170611/"))
+cv_results_lm <- read_cv_results(here::here("output/cross-validation/LM/"))
+cv_results_dnn <- read_cv_results(here::here("output/cross-validation/DNN/"))
+cv_results_cnn <- read_cv_results(here::here("output/cross-validation/CNN/"))
 
 cv_results <- bind_rows(
   cv_results_lm,
-  cv_results_dnn
-) %>%
-  mutate(
-    accel_model = glue::glue("{model} ({placement})")
-  )
+  cv_results_dnn,
+  cv_results_cnn
+)
 
 ```
 
@@ -61,8 +62,26 @@ cv_results <- bind_rows(
 cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = model_kind, y = rmse)) +
-  facet_grid(cols = vars(accel_model), rows = vars(outcome), scales = "free_y") +
+  facet_grid(cols = vars(accel), rows = vars(outcome), scales = "free_y") +
   geom_boxplot() +
   stat_summary(geom = "point", fun = mean, color = "red")
+```
+
+
+## Table
+
+```{r table}
+cv_results %>%
+  transmute(
+    model_kind = model_kind,
+    accel = accel,
+    outcome = outcome,
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
+  ) %>%
+  tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
+  #slice(c(3, 1, 2)) %>%
+  kable(caption = glue::glue("LOSO-CV results, Mean RMSE (SD)")) %>%
+  kable_styling()
+
 ```
 

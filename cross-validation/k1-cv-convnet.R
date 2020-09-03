@@ -121,7 +121,7 @@ for (row in seq_len(nrow(metadata))) {
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 20, activation = "relu",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
