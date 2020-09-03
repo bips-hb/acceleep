@@ -36,6 +36,8 @@ if (MINI_RUN) {
 for (row in seq_len(nrow(metadata))) {
   # hold current metadata
   metaparams <- metadata[row, ]
+  cliapp::cli_alert_info("Starting {model_kind} on {metaparams$model} ({metaparams$placement}) / {metaparams$outcome}")
+
   # browser()
 
   # Collecting original training data only tpo get it's subject IDs
