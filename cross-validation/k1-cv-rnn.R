@@ -109,9 +109,10 @@ for (row in seq_len(nrow(metadata))) {
 
     # Modelling ----
 
-    strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
+    # Not training on multi-gpu b/c weird "Unknown: CUDNN_STATUS_BAD_PARAM" error I don't understand
+    # strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    with(strategy$scope(), {
+    # with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_lstm(
           units = 256, input_shape = dim(train_data_array)[c(2, 3)],
@@ -132,7 +133,7 @@ for (row in seq_len(nrow(metadata))) {
         layer_dense(activation = "relu", units = 64) %>%
         layer_dropout(rate = 0.2) %>%
         layer_dense(units = 1, name = "output", activation = "linear")
-    })
+    # })
 
     model %>% compile(
       loss = "mse",
@@ -141,12 +142,17 @@ for (row in seq_len(nrow(metadata))) {
     )
 
     history <- model %>% fit(
-      train_data_array,
-      train_labels,
-      batch_size = 32,
-      epochs = 150,
-      validation_split = 0,
-      verbose = 0
+      x = train_data_array,
+      y = train_labels,
+      batch_size = 16,
+      epochs = 100,
+      # validation_split = 0,
+      validation_data =
+        list(
+          test_data_array,
+          test_labels
+        ),
+      verbose = 1
     )
 
     # Evaluate, save results
