@@ -34,7 +34,6 @@ FLAGS <- flags(
   flag_numeric("callback_reduce_lr_min_delta", 0.01),
   flag_numeric("callback_reduce_lr_min_lr", 1e-8),
   flag_string("model_kind", "DNN") # Dummy flag just in case for sorting later
-
 )
 
 # Data Preparation ----

@@ -22,7 +22,7 @@ training_run(
     dense_units_1 = 256,
     dense_units_2 = 128,
     dense_units_3 = 64,
-    dense_units_4 = 32,
+    dense_units_4 = 64,
     # dense_units_5 = 256,
     dropout_rate = 0.2,
     validation_split = 0.2,
@@ -64,7 +64,8 @@ tuning_runs <- tuning_run(
 pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
 # Quick look at runs ----
-runs <- ingest_runs()
+runs <- ingest_runs() %>%
+  arrange(desc(run_dir))
 
 runs %>%
   slice_min(rmse, n = 1) %>%
