@@ -13,13 +13,17 @@ combine_clean_data(
 get_combined_data(
   model = c("actigraph", "activpal", "geneactiv"),
   placement = c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right"),
-  res = 100
+  res = 100,
+  summarized = FALSE
 )
 }
 \arguments{
 \item{model}{Accelerometer model, one of \code{c("actigraph", "activpal", "geneactiv")}.}
 
 \item{placement}{One of \code{c("hip_left", "hip_right", "thigh_right", "wrist_left", "wrist_right")}.}
+
+\item{summarized}{\verb{[FALSE]} If \code{TRUE}, \code{res} is ignored and the pre-summarized data is loaded,
+which is suitable for regular regression models.}
 }
 \value{
 A tibble. If combination of \code{model} and \code{placement} is invalid, an empty \code{data.frame}.

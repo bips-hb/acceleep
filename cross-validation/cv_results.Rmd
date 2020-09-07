@@ -9,44 +9,16 @@ editor_options:
 library(acceleep)
 library(ggplot2)
 library(dplyr)
+library(tidyr)
 library(kableExtra)
 
 theme_set(hrbrthemes::theme_ipsum())
 ```
 
 ```{r read-data}
-read_cv_results <- function(path) {
-  # browser()
-  # get latest run
-  path <- rev(sort(fs::dir_ls(path)))[[1]]
-  
-  purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
-    tibble::tibble(
-      file = .x,
-      data = list(readRDS(.x) %>% filter(!is.na(left_out)))
-    )
-  }) %>%
-    mutate(
-      file = fs::path_file(file) %>% fs::path_ext_remove(),
-      mean_rmse = purrr::map_dbl(data, ~mean(.x$rmse)),
-      median_rmse = purrr::map_dbl(data, ~median(.x$rmse)),
-      sd_rmse = purrr::map_dbl(data, ~sd(.x$rmse))
-    ) %>%
-    tidyr::separate(
-      col = file,
-      into = c("folds", "method", "model_kind", "model", "placement", "outcome", "res", "timestamp"),
-      sep = "-"
-    ) %>%
-    mutate(
-      model = label_accel_models(model),
-      placement = purrr::map_chr(placement, label_placement),
-      accel = glue::glue("{model} ({placement})")
-    )
-}
-
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
-  here::here("output/cross-validation", c("LM", "DNN", "CNN", "RNN")),
+  here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
   read_cv_results
 )
 ```
@@ -56,10 +28,17 @@ cv_results <- purrr::map_df(
 ```{r boxplot}
 cv_results %>%
   tidyr::unnest(data) %>%
-  ggplot(aes(x = model_kind, y = rmse)) +
-  facet_grid(cols = vars(accel), rows = vars(outcome), scales = "free_y") +
-  geom_boxplot() +
-  stat_summary(geom = "point", fun = mean, color = "red")
+  ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "Y")
 ```
 
 
@@ -70,13 +49,38 @@ cv_results %>%
   transmute(
     model_kind = model_kind,
     accel = accel,
-    outcome = outcome,
+    outcome_unit = outcome_unit,
     measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
   ) %>%
   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
   #slice(c(3, 1, 2)) %>%
   kable(caption = glue::glue("LOSO-CV results, Mean RMSE (SD)")) %>%
-  kable_styling()
+  kable_styling() %>%
+  collapse_rows(columns = 1)
 
+```
+
+## Per-Model Predictions
+
+```{r pred-cnn}
+vec_model_kind <- unique(cv_results$model_kind)
+vec_accel <- unique(cv_results$accel)
+vec_outcome_unit <- unique(cv_results$outcome_unit)
+
+cv_results %>%
+  filter(model_kind == "CNN", accel == first(accel), outcome_unit == first(outcome_unit)) %>%
+  unnest(data) %>%
+  unnest(predicted_obs) %>%
+  pivot_longer(cols = c(outcome, predicted)) %>%
+  ggplot(aes(x = interval, y = value, color = name)) +
+  facet_wrap(~left_out, scales = "free_x") +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = glue::glue("Per-Subject Predictions for"),
+    subtitle = "Predictions based on model for which respective subject is not in training data",
+    x = "Interval", y = "Outcome Unit", color = ""
+  ) +
+  theme(legend.position = "top")
 ```
 

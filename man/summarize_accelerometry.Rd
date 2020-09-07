@@ -4,7 +4,11 @@
 \alias{summarize_accelerometry}
 \title{Summarize accelerometry data}
 \usage{
-summarize_accelerometry(training_data, validation_data = NULL)
+summarize_accelerometry(
+  training_data,
+  validation_data = NULL,
+  normalize = TRUE
+)
 }
 \arguments{
 \item{training_data}{Datasets as created by e.g. \verb{[make_initial_splits()]}.}
