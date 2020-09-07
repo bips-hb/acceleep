@@ -130,7 +130,7 @@ for (row in seq_len(nrow(metadata))) {
         layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 20, activation = "relu",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
