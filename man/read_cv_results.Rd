@@ -4,10 +4,12 @@
 \alias{read_cv_results}
 \title{Read CV results and bind them together}
 \usage{
-read_cv_results(path)
+read_cv_results(path, latest_only = TRUE)
 }
 \arguments{
 \item{path}{Path to CV results, e.g. \code{here::here("output/cross-validation/CNN")}.}
+
+\item{latest_only}{\verb{[TRUE]} Only return the latest run results.}
 }
 \value{
 A tibble

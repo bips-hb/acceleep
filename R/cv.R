@@ -1,7 +1,7 @@
 #' Read CV results and bind them together
 #'
 #' @param path Path to CV results, e.g. `here::here("output/cross-validation/CNN")`.
-#'
+#' @param latest_only `[TRUE]` Only return the latest run results.
 #' @return A tibble
 #' @export
 #'
@@ -13,10 +13,15 @@
 #'   read_cv_results
 #' )
 #' }
-read_cv_results <- function(path) {
+read_cv_results <- function(path, latest_only = TRUE) {
   # browser()
   # get latest run
-  path <- rev(sort(fs::dir_ls(path)))[[1]]
+
+  path <- fs::dir_ls(path)
+
+  if (latest_only) {
+    path <- rev(sort(path))[[1]]
+  }
 
   purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
     tibble::tibble(

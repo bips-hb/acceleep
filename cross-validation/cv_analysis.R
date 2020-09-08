@@ -92,6 +92,31 @@ cv_results %>%
   #footnote("Bold: Minimal RMSE per Accelerometer and Outcome") %>%
   collapse_rows(columns = 1)
 
+# Closer look at CNNs ----
+
+cnn_results <- purrr::map_df(
+ here::here("output/cross-validation/CNN"),
+  ~read_cv_results(.x, latest_only = FALSE)
+)
+
+cnn_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = reorder(timestamp, rmse), y = rmse)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "Y") +
+  theme(axis.text.x = element_text(angle = 90))
+
+
+
+
 # Per model per subject predictions -----
 
 vec_model_kind <- unique(cv_results$model_kind)
