@@ -44,7 +44,9 @@ read_cv_results <- function(path, latest_only = TRUE) {
       accel_id = glue::glue("{.data$model}_{.data$placement}"),
       model = label_accel_models(.data$model),
       placement = purrr::map_chr(.data$placement, label_placement),
-      accel = glue::glue("{model} ({placement})")
+      accel = glue::glue("{model} ({placement})")# ,
+      # model_note = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "model_note", .default = NA))),
+      # mini_run = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "mini_run", .default = NA)))
     ) %>%
     dplyr::rename(outcome_unit = .data$outcome)
 }
