@@ -25,18 +25,19 @@ training_run(
     conv1d_layers = 2,
     # conv1d_filters = 64,
     conv1d_filters_1 = 64,
-    conv1d_filters_2 = 64,
+    conv1d_filters_2 = 32,
     #conv1d_filters_3 = 32,
     # conv1d_kernel_size = 18,
-    conv1d_kernel_size_1 = 50,
-    conv1d_kernel_size_2 = 50,
+    conv1d_kernel_size_1 = 25,
+    conv1d_kernel_size_2 = 20,
     #conv1d_kernel_size_3 = 10,
     conv1d_pool_size = 10,
     conv1d_reduction = "maxpooling",
-    dense_layers = 2,
+    dense_layers = 3,
     # dense_units = 32,
     dense_units_1 = 64,
-    dense_units_2 = 32,
+    dense_units_2 = 64,
+    dense_units_3 = 32,
     dropout_rate = 0.2,
     weight_decay_conv = 0.01,
     # weight_decay_dense = 0.05,
@@ -48,7 +49,7 @@ training_run(
     callback_reduce_lr_min_delta = 0.05
 ))
 
-pushoverr::pushover("Runs are done!", title = "Modelling Hell")
+# pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
 
 
