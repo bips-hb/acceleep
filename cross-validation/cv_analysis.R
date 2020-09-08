@@ -10,24 +10,8 @@ cv_results <- purrr::map_df(
   read_cv_results
 )
 
-# A plot ----
-cv_results %>%
-  tidyr::unnest(data) %>%
-  ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
-  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
-  labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-    x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
-  ) +
-  hrbrthemes::theme_ipsum_pub(grid = "Y")
 
-ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
-
-# predict() vs evaluate()
+# predict() vs evaluate() ----
 cv_results %>%
   tidyr::unnest(data) %>%
   filter(!is.na(eval_rmse)) %>%
@@ -50,47 +34,6 @@ cv_results %>%
   ) +
   hrbrthemes::theme_ipsum_ps(grid = "Y")
 
-# A table ----
-# cv_results %>%
-#   transmute(
-#     model_kind = model_kind,
-#     accel = accel,
-#     outcome_unit = outcome_unit,
-#     measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
-#   ) %>%
-#   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
-#   #slice(c(3, 1, 2)) %>%
-#   kable(caption = glue::glue("LOSO-CV results, Mean RMSE (SD)")) %>%
-#   kable_styling() %>%
-#   collapse_rows(columns = 1)
-
-cv_results %>%
-  mutate(
-    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
-  ) %>%
-  group_by(accel, outcome_unit) %>%
-  mutate(
-    # min_rmse = min(mean_rmse),
-    is_min_mean_rmse = mean_rmse == min(mean_rmse)
-  ) %>%
-  ungroup() %>%
-  select(
-    model_kind,
-    accel,
-    outcome_unit,
-    measure,
-    is_min_mean_rmse
-  ) %>%
-  mutate(measure = cell_spec(measure, bold = is_min_mean_rmse)) %>%
-  select(-is_min_mean_rmse) %>%
-  pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
-  rename(Accelerometer = accel, Outcome = outcome_unit) %>%
-  kable(
-    caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
-  ) %>%
-  kable_styling() %>%
-  #footnote("Bold: Minimal RMSE per Accelerometer and Outcome") %>%
-  collapse_rows(columns = 1)
 
 # Closer look at CNNs ----
 

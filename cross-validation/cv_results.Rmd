@@ -1,6 +1,12 @@
 ---
 title: "LOSO-CV Results"
-output: html_document
+output: 
+  html_document: 
+    toc: yes
+    fig_width: 10
+    fig.retina: 2
+    device: ragg::agg_png
+    self_contained: no
 editor_options: 
   chunk_output_type: console
 ---
@@ -12,7 +18,7 @@ library(dplyr)
 library(tidyr)
 library(kableExtra)
 
-theme_set(hrbrthemes::theme_ipsum())
+theme_set(hrbrthemes::theme_ipsum_ps())
 ```
 
 ```{r read-data}
@@ -25,7 +31,7 @@ cv_results <- purrr::map_df(
 
 ## Boxplot
 
-```{r boxplot}
+```{r boxplot, fig.width = 20, fig.height=10}
 cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
@@ -38,13 +44,17 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
   ) +
-  hrbrthemes::theme_ipsum_pub(grid = "Y")
+  hrbrthemes::theme_ipsum_ps(grid = "Y")
+
+
+
+# ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
 ```
 
 
-## Table
+## Tables
 
-```{r table}
+```{r table-by-accel}
 cv_results %>%
   transmute(
     model_kind = model_kind,
@@ -53,34 +63,40 @@ cv_results %>%
     measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
   ) %>%
   tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
-  #slice(c(3, 1, 2)) %>%
+  rename(Model = model_kind, Outcome = outcome_unit) %>%
   kable(caption = glue::glue("LOSO-CV results, Mean RMSE (SD)")) %>%
   kable_styling() %>%
   collapse_rows(columns = 1)
-
 ```
 
-## Per-Model Predictions
-
-```{r pred-cnn}
-vec_model_kind <- unique(cv_results$model_kind)
-vec_accel <- unique(cv_results$accel)
-vec_outcome_unit <- unique(cv_results$outcome_unit)
-
+```{r table-by-model}
 cv_results %>%
-  filter(model_kind == "CNN", accel == first(accel), outcome_unit == first(outcome_unit)) %>%
-  unnest(data) %>%
-  unnest(predicted_obs) %>%
-  pivot_longer(cols = c(outcome, predicted)) %>%
-  ggplot(aes(x = interval, y = value, color = name)) +
-  facet_wrap(~left_out, scales = "free_x") +
-  geom_path() +
-  scale_color_brewer(palette = "Dark2") +
-  labs(
-    title = glue::glue("Per-Subject Predictions for"),
-    subtitle = "Predictions based on model for which respective subject is not in training data",
-    x = "Interval", y = "Outcome Unit", color = ""
-  ) +
-  theme(legend.position = "top")
+  mutate(
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
+  ) %>%
+  group_by(accel, outcome_unit) %>%
+  mutate(
+    # min_rmse = min(mean_rmse),
+    is_min_mean_rmse = mean_rmse == min(mean_rmse)
+  ) %>%
+  ungroup() %>%
+  select(
+    model_kind,
+    accel,
+    outcome_unit,
+    measure,
+    is_min_mean_rmse
+  ) %>%
+  mutate(measure = cell_spec(measure, bold = is_min_mean_rmse)) %>%
+  select(-is_min_mean_rmse) %>%
+  pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
+  rename(Accelerometer = accel, Outcome = outcome_unit) %>%
+  kable(
+    caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
+  ) %>%
+  kable_styling() %>%
+  #footnote("Bold: Minimal RMSE per Accelerometer and Outcome") %>%
+  collapse_rows(columns = 1)
 ```
+
 
