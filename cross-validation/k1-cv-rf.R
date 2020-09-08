@@ -124,7 +124,7 @@ for (row in seq_len(nrow(metadata))) {
         predicted = predict(model, test_data[-c(1:2)])[["predictions"]]
       )
 
-    # prediction rmse differs from result of evaluate() o_O
+    # prediction rmse
     prediction_rmse <- predicted_obs %>%
       summarize(rmse = sqrt(mean((predicted - outcome)^2))) %>%
       pull(rmse)
@@ -132,9 +132,6 @@ for (row in seq_len(nrow(metadata))) {
     current_result <- tibble::tibble(
       left_out = i,
       rmse = prediction_rmse,
-      # prediction_rmse = prediction_rmse,
-      # mse = eval_result[["loss"]],
-      # mae = eval_result[["mae"]],
       predicted_obs = list(predicted_obs)
     )
 
