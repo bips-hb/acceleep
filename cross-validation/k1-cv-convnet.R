@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- FALSE
+MINI_RUN <- TRUE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -120,19 +120,19 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF64K20-MP10-CF64K20-GMP-D64-D32-BN"
+    model_note <- "CF64K10-MP10-CF64K10-GMP-D64-D32-BN-E50"
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 20, activation = "relu",
+          filters = 64, kernel_size = 10, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 64, kernel_size = 20, activation = "relu",
+          filters = 64, kernel_size = 10, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
@@ -160,15 +160,15 @@ for (row in seq_len(nrow(metadata))) {
       train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 100,
+      epochs = 50,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      # validation_data =
-      #   list(
-      #     test_data_array,
-      #     test_labels
-      #   ),
-      verbose = 0
+      validation_data =
+        list(
+          test_data_array,
+          test_labels
+        ),
+      verbose = 1
     )
 
     # To check in with LOO model results
