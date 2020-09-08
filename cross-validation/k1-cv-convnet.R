@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -120,33 +120,40 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF64K10-MP10-CF64K10-GMP-D64-D32-BN-E50"
+    model_note <- "CF64K25-MP10-CF32K20-GMP-D64-D64-D32-BN-E50"
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
+        # Conv 1
         layer_conv_1d(
-          filters = 64, kernel_size = 10, activation = "relu",
+          filters = 64, kernel_size = 25, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
+        # MaxPooling 1
         layer_max_pooling_1d(pool_size = 10) %>%
+        # Conv 2
         layer_conv_1d(
-          filters = 64, kernel_size = 10, activation = "relu",
+          filters = 32, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
+        # Global Max Pooling
         layer_global_max_pooling_1d() %>%
-        layer_dense(
-          activation = "relu", units = 64
-        )  %>%
+        # Dense 1
+        layer_dense(activation = "relu", units = 64)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        layer_dense(
-          activation = "relu", units = 32
-        ) %>%
+        # Dense 2
+        layer_dense(activation = "relu", units = 64)  %>%
+        layer_batch_normalization() %>%
+        layer_dropout(rate = 0.2)  %>%
+        # Dense 3
+        layer_dense(activation = "relu", units = 32) %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
+        # Output
         layer_dense(units = 1, name = "output", activation = "linear")
     })
 
@@ -163,12 +170,12 @@ for (row in seq_len(nrow(metadata))) {
       epochs = 50,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      validation_data =
-        list(
-          test_data_array,
-          test_labels
-        ),
-      verbose = 1
+      # validation_data =
+      #   list(
+      #     test_data_array,
+      #     test_labels
+      #   ),
+      verbose = 0
     )
 
     # To check in with LOO model results
