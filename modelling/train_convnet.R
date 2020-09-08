@@ -97,7 +97,7 @@ with(strategy$scope(), {
     # layer_filters <- FLAGS$conv1d_filters
     # layer_kernel_size <- FLAGS$conv1d_kernel_size
 
-    layer_filters <- FLAGS[[glue::glue("conv1d_kernel_size_{conv_layer}")]]
+    layer_filters <- FLAGS[[glue::glue("conv1d_filters_{conv_layer}")]]
     layer_kernel_size <- FLAGS[[glue::glue("conv1d_kernel_size_{conv_layer}")]]
 
 
