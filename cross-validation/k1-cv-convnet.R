@@ -120,17 +120,19 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
+    model_note <- "CF64K20-MP10-CF64K20-GMP-D64-D32-BN"
+
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_conv_1d(
-          filters = 128, kernel_size = 20, activation = "relu",
+          filters = 64, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         layer_max_pooling_1d(pool_size = 10) %>%
         layer_conv_1d(
-          filters = 128, kernel_size = 20, activation = "relu",
+          filters = 64, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
@@ -191,7 +193,9 @@ for (row in seq_len(nrow(metadata))) {
       left_out = i,
       rmse = prediction_rmse,
       eval_rmse = sqrt(eval_result[["loss"]]),
-      predicted_obs = list(predicted_obs)
+      predicted_obs = list(predicted_obs),
+      model_note = model_note,
+      mini_run = MINI_RUN
     )
 
     cv_result <- bind_rows(cv_result, current_result)

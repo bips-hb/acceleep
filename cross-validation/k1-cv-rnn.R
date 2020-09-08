@@ -115,10 +115,12 @@ for (row in seq_len(nrow(metadata))) {
     # Not training on multi-gpu b/c weird "Unknown: CUDNN_STATUS_BAD_PARAM" error I don't understand
     # strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
+    model_note <- "LSTM128-LSTM128-D64-D64"
+
     # with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         layer_lstm(
-          units = 256, input_shape = dim(train_data_array)[c(2, 3)],
+          units = 128, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = TRUE
@@ -126,14 +128,14 @@ for (row in seq_len(nrow(metadata))) {
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_lstm(
-          units = 256, input_shape = dim(train_data_array)[c(2, 3)],
+          units = 128, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = FALSE
         ) %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        layer_dense(activation = "relu", units = 128)  %>%
+        layer_dense(activation = "relu", units = 64)  %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_dense(activation = "relu", units = 64) %>%
@@ -182,7 +184,9 @@ for (row in seq_len(nrow(metadata))) {
       left_out = i,
       rmse = prediction_rmse,
       eval_rmse = sqrt(eval_result[["loss"]]),
-      predicted_obs = list(predicted_obs)
+      predicted_obs = list(predicted_obs),
+      model_note = model_note,
+      mini_run = MINI_RUN
     )
 
     cv_result <- bind_rows(cv_result, current_result)

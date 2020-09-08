@@ -124,6 +124,8 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
+    model_note <- "D256-D128-D64-BN"
+
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # L1 --
@@ -196,7 +198,9 @@ for (row in seq_len(nrow(metadata))) {
       eval_rmse = sqrt(eval_result[["loss"]]),
       # mse = eval_result[["loss"]],
       # mae = eval_result[["mae"]],
-      predicted_obs = list(predicted_obs)
+      predicted_obs = list(predicted_obs),
+      model_note = model_note,
+      mini_run = MINI_RUN
     )
 
     cv_result <- bind_rows(cv_result, current_result)
