@@ -121,6 +121,7 @@ for (row in seq_len(nrow(metadata))) {
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
     model_note <- "CF128K9-MP2-CF64K9-GMP-D64-D32-BN-E50"
+    model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
@@ -196,13 +197,17 @@ for (row in seq_len(nrow(metadata))) {
       summarize(rmse = sqrt(mean((predicted - outcome)^2))) %>%
       pull(rmse)
 
+    model_tock <- Sys.time()
+    model_took <- hms::hms(seconds = round(as.numeric(difftime(model_tock, model_tick, units = "secs"))))
+
     current_result <- tibble::tibble(
       left_out = i,
       rmse = prediction_rmse,
       eval_rmse = sqrt(eval_result[["loss"]]),
       predicted_obs = list(predicted_obs),
       model_note = model_note,
-      mini_run = MINI_RUN
+      mini_run = MINI_RUN,
+      model_took = model_took
     )
 
     cv_result <- bind_rows(cv_result, current_result)

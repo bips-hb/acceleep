@@ -101,6 +101,7 @@ for (row in seq_len(nrow(metadata))) {
     dim(test_data)
 
     # Modelling ----
+    model_tick <- Sys.time()
 
     model <- lm(outcome ~ ., data = training_data[-c(1:2)])
 
@@ -120,13 +121,14 @@ for (row in seq_len(nrow(metadata))) {
       summarize(rmse = sqrt(mean((predicted - outcome)^2))) %>%
       pull(rmse)
 
+    model_tock <- Sys.time()
+    model_took <- hms::hms(seconds = round(as.numeric(difftime(model_tock, model_tick, units = "secs"))))
+
     current_result <- tibble::tibble(
       left_out = i,
       rmse = prediction_rmse,
-      # prediction_rmse = prediction_rmse,
-      # mse = eval_result[["loss"]],
-      # mae = eval_result[["mae"]],
-      predicted_obs = list(predicted_obs)
+      predicted_obs = list(predicted_obs),
+      model_took = model_took
     )
 
     cv_result <- bind_rows(cv_result, current_result)

@@ -102,6 +102,7 @@ for (row in seq_len(nrow(metadata))) {
     dim(test_data)
 
     # Modelling ----
+    model_tick <- Sys.time()
 
     # According to Marvin's code (compare_models.R)
     num_trees <- switch(
@@ -129,10 +130,14 @@ for (row in seq_len(nrow(metadata))) {
       summarize(rmse = sqrt(mean((predicted - outcome)^2))) %>%
       pull(rmse)
 
+    model_tock <- Sys.time()
+    model_took <- hms::hms(seconds = round(as.numeric(difftime(model_tock, model_tick, units = "secs"))))
+
     current_result <- tibble::tibble(
       left_out = i,
       rmse = prediction_rmse,
-      predicted_obs = list(predicted_obs)
+      predicted_obs = list(predicted_obs),
+      model_took = model_took
     )
 
     cv_result <- bind_rows(cv_result, current_result)
