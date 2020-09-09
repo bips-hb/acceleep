@@ -22,13 +22,18 @@ label_accel_models <- function(x) {
 #' @return A `character()` of the same length as the input
 #' @export
 #' @importFrom stringr str_split str_c
+#' @importFrom purrr map_chr
 #' @examples
 #' label_placement("hip_right") # -> "right hip"
 #' label_placement("thigh_right") # -> "right thigh"
 #' label_placement("wrist_left") # -> "left wrist"
 label_placement <- function(x) {
-  x %>%
-    stringr::str_split("_", simplify = TRUE) %>%
-    rev() %>%
-    stringr::str_c(collapse = " ")
+
+  purrr::map_chr(x, ~{
+    .x %>%
+      stringr::str_split("_", simplify = TRUE) %>%
+      rev() %>%
+      stringr::str_c(collapse = " ")
+  })
+
 }

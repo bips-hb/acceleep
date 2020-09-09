@@ -41,11 +41,12 @@ read_cv_results <- function(path, latest_only = TRUE) {
       sep = "-"
     ) %>%
     dplyr::mutate(
+      cv_count = purrr::map_dbl(.data$data, nrow),
       accel_id = glue::glue("{.data$model}_{.data$placement}"),
-      model = label_accel_models(.data$model),
-      placement = purrr::map_chr(.data$placement, label_placement),
-      accel = glue::glue("{model} ({placement})")# ,
-      # model_note = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "model_note", .default = NA))),
+      # accel = glue::glue("{label_accel_models(.data$model)} ({ purrr::map_chr(.data$placement, label_placement)})"),
+      accel = glue::glue("{label_accel_models(.data$model)} ({label_placement(.data$placement)})"),
+      model_spec = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "model_note", .default = NA))),
+      model_spec = ifelse(is.na(model_spec), model_kind, model_spec),
       # mini_run = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "mini_run", .default = NA)))
     ) %>%
     dplyr::rename(outcome_unit = .data$outcome)

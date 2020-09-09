@@ -43,6 +43,14 @@ cnn_results <- purrr::map_df(
 )
 
 cnn_results %>%
+  unnest(data) %>%
+  filter(outcome_unit == "kJ") %>%
+  ggplot(aes(x = accel, y = rmse)) +
+  facet_wrap(~left_out) +
+  geom_boxplot()
+
+# By accelerometer
+cnn_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = reorder(timestamp, rmse), y = rmse)) +
   facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
@@ -57,6 +65,59 @@ cnn_results %>%
   hrbrthemes::theme_ipsum_pub(grid = "Y") +
   theme(axis.text.x = element_text(angle = 90))
 
+# By unit
+cnn_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(timestamp, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "X")
+
+# Closer look at DNNs ----
+
+dnn_results <- purrr::map_df(
+  here::here("output/cross-validation/DNN"),
+  ~read_cv_results(.x, latest_only = FALSE)
+)
+
+
+# By accelerometer
+dnn_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = reorder(timestamp, rmse), y = rmse)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "Y") +
+  theme(axis.text.x = element_text(angle = 90))
+
+# By unit
+dnn_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(timestamp, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "X")
 
 
 
@@ -66,10 +127,10 @@ vec_model_kind <- unique(cv_results$model_kind)
 vec_accel <- unique(cv_results$accel)
 vec_outcome_unit <- unique(cv_results$outcome_unit)
 
-
 for (current_model_kind in vec_model_kind) {
   for (current_accel in vec_accel) {
     for (current_outcome_unit in vec_outcome_unit) {
+
       current_result <- cv_results %>%
         filter(
           model_kind == .env$current_model_kind,
@@ -80,9 +141,6 @@ for (current_model_kind in vec_model_kind) {
       # out_dir <- here::here("output", "cross-validation", current_model_kind, current_result$timestamp, "plots")
       out_dir <- here::here("output", "cross-validation", "plots")
       filename <- glue::glue("k1-cv-predictions-{current_model_kind}-{current_result$accel_id}-{current_result$outcome_unit}-{current_result$res}-{current_result$timestamp}.png")
-
-      # print(out_dir)
-      # print(filename)
 
       cliapp::cli_alert_info("Plotting {current_model_kind} / {current_accel} / {current_outcome_unit} to {filename}")
 
@@ -125,9 +183,9 @@ for (current_model_kind in vec_model_kind) {
   }
 }
 
-
-ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
-
-
-filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{run_start}.rds")
+#
+# ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
+#
+#
+# filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{run_start}.rds")
 

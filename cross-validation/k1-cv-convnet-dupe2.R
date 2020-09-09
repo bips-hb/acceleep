@@ -120,7 +120,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF128K9-MP2-CF64K9-GMP-D64-D32-BN-E50"
+    model_note <- "CF128K9-MP5-CF64K9-GMP-D64-D32-BN-E50"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
@@ -133,7 +133,7 @@ for (row in seq_len(nrow(metadata))) {
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(pool_size = 2) %>%
+        layer_max_pooling_1d(pool_size = 5) %>%
         # Conv 2
         layer_conv_1d(
           filters = 64, kernel_size = 9, activation = "relu",
