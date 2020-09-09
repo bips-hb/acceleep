@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
