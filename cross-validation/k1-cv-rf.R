@@ -105,10 +105,11 @@ for (row in seq_len(nrow(metadata))) {
     model_tick <- Sys.time()
 
     # According to Marvin's code (compare_models.R)
+    # as per conversation w/ Marvin: 500 trees for all models!
     num_trees <- switch(
       metaparams$outcome,
       "kJ" = 500,
-      "MET" = 50,
+      "MET" = 500,
       "Jrel" = 500
     )
 
