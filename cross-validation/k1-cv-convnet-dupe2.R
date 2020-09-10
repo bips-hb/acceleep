@@ -127,31 +127,33 @@ for (row in seq_len(nrow(metadata))) {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
+          name = "Conv1-F128K9-L2",
           filters = 128, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(pool_size = 5) %>%
+        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 5) %>%
         # Conv 2
         layer_conv_1d(
+          name = "Conv2-F128K9-L2",
           filters = 64, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
         # Global Max Pooling
-        layer_global_max_pooling_1d() %>%
+        layer_global_max_pooling_1d(name = "GlobalMaxPooling1D") %>%
         # Dense 1
-        layer_dense(activation = "relu", units = 64)  %>%
+        layer_dense(name = "Dense1-64", activation = "relu", units = 64)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 2
-        layer_dense(activation = "relu", units = 32)  %>%
+        layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 3
-        # layer_dense(activation = "relu", units = 32) %>%
+        # layer_dense(name = "Dense3-32", activation = "relu", units = 32) %>%
         # layer_batch_normalization() %>%
         # layer_dropout(rate = 0.2) %>%
         # Output

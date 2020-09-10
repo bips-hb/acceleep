@@ -129,7 +129,7 @@ for (row in seq_len(nrow(metadata))) {
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         layer_lstm(
-          units = 128, input_shape = dim(train_data_array)[c(2, 3)],
+          units = 128,
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = FALSE

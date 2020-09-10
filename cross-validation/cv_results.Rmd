@@ -3,7 +3,8 @@ title: "LOSO-CV Results"
 output: 
   html_document: 
     toc: yes
-    fig_width: 10
+    fig_width: 20
+    fig.height: 10
     fig.retina: 2
     device: ragg::agg_png
     self_contained: no
@@ -31,7 +32,7 @@ cv_results <- purrr::map_df(
 
 ## Boxplot by Accelerometer
 
-```{r boxplot-by-accelerometer, fig.width = 20, fig.height=10}
+```{r boxplot-by-accelerometer}
 cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
@@ -55,7 +56,7 @@ cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
   geom_boxplot(alpha = .5, outlier.alpha = 0) +
   stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
   labs(
@@ -125,8 +126,8 @@ cv_results %>%
     caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
   ) %>%
   kable_styling() %>%
-  #footnote("Bold: Minimal RMSE per Accelerometer and Outcome") %>%
-  collapse_rows(columns = 1)
+  collapse_rows(columns = 1) %>%
+  footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
 ```
 
 

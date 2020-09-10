@@ -7,8 +7,23 @@ library(kableExtra)
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
   here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
-  read_cv_results
+  ~read_cv_results(.x, latest_only = FALSE)
 )
+
+# RF num.trees comparison
+cv_results %>%
+  filter(model_kind == "RF") %>%
+  ggplot(aes(x = "", y = mean_rmse, fill = timestamp)) +
+  facet_grid(rows = vars(outcome_unit), cols = vars(accel), scales = "free") +
+  geom_point(size = 4, alpha = .5, shape = 21, color = "black", position = position_dodge2(width = .5)) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "RF: LOSO-CV RMSE (mean)",
+    subtitle = "Blue: Model with num.trees = 500 for all units\nRed: num.trees = 50 for MET, 500 else",
+    x = "", y = "Mean RMSE", fill = "Model ID"
+  ) +
+  hrbrthemes::theme_ipsum_ps() +
+  theme(legend.position = "top")
 
 
 # predict() vs evaluate() ----
