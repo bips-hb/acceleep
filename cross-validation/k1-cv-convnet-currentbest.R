@@ -173,12 +173,12 @@ for (row in seq_len(nrow(metadata))) {
       epochs = 50,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      validation_data =
-        list(
-          test_data_array,
-          test_labels
-        ),
-      verbose = 1
+      # validation_data =
+      #   list(
+      #     test_data_array,
+      #     test_labels
+      #   ),
+      verbose = 0
     )
 
     # To check in with LOO model results
