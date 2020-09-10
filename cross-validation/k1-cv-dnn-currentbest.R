@@ -124,7 +124,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D256-D128-D64-D32-BN-E50-LR3"
+    model_note <- "D256-D128-D64-D32-BN-E30-LR3"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
@@ -171,8 +171,14 @@ for (row in seq_len(nrow(metadata))) {
       as.matrix(training_data[-c(1, 2)]), # Make sure to exclude ID and interval columns (1, 2)
       train_labels,
       batch_size = 16,
-      epochs = 50,
+      epochs = 30,
       validation_split = 0,
+      # Uncomment the following to monitor validation error during training w/ verbose = 1
+      # validation_data =
+      #   list(
+      #     as.matrix(test_data[-c(1, 2)]),
+      #     test_labels
+      #   ),
       verbose = 0
     )
 

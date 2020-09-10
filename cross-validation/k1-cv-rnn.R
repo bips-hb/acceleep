@@ -158,7 +158,7 @@ for (row in seq_len(nrow(metadata))) {
       x = train_data_array,
       y = train_labels,
       batch_size = 16,
-      epochs = 100,
+      epochs = 50,
       validation_split = 0,
       # callbacks = list(
       #   callback_model_checkpoint(
