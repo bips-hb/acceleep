@@ -14,7 +14,7 @@ MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
-model_kind <- "RNN"
+model_kind <- "RNN (1Hz)"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 cliapp::cli_alert_info("Starting {model_kind} LOSO-CV on {run_start}")
 
