@@ -120,25 +120,25 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF128K9-MP2-CF128K9-GMP-D64-D64-D32-BN-E50"
+    model_note <- "CF16K9-MP10-CF16K9-GMP-D64-D64-BN-E30-LR3"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
-          name = "Conv1-F128K25-L2",
-          filters = 128, kernel_size = 25, activation = "relu",
+          name = "Conv1-F16K9-L2",
+          filters = 16, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 2) %>%
+        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 10) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2-F128K25-L2",
-          filters = 128, kernel_size = 25, activation = "relu",
+          name = "Conv2-F16K9-L2",
+          filters = 16, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
@@ -153,24 +153,23 @@ for (row in seq_len(nrow(metadata))) {
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 3
-        layer_dense(name = "Dense3-32", activation = "relu", units = 32) %>%
-        layer_batch_normalization() %>%
-        layer_dropout(rate = 0.2) %>%
+        # layer_dense(name = "Dense3-64", activation = "relu", units = 32) %>%
+        # layer_batch_normalization() %>%
+        # layer_dropout(rate = 0.2) %>%
         # Output
         layer_dense(units = 1, name = "output", activation = "linear")
     })
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3),
-      metrics = "mae"
+      optimizer = optimizer_adam(lr = 1e-3)
     )
 
     history <- model %>% fit(
       train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 50,
+      epochs = 30,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
       # validation_data =

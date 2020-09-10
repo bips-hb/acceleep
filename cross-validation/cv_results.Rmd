@@ -51,6 +51,23 @@ cv_results %>%
 # ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
 ```
 
+```{r boxplot-by-unit-accel}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(accel, -rmse), x = rmse)) +
+  facet_grid(rows = vars(model_kind), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .01, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(grid = "X")
+```
+
+
 ```{r boxplot-by-unit}
 cv_results %>%
   tidyr::unnest(data) %>%

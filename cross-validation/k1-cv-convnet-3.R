@@ -120,25 +120,25 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF128K25-MP10-CF128K25-GMP-D64-D64-BN-E50"
+    model_note <- "CF128K9-MP5-CF128K9-GMP-D64-D32-BN-E30"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
-          name = "Conv1-F128K25-L2",
-          filters = 128, kernel_size = 25, activation = "relu",
+          name = "Conv1-F128K9-L2",
+          filters = 128, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 10) %>%
+        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 5) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2-F128K25-L2",
-          filters = 128, kernel_size = 25, activation = "relu",
+          name = "Conv2-F128K9-L2",
+          filters = 128, kernel_size = 9, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
@@ -149,11 +149,11 @@ for (row in seq_len(nrow(metadata))) {
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 2
-        layer_dense(name = "Dense2-64", activation = "relu", units = 64)  %>%
+        layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 3
-        # layer_dense(name = "Dense3-64", activation = "relu", units = 32) %>%
+        # layer_dense(name = "Dense3-32", activation = "relu", units = 32) %>%
         # layer_batch_normalization() %>%
         # layer_dropout(rate = 0.2) %>%
         # Output
@@ -162,23 +162,22 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3),
-      metrics = "mae"
+      optimizer = optimizer_adam(lr = 1e-3)
     )
 
     history <- model %>% fit(
       train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 50,
+      epochs = 30,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      validation_data =
-        list(
-          test_data_array,
-          test_labels
-        ),
-      verbose = 1
+      # validation_data =
+      #   list(
+      #     test_data_array,
+      #     test_labels
+      #   ),
+      verbose = 0
     )
 
     # To check in with LOO model results

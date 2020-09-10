@@ -1,15 +1,46 @@
 #! /usr/bin/env bash
 
-./k1-cv-convnet.R
+echo "####################"
+echo "## Starting CNN (cb) ##"
+echo "####################"
 
-sleep 60; ./k1-cv-convnet-dupe1.R
+./k1-cv-convnet-currentbest.R
 
-sleep 60; ./k1-cv-convnet-dupe2.R
+echo "####################"
+echo "## Starting CNN 1 ##"
+echo "####################"
 
-# sleep 60; ./k1-cv-dnn.R
+./k1-cv-convnet-1.R
 
-# sleep 60; ./k1-cv-rf.R
+echo "####################"
+echo "## Starting CNN 2 ##"
+echo "####################"
 
-# sleep 60; ./k1-cv-rnn.R
+./k1-cv-convnet-2.R
+
+echo "####################"
+echo "## Starting CNN 3 ##"
+echo "####################"
+
+./k1-cv-convnet-3.R
+
+echo "####################"
+echo "## Starting DNN 1 ##"
+echo "####################"
+
+./k1-cv-dnn.R
+
+echo "####################"
+echo "## Starting DNN (cb) ##"
+echo "####################"
+
+./k1-cv-dnn-currentbest.R
+
+echo "####################"
+echo "## Starting RNN 1 ##"
+echo "####################"
+
+./k1-cv-rnn.R
 
 # sleep 60; ./k1-cv-lm.R
+# sleep 60; ./k1-cv-rf.R
