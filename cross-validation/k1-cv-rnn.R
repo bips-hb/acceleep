@@ -115,11 +115,12 @@ for (row in seq_len(nrow(metadata))) {
     # Not training on multi-gpu b/c weird "Unknown: CUDNN_STATUS_BAD_PARAM" error I don't understand
     # strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "LSTM128-LSTM128-D64-D64"
+    model_note <- "LSTM128-LSTM128-D64-D64-E50-LR5"
     model_tick <- Sys.time()
 
     # with(strategy$scope(), {
       model <- keras_model_sequential() %>%
+        # LSTM 1 --
         layer_lstm(
           units = 128, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
@@ -128,6 +129,7 @@ for (row in seq_len(nrow(metadata))) {
         ) %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
+        # LSTM 2 --
         layer_lstm(
           units = 128,
           activation = "tanh", recurrent_activation = "sigmoid",
@@ -136,9 +138,11 @@ for (row in seq_len(nrow(metadata))) {
         ) %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
+        # Dense 1 --
         layer_dense(activation = "relu", units = 64)  %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
+        # Dense 2 --
         layer_dense(activation = "relu", units = 64) %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
@@ -147,8 +151,7 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-5),
-      metrics = "mae"
+      optimizer = optimizer_adam(lr = 1e-5)
     )
 
     history <- model %>% fit(
@@ -157,6 +160,14 @@ for (row in seq_len(nrow(metadata))) {
       batch_size = 16,
       epochs = 100,
       validation_split = 0,
+      # callbacks = list(
+      #   callback_model_checkpoint(
+      #     filepath = tempfile(),
+      #     monitor = "val_loss",
+      #     save_best_only = TRUE,
+      #     mode = "min"
+      #   )
+      # ),
       # Uncomment the following to monitor validation error during training w/ verbose = 1
       # validation_data =
       #   list(
