@@ -124,7 +124,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D256-D128-D64-D32-BN-E50"
+    model_note <- "D256-D128-D64-D32-BN-E50-LR3"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {

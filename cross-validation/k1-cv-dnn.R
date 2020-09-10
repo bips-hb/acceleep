@@ -124,7 +124,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D128-D64-BN-E50"
+    model_note <- "D128-D64-BN-E50-LR4"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
@@ -164,7 +164,7 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3)
+      optimizer = optimizer_adam(lr = 1e-4)
     )
 
     history <- model %>% fit(
@@ -173,6 +173,12 @@ for (row in seq_len(nrow(metadata))) {
       batch_size = 16,
       epochs = 50,
       validation_split = 0,
+      # Uncomment the following to monitor validation error during training w/ verbose = 1
+      # validation_data =
+      #   list(
+      #     as.matrix(test_data[-c(1, 2)]),
+      #     test_labels
+      #   ),
       verbose = 0
     )
 
