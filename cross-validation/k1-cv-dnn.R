@@ -124,32 +124,37 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D256-D256-D128-D64-BN"
+    model_note <- "D128-D128-D64-D32-BN"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # L1 --
         layer_dense(
+          input_shape = 30,
+          name = "Dense1-128",
           activation = "relu", units = 256
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L2 --
         layer_dense(
-          activation = "relu", units = 256
+          name = "Dense2-128",
+          activation = "relu", units = 128
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L3 --
         layer_dense(
-          activation = "relu", units = 128
+          name = "Dense3-64",
+          activation = "relu", units = 64
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L4 --
         layer_dense(
-          activation = "relu", units = 64
+          name = "Dense4-32",
+          activation = "relu", units = 32
         ) %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2) %>%
@@ -159,17 +164,16 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3),
-      metrics = "mae"
+      optimizer = optimizer_adam(lr = 1e-3)
     )
 
     history <- model %>% fit(
       as.matrix(training_data[-c(1, 2)]), # Make sure to exclude ID and interval columns (1, 2)
       train_labels,
       batch_size = 16,
-      epochs = 100,
+      epochs = 50,
       validation_split = 0,
-      verbose = 0
+      verbose = 1
     )
 
     # To check in with LOO model results
