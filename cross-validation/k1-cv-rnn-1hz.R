@@ -230,6 +230,6 @@ for (row in seq_len(nrow(metadata))) {
 
 tock <- Sys.time()
 took <- hms::hms(seconds = round(as.numeric(difftime(tock, tick, units = "secs"))))
-pushoverr::pushover(glue::glue("{model_kind} cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
+pushoverr::pushover(glue::glue("{model_kind} (1Hz) cross validation is done! Took {took}"), title = "Modelling Hell", priority = 1)
 
 cuda_close_device()
