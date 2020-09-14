@@ -24,11 +24,17 @@ echo "####################"
 
 ./k1-cv-convnet-3.R
 
-# echo "####################"
-# echo "## Starting DNN 1 ##"
-# echo "####################"
-#
-# ./k1-cv-dnn.R
+echo "####################"
+echo "## Starting CNN 4 ##"
+echo "####################"
+
+./k1-cv-convnet-4.R
+
+echo "####################"
+echo "## Starting DNN 1 ##"
+echo "####################"
+
+./k1-cv-dnn.R
 
 # echo "####################"
 # echo "## Starting DNN (cb) ##"
