@@ -137,7 +137,7 @@ for (row in seq_len(nrow(metadata))) {
         layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 10) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2-F64K20-L2",
+          name = "Conv2-F128K20-L2",
           filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
