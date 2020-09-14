@@ -14,7 +14,7 @@ MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
-model_kind <- "RNN (10Hz)"
+model_kind <- "RNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 cliapp::cli_alert_info("Starting {model_kind} LOSO-CV on {run_start}")
 
@@ -115,14 +115,14 @@ for (row in seq_len(nrow(metadata))) {
     # Not training on multi-gpu b/c weird "Unknown: CUDNN_STATUS_BAD_PARAM" error I don't understand
     # strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "LSTM128-LSTM128-D64-D64-E50-LR5"
+    model_note <- "LSTM256-LSTM256-D128-D64-E50-LR5"
     model_tick <- Sys.time()
 
     # with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # LSTM 1 --
         layer_lstm(
-          units = 128, input_shape = dim(train_data_array)[c(2, 3)],
+          units = 256, input_shape = dim(train_data_array)[c(2, 3)],
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = TRUE
@@ -131,7 +131,7 @@ for (row in seq_len(nrow(metadata))) {
         layer_dropout(rate = 0.2)  %>%
         # LSTM 2 --
         layer_lstm(
-          units = 128,
+          units = 256,
           activation = "tanh", recurrent_activation = "sigmoid",
           recurrent_dropout = 0, unroll = FALSE, use_bias = TRUE,
           return_sequences = FALSE
@@ -139,7 +139,7 @@ for (row in seq_len(nrow(metadata))) {
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 1 --
-        layer_dense(activation = "relu", units = 64)  %>%
+        layer_dense(activation = "relu", units = 128)  %>%
         # layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 2 --
