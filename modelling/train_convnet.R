@@ -31,6 +31,7 @@ FLAGS <- flags(
   flag_numeric("conv1d_kernel_size_2", 7), # ..layer 2
   flag_numeric("conv1d_kernel_size_3", 7), # ..layer 3
   flag_numeric("conv1d_pool_size", 10),
+  flag_numeric("conv1d_pool_strides", 10),
   flag_numeric("dense_units", 64),   # Unused
   flag_numeric("dense_units_1", 64), # Units in dense layer 1
   flag_numeric("dense_units_2", 64), # ... in layer 2
@@ -118,7 +119,7 @@ with(strategy$scope(), {
     # Every conv layer *but* the last layer gets a pooling layer
     if (conv_layer < FLAGS$conv1d_layers) {
       model %>%
-        layer_max_pooling_1d(pool_size = FLAGS$conv1d_pool_size)
+        layer_max_pooling_1d(pool_size = FLAGS$conv1d_pool_size, strides = FLAGS$conv1d_pool_strides)
     }
   }
 
@@ -162,8 +163,7 @@ with(strategy$scope(), {
 # Compilation
 model %>% compile(
   loss = "mse",
-  optimizer = optimizer_adam(lr = FLAGS$lr, decay = FLAGS$decay),
-  metrics = "mae"
+  optimizer = optimizer_adam(lr = FLAGS$lr, decay = FLAGS$decay)
 )
 
 # Assemble callbacks
