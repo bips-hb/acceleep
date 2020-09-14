@@ -57,57 +57,6 @@ cnn_results <- purrr::map_df(
   ~read_cv_results(.x, latest_only = FALSE)
 )
 
-cnn_results %>%
-  unnest(data) %>%
-  filter(outcome_unit == "kJ") %>%
-  ggplot(aes(x = accel, y = rmse)) +
-  facet_wrap(~left_out) +
-  geom_boxplot()
-
-# By accelerometer
-cnn_results %>%
-  tidyr::unnest(data) %>%
-  ggplot(aes(x = reorder(timestamp, rmse), y = rmse)) +
-  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
-  labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-    x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
-  ) +
-  hrbrthemes::theme_ipsum_pub(grid = "Y") +
-  theme(axis.text.x = element_text(angle = 90))
-
-# By unit
-cnn_results %>%
-  tidyr::unnest(data) %>%
-  ggplot(aes(y = reorder(timestamp, -rmse), x = rmse)) +
-  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
-  labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-    y = "Model", x = "Per-Subject RMSE (+ Mean)"
-  ) +
-  hrbrthemes::theme_ipsum_pub(grid = "X")
-
-## Table, mean'd accelerometers, quick glance at "best overall" model ranking
-cnn_results %>%
-  tidyr::unnest(data) %>%
-  group_by(timestamp, outcome_unit) %>%
-  summarize(
-    mean_rmse = mean(rmse),
-    sd_rmse = sd(rmse)
-  ) %>%
-  tidyr::pivot_wider(
-    id_cols = c(timestamp, outcome_unit),
-    names_from = outcome_unit, values_from = c(mean_rmse, sd_rmse)
-  ) %>%
-  arrange(mean_rmse_kJ)
 
 # Closer look at DNNs ----
 
@@ -116,26 +65,10 @@ dnn_results <- purrr::map_df(
   ~read_cv_results(.x, latest_only = FALSE)
 )
 
-# By accelerometer
-# dnn_results %>%
-#   tidyr::unnest(data) %>%
-#   ggplot(aes(x = reorder(timestamp, rmse), y = rmse)) +
-#   facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
-#   geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
-#   geom_boxplot(alpha = .5, outlier.alpha = 0) +
-#   stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
-#   labs(
-#     title = "Leave-One-Subject-Out Cross Validation",
-#     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-#     x = "Model Type", y = "Per-Subject RMSE (+ Mean)"
-#   ) +
-#   hrbrthemes::theme_ipsum_pub(grid = "Y") +
-#   theme(axis.text.x = element_text(angle = 90))
-
 # By unit
 dnn_results %>%
   tidyr::unnest(data) %>%
-  ggplot(aes(y = reorder(timestamp, -rmse), x = rmse)) +
+  ggplot(aes(y = reorder(model_spec, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
   geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
   geom_boxplot(alpha = .5, outlier.alpha = 0) +
@@ -147,7 +80,54 @@ dnn_results %>%
   ) +
   hrbrthemes::theme_ipsum_pub(grid = "X")
 
+dnn_results %>%
+  tidyr::unnest(data) %>%
+  group_by(timestamp, model_spec, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    sd_rmse = sd(rmse)
+  ) %>%
+  tidyr::pivot_wider(
+    id_cols = c(timestamp, model_spec, outcome_unit),
+    names_from = outcome_unit, values_from = c(mean_rmse, sd_rmse)
+  ) %>%
+  arrange(mean_rmse_kJ)
 
+# RNNs ----
+
+
+rnn_results <- purrr::map_df(
+  here::here("output/cross-validation/RNN"),
+  ~read_cv_results(.x, latest_only = FALSE)
+)
+
+rnn_results %>%
+  mutate(model_spec = glue::glue("{model_spec} ({res}Hz) {timestamp}")) %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(model_spec, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "X")
+
+rnn_results %>%
+  tidyr::unnest(data) %>%
+  group_by(timestamp, model_spec, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    sd_rmse = sd(rmse)
+  ) %>%
+  tidyr::pivot_wider(
+    id_cols = c(timestamp, model_spec, outcome_unit),
+    names_from = outcome_unit, values_from = c(mean_rmse, sd_rmse)
+  ) %>%
+  arrange(mean_rmse_kJ)
 
 # Per model per subject predictions -----
 

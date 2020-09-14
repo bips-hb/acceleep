@@ -4,7 +4,7 @@ output:
   html_document: 
     toc: yes
     fig_width: 20
-    fig.height: 10
+    fig_height: 10
     fig.retina: 2
     device: ragg::agg_png
     self_contained: no
@@ -26,8 +26,26 @@ theme_set(hrbrthemes::theme_ipsum_ps())
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
   here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
-  read_cv_results
+  ~read_cv_results(.x, latest_only = TRUE)
 )
+
+cv_results_full <- purrr::map_df(
+  here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
+  ~read_cv_results(.x, latest_only = FALSE)
+)
+
+cv_results_full %>%
+  group_by(model_kind, timestamp, outcome_unit) %>%
+  summarize(mean_mean_rmse = mean(mean_rmse), .groups = "drop") %>%
+  group_by(model_kind, outcome_unit) %>%
+  slice_min(mean_mean_rmse, n = 1) %>%
+  pivot_wider(
+    id_cols = c(model_kind, timestamp, outcome_unit), 
+    names_from = outcome_unit,
+    values_from = mean_mean_rmse
+  ) %>%
+  kable(caption = "Best model by unit with RMSE (non-unique)") %>%
+  kable_styling()
 ```
 
 ## Boxplot by Accelerometer
@@ -147,4 +165,87 @@ cv_results %>%
   footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
 ```
 
+
+## CNNs
+
+```{r cnn-results-boxplot}
+# By accelerometer (flipped)
+cv_results_full %>%
+  filter(model_kind == "CNN") %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(model_spec, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "X")
+```
+
+Table with mean'd accelerometers, quick glance at "best overall" model ranking
+
+```{r cnn-results-table}
+cv_results_full %>%
+  filter(model_kind == "CNN") %>%
+  tidyr::unnest(data) %>%
+  group_by(timestamp, model_spec, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    sd_rmse = sd(rmse),
+    .groups = "drop"
+  ) %>%
+  tidyr::pivot_wider(
+    id_cols = c(timestamp, model_spec, outcome_unit),
+    names_from = outcome_unit, values_from = c(mean_rmse, sd_rmse)
+  ) %>%
+  arrange(mean_rmse_kJ) %>%
+  kable() %>%
+  kable_styling()
+```
+
+## RNNs
+
+```{r rnn-results-boxplot}
+cv_results_full %>%
+  filter(stringr::str_detect(model_kind, "^RNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(res = glue::glue("{res}Hz")) %>%
+  ggplot(aes(y = reorder(model_spec, -rmse), x = rmse, color = res, fill = res)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .25, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_pub(grid = "X") +
+  theme(legend.position = "top")
+```
+
+# Model Runtime
+
+Model runtime summaries (seconds)
+
+```{r runtime}
+cv_results_full %>%
+  unnest(data) %>%
+  filter(!is.na(model_took)) %>%
+  group_by(model_kind) %>%
+  summarize(
+    mean_took = mean(model_took, na.rm = TRUE),
+    sd_took =  sd(model_took, na.rm = TRUE),
+    range_took = paste0(range(model_took), collapse = " – "),
+    .groups = "drop"
+  ) %>%
+  kable() %>%
+  kable_styling()
+
+```
 

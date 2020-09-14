@@ -49,5 +49,6 @@ read_cv_results <- function(path, latest_only = TRUE) {
       model_spec = ifelse(is.na(model_spec), model_kind, model_spec),
       # mini_run = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "mini_run", .default = NA)))
     ) %>%
-    dplyr::rename(outcome_unit = .data$outcome)
+    dplyr::rename(outcome_unit = .data$outcome) %>%
+    dplyr::mutate(model_kind = ifelse(.data$model_kind == "RNN", glue::glue("RNN ({res}Hz)"), .data$model_kind))
 }
