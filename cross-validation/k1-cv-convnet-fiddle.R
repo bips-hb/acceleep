@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -121,36 +121,27 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF128K20-MP20-CF128K20-GMP-D64-D32-BN-E50"
+    model_note <- "CF256K20-MP5-CF128K10-GMP-D64-D32-BN-E50-ES"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
-          name = "Conv1-F128K20-L2",
-          filters = 128, kernel_size = 20, activation = "relu",
+          name = "Conv1-F256K20-L2",
+          filters = 256, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(name = "MaxPooling1D-2_1", pool_size = 2) %>%
+        layer_max_pooling_1d(name = "MaxPooling1D-5", pool_size = 5) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2-F128K20-L2",
-          filters = 128, kernel_size = 20, activation = "relu",
+          name = "Conv2-F128K10-L2",
+          filters = 128, kernel_size = 10, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
-        )  %>%
-        layer_batch_normalization() %>%
-        # MaxPooling 2
-        layer_max_pooling_1d(name = "MaxPooling1D-2_2", pool_size = 2) %>%
-        # Conv 3
-        layer_conv_1d(
-          name = "Conv3-F128K20-L2",
-          filters = 128, kernel_size = 20, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
         # Global Max Pooling
@@ -173,15 +164,21 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-4)
+      optimizer = optimizer_adam(lr = 1e-3)
     )
 
     history <- model %>% fit(
       train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 100,
+      epochs = 50,
       validation_split = 0,
+      verbose = 0,
+      validation_data =
+        list(
+          test_data_array,
+          test_labels
+        ),
       callbacks =
         list(
           callback_early_stopping(
@@ -191,14 +188,7 @@ for (row in seq_len(nrow(metadata))) {
             mode = "min",
             restore_best_weights = TRUE
           )
-        ),
-      # Uncomment the following to monitor validation error during training w/ verbose = 1
-      validation_data =
-        list(
-          test_data_array,
-          test_labels
-        ),
-      verbose = 1
+        )
     )
 
     # To check in with LOO model results
@@ -229,7 +219,8 @@ for (row in seq_len(nrow(metadata))) {
       predicted_obs = list(predicted_obs),
       model_note = model_note,
       mini_run = MINI_RUN,
-      model_took = model_took
+      model_took = model_took,
+      epochs_completed = length(history$metrics$loss)
     )
 
     cv_result <- bind_rows(cv_result, current_result)
