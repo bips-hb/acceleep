@@ -1,10 +1,10 @@
 #! /usr/bin/env bash
 
-# echo "####################"
-# echo "## Starting CNN (cb) ##"
-# echo "####################"
-#
-# ./k1-cv-convnet-currentbest.R
+echo "####################"
+echo "## Starting CNN (cb) ##"
+echo "####################"
+
+./k1-cv-convnet-currentbest.R
 
 echo "####################"
 echo "## Starting CNN 1 ##"
@@ -31,6 +31,12 @@ echo "####################"
 ./k1-cv-convnet-4.R
 
 echo "####################"
+echo "## Starting CNN 5 ##"
+echo "####################"
+
+./k1-cv-convnet-5.R
+
+echo "####################"
 echo "## Starting DNN 1 ##"
 echo "####################"
 
@@ -47,7 +53,6 @@ echo "####################"
 # echo "####################"
 #
 # ./k1-cv-rnn-1hz.R
-#
 #
 # echo "####################"
 # echo "## Starting RNN 10Hz ##"
