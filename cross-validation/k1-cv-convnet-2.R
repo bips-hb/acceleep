@@ -162,8 +162,7 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3),
-      metrics = "mae"
+      optimizer = optimizer_adam(lr = 1e-3)
     )
 
     history <- model %>% fit(
@@ -219,7 +218,8 @@ for (row in seq_len(nrow(metadata))) {
       predicted_obs = list(predicted_obs),
       model_note = model_note,
       mini_run = MINI_RUN,
-      model_took = model_took
+      model_took = model_took,
+      epochs_completed = length(history$metrics$loss)
     )
 
     cv_result <- bind_rows(cv_result, current_result)
