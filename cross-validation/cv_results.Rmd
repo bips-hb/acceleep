@@ -33,7 +33,12 @@ cv_results_full <- purrr::map_df(
   here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 )
+```
 
+
+Best model (per unit, non-unique)
+
+```{r dummy-best-model}
 cv_results_full %>%
   group_by(model_kind, timestamp, outcome_unit) %>%
   summarize(mean_mean_rmse = mean(mean_rmse), .groups = "drop") %>%
@@ -47,6 +52,7 @@ cv_results_full %>%
   kable(caption = "Best model by unit with RMSE (non-unique)") %>%
   kable_styling()
 ```
+
 
 ## Boxplot by Accelerometer
 
@@ -102,6 +108,8 @@ cv_results %>%
   hrbrthemes::theme_ipsum_ps(grid = "Y")
 ```
 
+### Mean + Bootstrap-CI
+
 ```{r meanci-by-unit}
 cv_results %>%
   tidyr::unnest(data) %>%
@@ -116,6 +124,32 @@ cv_results %>%
   ) +
   hrbrthemes::theme_ipsum_ps(grid = "Y")
 ```
+
+### Mean + SD
+
+```{r meansd-by-unit}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, -y), y = y)) +
+  coord_flip() +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Mean + Bootstrap-CI)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(grid = "Y")
+```
+
 
 
 ## Tables
@@ -171,7 +205,7 @@ cv_results %>%
 ```{r cnn-results-boxplot}
 # By accelerometer (flipped)
 cv_results_full %>%
-  filter(model_kind == "CNN") %>%
+  filter(model_kind == "CNN" | timestamp == 20200910115426) %>% 
   tidyr::unnest(data) %>%
   ggplot(aes(y = reorder(model_spec, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
@@ -183,14 +217,16 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  hrbrthemes::theme_ipsum_pub(grid = "X")
+  hrbrthemes::theme_ipsum_pub(
+    grid = "X", base_size = 8
+  )
 ```
 
 Table with mean'd accelerometers, quick glance at "best overall" model ranking
 
 ```{r cnn-results-table}
 cv_results_full %>%
-  filter(model_kind == "CNN") %>%
+  filter(model_kind == "CNN" | timestamp == 20200910115426) %>%
   tidyr::unnest(data) %>%
   group_by(timestamp, model_spec, outcome_unit) %>%
   summarize(
@@ -207,7 +243,7 @@ cv_results_full %>%
   kable_styling()
 ```
 
-```{r cnn-results-aggregated-meanci}
+```{r cnn-results-aggregated-meansd}
 cv_results_full %>%
   filter(model_kind == "CNN") %>%
   tidyr::unnest(data) %>%
@@ -229,6 +265,29 @@ cv_results_full %>%
     x = "Model Spec", y = "Per-Subject RMSE (Mean +- SD)"
   ) +
   hrbrthemes::theme_ipsum_pub(grid = "X")
+```
+
+Ranked within outcome unit, averaged over accelerometers
+
+```{r cnn-results-ranked}
+cv_results_full %>%
+  filter(model_kind == "CNN") %>%
+  tidyr::unnest(data) %>%
+  group_by(model_spec, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    .groups = "drop"
+  ) %>%
+  group_by(outcome_unit) %>%
+  mutate(rank = rank(mean_rmse)) %>%
+  group_by(model_spec) %>%
+  summarize(mean_rank = mean(rank), .groups = "drop") %>%
+  arrange(mean_rank) %>%
+  kable(
+    digits = 2,
+    caption = "Average rank of model across outcome units, averaged over accelerometers"
+  ) %>%
+  kable_styling()
 ```
 
 
@@ -272,6 +331,27 @@ cv_results_full %>%
   kable_styling()
 ```
 
+```{r dnn-results-ranked}
+cv_results_full %>%
+  filter(model_kind == "DNN") %>%
+  tidyr::unnest(data) %>%
+  group_by(model_spec, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    .groups = "drop"
+  ) %>%
+  group_by(outcome_unit) %>%
+  mutate(rank = rank(mean_rmse)) %>%
+  group_by(model_spec) %>%
+  summarize(mean_rank = mean(rank), .groups = "drop") %>%
+  arrange(mean_rank) %>%
+  kable(
+    digits = 2,
+    caption = "Average rank of model across outcome units, averaged over accelerometers"
+  ) %>%
+  kable_styling()
+```
+
 ## RNNs
 
 ```{r rnn-results-boxplot}
@@ -283,7 +363,7 @@ cv_results_full %>%
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
   geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
   geom_boxplot(alpha = .25, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  stat_summary(geom = "point", fun = mean, shape = 21, color = "black", size = 2, position = position_dodge(width = .75)) +
   scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",

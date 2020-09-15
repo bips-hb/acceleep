@@ -7,11 +7,16 @@ library(kableExtra)
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
   here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
+  ~read_cv_results(.x, latest_only = TRUE)
+)
+
+cv_results_full <- purrr::map_df(
+  here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 )
 
 # RF num.trees comparison
-cv_results %>%
+cv_results_full %>%
   filter(model_kind == "RF") %>%
   ggplot(aes(x = "", y = mean_rmse, fill = timestamp)) +
   facet_grid(rows = vars(outcome_unit), cols = vars(accel), scales = "free") +
@@ -48,31 +53,6 @@ cv_results %>%
     y = "Frequency"
   ) +
   hrbrthemes::theme_ipsum_ps(grid = "Y")
-
-
-# Closer look at CNNs ----
-
-cnn_results <- purrr::map_df(
- here::here("output/cross-validation/CNN"),
-  ~read_cv_results(.x, latest_only = FALSE)
-)
-
-
-# Closer look at DNNs ----
-
-dnn_results <- purrr::map_df(
-  here::here("output/cross-validation/DNN"),
-  ~read_cv_results(.x, latest_only = FALSE)
-)
-
-
-# RNNs ----
-
-
-rnn_results <- purrr::map_df(
-  here::here("output/cross-validation/RNN"),
-  ~read_cv_results(.x, latest_only = FALSE)
-)
 
 
 # Per model per subject predictions -----
