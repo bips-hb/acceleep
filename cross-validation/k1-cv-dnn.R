@@ -124,7 +124,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D32-D16-BN-E30-LR3"
+    model_note <- "D64-D64-BN-E30-ES"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
@@ -133,14 +133,14 @@ for (row in seq_len(nrow(metadata))) {
         layer_dense(
           input_shape = 30,
           name = "Dense1",
-          activation = "relu", units = 32
+          activation = "relu", units = 64
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # L2 --
         layer_dense(
           name = "Dense2",
-          activation = "relu", units = 16
+          activation = "relu", units = 64
         )  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
@@ -184,7 +184,7 @@ for (row in seq_len(nrow(metadata))) {
         list(
           callback_early_stopping(
             monitor = "val_loss",
-            min_delta = 0.25,
+            min_delta = 0.1,
             patience = 5,
             mode = "min",
             restore_best_weights = TRUE
