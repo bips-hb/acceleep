@@ -184,7 +184,7 @@ for (row in seq_len(nrow(metadata))) {
           callback_early_stopping(
             monitor = "val_loss",
             min_delta = 0.1,
-            patience = 4,
+            patience = 5,
             mode = "min",
             restore_best_weights = TRUE
           )
