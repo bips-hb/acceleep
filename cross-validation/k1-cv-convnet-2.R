@@ -120,7 +120,7 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF128K20-MP5-CF64K20-GMP-D64-D32-BN-E50"
+    model_note <- "CF128K20-MP5-CF128K20-GMP-D64-D32-BN-E50"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
@@ -138,7 +138,7 @@ for (row in seq_len(nrow(metadata))) {
         # Conv 2
         layer_conv_1d(
           name = "Conv2-F64K20-L2",
-          filters = 64, kernel_size = 20, activation = "relu",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
