@@ -24,10 +24,11 @@ metadata <- get_overview_table() %>%
   mutate(res = ifelse(model == "activpal", 20, 100))
 
 if (MINI_RUN) {
-  cliapp::cli_alert_warning("Only running on GENEActiv (right hip) with kJ!")
-
   metadata <- metadata %>%
-    filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
+    filter(model == "activpal", placement == "thigh_right", outcome == "kJ")
+
+  cliapp::cli_alert_warning("Only running on {metadata$model} ({metadata$placement}) with {metadata$outcome}!")
+
 } else {
   cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
 }
@@ -120,40 +121,50 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF16K7-MP10-CF16K7-GMP-D16-BN-E30-LR3"
+    model_note <- "CF128K20-MP20-CF128K20-GMP-D64-D32-BN-E50"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
-          name = "Conv1",
-          filters = 16, kernel_size = 7, activation = "relu",
+          name = "Conv1-F128K20-L2",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
         layer_batch_normalization() %>%
         # MaxPooling 1
-        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 10) %>%
+        layer_max_pooling_1d(name = "MaxPooling1D-2_1", pool_size = 2) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2",
-          filters = 16, kernel_size = 7, activation = "relu",
+          name = "Conv2-F128K20-L2",
+          filters = 128, kernel_size = 20, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.01),
+          input_shape = dim(train_data_array)[c(2, 3)]
+        )  %>%
+        layer_batch_normalization() %>%
+        # MaxPooling 2
+        layer_max_pooling_1d(name = "MaxPooling1D-2_2", pool_size = 2) %>%
+        # Conv 3
+        layer_conv_1d(
+          name = "Conv3-F128K20-L2",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
         # Global Max Pooling
         layer_global_max_pooling_1d(name = "GlobalMaxPooling1D") %>%
         # Dense 1
-        layer_dense(name = "Dense1", activation = "relu", units = 16)  %>%
+        layer_dense(name = "Dense1-64", activation = "relu", units = 64)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # # Dense 2
-        # layer_dense(name = "Dense2-64", activation = "relu", units = 256)  %>%
-        # layer_batch_normalization() %>%
-        # layer_dropout(rate = 0.2)  %>%
-        # # Dense 3
-        # layer_dense(name = "Dense3-64", activation = "relu", units = 128) %>%
+        # Dense 2
+        layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
+        layer_batch_normalization() %>%
+        layer_dropout(rate = 0.2)  %>%
+        # Dense 3
+        # layer_dense(name = "Dense3-64", activation = "relu", units = 32) %>%
         # layer_batch_normalization() %>%
         # layer_dropout(rate = 0.2) %>%
         # Output
@@ -162,22 +173,32 @@ for (row in seq_len(nrow(metadata))) {
 
     model %>% compile(
       loss = "mse",
-      optimizer = optimizer_adam(lr = 1e-3)
+      optimizer = optimizer_adam(lr = 1e-4)
     )
 
     history <- model %>% fit(
       train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 30,
+      epochs = 100,
       validation_split = 0,
+      callbacks =
+        list(
+          callback_early_stopping(
+            monitor = "val_loss",
+            min_delta = 0.1,
+            patience = 5,
+            mode = "min",
+            restore_best_weights = TRUE
+          )
+        ),
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      # validation_data =
-      #   list(
-      #     test_data_array,
-      #     test_labels
-      #   ),
-      verbose = 0
+      validation_data =
+        list(
+          test_data_array,
+          test_labels
+        ),
+      verbose = 1
     )
 
     # To check in with LOO model results
