@@ -174,12 +174,22 @@ for (row in seq_len(nrow(metadata))) {
       epochs = 30,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      # validation_data =
-      #   list(
-      #     as.matrix(test_data[-c(1, 2)]),
-      #     test_labels
-      #   ),
-      verbose = 0
+      validation_data =
+        list(
+          as.matrix(test_data[-c(1, 2)]),
+          test_labels
+        ),
+      verbose = 0,
+      callbacks =
+        list(
+          callback_early_stopping(
+            monitor = "val_loss",
+            min_delta = 0.25,
+            patience = 5,
+            mode = "min",
+            restore_best_weights = TRUE
+          )
+        )
     )
 
     # To check in with LOO model results

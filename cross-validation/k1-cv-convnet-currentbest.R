@@ -188,7 +188,7 @@ for (row in seq_len(nrow(metadata))) {
             mode = "min",
             restore_best_weights = TRUE
           )
-        ),
+        )
     )
 
     # To check in with LOO model results
