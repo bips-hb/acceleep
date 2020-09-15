@@ -3,8 +3,8 @@ title: "LOSO-CV Results"
 output: 
   html_document: 
     toc: yes
-    fig_width: 20
-    fig_height: 10
+    fig_width: 25
+    fig_height: 15
     fig.retina: 2
     device: ragg::agg_png
     self_contained: no
@@ -245,7 +245,7 @@ cv_results_full %>%
 
 ```{r cnn-results-aggregated-meansd}
 cv_results_full %>%
-  filter(model_kind == "CNN") %>%
+  filter(model_kind == "CNN" | timestamp == 20200910115426) %>%
   tidyr::unnest(data) %>%
   group_by(model_spec, outcome_unit) %>%
   summarize(
@@ -273,14 +273,14 @@ Ranked within outcome unit, averaged over accelerometers
 cv_results_full %>%
   filter(model_kind == "CNN") %>%
   tidyr::unnest(data) %>%
-  group_by(model_spec, outcome_unit) %>%
+  group_by(model_spec, timestamp, outcome_unit) %>%
   summarize(
     mean_rmse = mean(rmse),
     .groups = "drop"
   ) %>%
   group_by(outcome_unit) %>%
   mutate(rank = rank(mean_rmse)) %>%
-  group_by(model_spec) %>%
+  group_by(model_spec, timestamp) %>%
   summarize(mean_rank = mean(rank), .groups = "drop") %>%
   arrange(mean_rank) %>%
   kable(
