@@ -115,7 +115,7 @@ for (row in seq_len(nrow(metadata))) {
     # Not training on multi-gpu b/c weird "Unknown: CUDNN_STATUS_BAD_PARAM" error I don't understand
     # strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "LSTM256-LSTM256-D128-D64-E50-LR5"
+    model_note <- "LSTM256-LSTM256-D128-D64-E50-LR5-ES"
     model_tick <- Sys.time()
 
     # with(strategy$scope(), {
@@ -160,21 +160,23 @@ for (row in seq_len(nrow(metadata))) {
       batch_size = 16,
       epochs = 50,
       validation_split = 0,
-      # callbacks = list(
-      #   callback_model_checkpoint(
-      #     filepath = tempfile(),
-      #     monitor = "val_loss",
-      #     save_best_only = TRUE,
-      #     mode = "min"
-      #   )
-      # ),
       # Uncomment the following to monitor validation error during training w/ verbose = 1
-      # validation_data =
-      #   list(
-      #     test_data_array,
-      #     test_labels
-      #   ),
-      verbose = 0
+      validation_data =
+        list(
+          test_data_array,
+          test_labels
+        ),
+      verbose = 0,
+      callbacks =
+        list(
+          callback_early_stopping(
+            monitor = "val_loss",
+            min_delta = 0.1,
+            patience = 10,
+            mode = "min",
+            restore_best_weights = TRUE
+          )
+        )
     )
 
     # Evaluate, save results
