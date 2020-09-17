@@ -3,8 +3,8 @@ title: "LOSO-CV Results"
 output: 
   html_document: 
     toc: yes
-    fig_width: 25
-    fig_height: 15
+    fig_width: 22
+    fig_height: 13
     fig.retina: 2
     device: ragg::agg_png
     self_contained: no
@@ -18,21 +18,33 @@ library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(kableExtra)
+library(hrbrthemes)
 
 theme_set(hrbrthemes::theme_ipsum_ps())
-```
 
-```{r read-data}
-# Iterate over all model output folders, read in latest CV runs, bind together
-cv_results <- purrr::map_df(
-  here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
-  ~read_cv_results(.x, latest_only = TRUE)
+current_best <- tibble::tribble(
+  ~model_kind, ~timestamp,
+  "CNN",  20200916192100,
+  "DNN",  20200917000101,
+  "RNN (1Hz)",  20200917020316,
+  "RNN (10Hz)", 20200912043406,
+  "RF",  20200910115426,
+  "LM",  20200903163311,
 )
 
+# Iterate over all model output folders, read in latest CV runs, bind together
 cv_results_full <- purrr::map_df(
   here::here("output/cross-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 )
+
+cv_results <- cv_results_full %>%
+  filter(
+    timestamp %in% current_best$timestamp
+  ) %>%
+  mutate(
+    model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind)
+  )
 ```
 
 
@@ -91,10 +103,14 @@ cv_results %>%
   hrbrthemes::theme_ipsum_ps(grid = "X")
 ```
 
+### Horizontal box plot grouped by model
 
 ```{r boxplot-by-unit}
 cv_results %>%
   tidyr::unnest(data) %>%
+    mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
   ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
   geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
@@ -105,7 +121,10 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+  hrbrthemes::theme_ipsum_ps(
+    grid = "Y",
+    strip_text_size = 9
+  )
 ```
 
 ### Mean + Bootstrap-CI
@@ -199,6 +218,39 @@ cv_results %>%
   footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
 ```
 
+Preferred table for final text:
+
+```{r table-by-model-redux}
+cv_results %>%
+  mutate(
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
+  ) %>%
+  group_by(accel, outcome_unit) %>%
+  mutate(
+    # min_rmse = min(mean_rmse),
+    is_min_mean_rmse = mean_rmse == min(mean_rmse)
+  ) %>%
+  ungroup() %>%
+  select(
+    model_kind,
+    accel,
+    outcome_unit,
+    measure,
+    is_min_mean_rmse
+  ) %>%
+  mutate(measure = cell_spec(measure, bold = is_min_mean_rmse)) %>%
+  select(-is_min_mean_rmse) %>%
+  pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
+  rename(Accelerometer = accel, Outcome = outcome_unit) %>%
+  select(Outcome, Accelerometer, everything()) %>%
+  arrange(Outcome) %>%
+  kable(
+    caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1) %>%
+  footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
+```
 
 ## CNNs
 
@@ -271,7 +323,7 @@ Ranked within outcome unit, averaged over accelerometers
 
 ```{r cnn-results-ranked}
 cv_results_full %>%
-  filter(model_kind == "CNN") %>%
+  filter(model_kind == "CNN" | timestamp == 20200910115426) %>%
   tidyr::unnest(data) %>%
   group_by(model_spec, timestamp, outcome_unit) %>%
   summarize(
@@ -335,14 +387,14 @@ cv_results_full %>%
 cv_results_full %>%
   filter(model_kind == "DNN") %>%
   tidyr::unnest(data) %>%
-  group_by(model_spec, outcome_unit) %>%
+  group_by(model_spec, timestamp, outcome_unit) %>%
   summarize(
     mean_rmse = mean(rmse),
     .groups = "drop"
   ) %>%
   group_by(outcome_unit) %>%
   mutate(rank = rank(mean_rmse)) %>%
-  group_by(model_spec) %>%
+  group_by(model_spec, timestamp) %>%
   summarize(mean_rank = mean(rank), .groups = "drop") %>%
   arrange(mean_rank) %>%
   kable(
@@ -372,6 +424,27 @@ cv_results_full %>%
   ) +
   hrbrthemes::theme_ipsum_pub(grid = "X") +
   theme(legend.position = "top")
+```
+
+```{r rnn-results-ranked}
+cv_results_full %>%
+  filter(model_kind == "RNN") %>%
+  tidyr::unnest(data) %>%
+  group_by(model_spec, timestamp, res, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    .groups = "drop"
+  ) %>%
+  group_by(outcome_unit, res) %>%
+  mutate(rank = rank(mean_rmse)) %>%
+  group_by(model_spec, timestamp, res) %>%
+  summarize(mean_rank = mean(rank), .groups = "drop") %>%
+  arrange(mean_rank) %>%
+  kable(
+    digits = 2,
+    caption = "Average rank of model across outcome units, averaged over accelerometers"
+  ) %>%
+  kable_styling()
 ```
 
 # Model Runtime
