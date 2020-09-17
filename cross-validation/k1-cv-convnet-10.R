@@ -10,7 +10,7 @@ reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
 # If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- TRUE
+MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
@@ -24,15 +24,10 @@ metadata <- get_overview_table() %>%
   mutate(res = ifelse(model == "activpal", 20, 100))
 
 if (MINI_RUN) {
-  # metadata <- metadata %>%
-  #   filter(model == "activpal", placement == "thigh_right", outcome == "kJ")
-  #
-  # cliapp::cli_alert_warning("Only running on {metadata$model} ({metadata$placement}) with {metadata$outcome}!")
+  cliapp::cli_alert_warning("Only running on GENEActiv (right hip) with kJ!")
 
-  metadata <- metadata[c(1, 5, 9), ]
-
-  cliapp::cli_alert_warning("Only running on subset of {nrow(metadata)} models!")
-
+  metadata <- metadata %>%
+    filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
 } else {
   cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
 }
@@ -125,15 +120,15 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "CF256K20-MP10-CF128K10-MP2-CF64K10-GMP-D64-D32-BN-E50-ES"
+    model_note <- "CF128K20-MP10-CF64K10-MP2-CF32K5-GMP-D32-D16-BN-E50-ES"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
         # Conv 1
         layer_conv_1d(
-          name = "Conv1-F256K20-L2",
-          filters = 256, kernel_size = 20, activation = "relu",
+          name = "Conv1-F128K20-L2",
+          filters = 128, kernel_size = 20, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01),
           input_shape = dim(train_data_array)[c(2, 3)]
         )  %>%
@@ -142,28 +137,27 @@ for (row in seq_len(nrow(metadata))) {
         layer_max_pooling_1d(name = "MaxPooling1D_1-10", pool_size = 10) %>%
         # Conv 2
         layer_conv_1d(
-          name = "Conv2-F128K10-L2",
-          filters = 128, kernel_size = 10, activation = "relu",
-          kernel_regularizer = regularizer_l2(l = 0.01),
-          input_shape = dim(train_data_array)[c(2, 3)]
+          name = "Conv2-F64K10-L2",
+          filters = 64, kernel_size = 10, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         # MaxPooling 2
         layer_max_pooling_1d(name = "MaxPooling1D_2-2", pool_size = 2) %>%
         # Conv 3
         layer_conv_1d(
-          name = "Conv3-F64K10-L2",
-          filters = 64, kernel_size = 10, activation = "relu",
+          name = "Conv3-F32K5-L2",
+          filters = 32, kernel_size = 5, activation = "relu",
           kernel_regularizer = regularizer_l2(l = 0.01)
         )  %>%
         layer_batch_normalization() %>%
         # Global Max Pooling
         layer_global_max_pooling_1d(name = "GlobalMaxPooling1D") %>%
         # Dense 1
-        layer_dense(name = "Dense1-64", activation = "relu", units = 64)  %>%
+        layer_dense(name = "Dense1", activation = "relu", units = 32)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 2
-        layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
+        layer_dense(name = "Dense2", activation = "relu", units = 16)  %>%
         layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
         # Dense 3
@@ -185,12 +179,13 @@ for (row in seq_len(nrow(metadata))) {
       batch_size = 16,
       epochs = 50,
       validation_split = 0,
-      verbose = 1,
+      # Uncomment the following to monitor validation error during training w/ verbose = 1
       validation_data =
         list(
           test_data_array,
           test_labels
         ),
+      verbose = 0,
       callbacks =
         list(
           callback_early_stopping(

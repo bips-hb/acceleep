@@ -428,7 +428,7 @@ cv_results_full %>%
 
 ```{r rnn-results-ranked}
 cv_results_full %>%
-  filter(model_kind == "RNN") %>%
+  filter(stringr::str_detect(model_kind, "^RNN")) %>%
   tidyr::unnest(data) %>%
   group_by(model_spec, timestamp, res, outcome_unit) %>%
   summarize(
