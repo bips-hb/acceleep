@@ -145,7 +145,7 @@ cv_results %>%
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-    y = "Model Type", x = "Per-Subject RMSE (Mean + Bootstrap-CI)"
+    y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
   hrbrthemes::theme_ipsum_ps(grid = "Y")
 ```
