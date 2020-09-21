@@ -54,37 +54,6 @@ echo "####################"
 
 sleep 120
 
-echo "####################"
-echo "## Starting CNN 7 ##"
-echo "####################"
-
-./k1-cv-convnet-7.R
-
-sleep 120
-
-echo "####################"
-echo "## Starting CNN 8 ##"
-echo "####################"
-
-./k1-cv-convnet-8.R
-
-sleep 120
-
-echo "####################"
-echo "## Starting CNN 9 ##"
-echo "####################"
-
-./k1-cv-convnet-9.R
-
-sleep 120
-
-echo "#####################"
-echo "## Starting CNN 10 ##"
-echo "#####################"
-
-./k1-cv-convnet-10.R
-
-sleep 120
 
 echo "####################"
 echo "## Starting DNN 1 ##"
@@ -102,11 +71,11 @@ echo "####################"
 
 sleep 120
 
-# echo "####################"
-# echo "## Starting DNN (cb) ##"
-# echo "####################"
-#
-# ./k1-cv-dnn-currentbest.R
+echo "####################"
+echo "## Starting DNN (cb) ##"
+echo "####################"
+
+./k1-cv-dnn-currentbest.R
 #
 # echo "####################"
 # echo "## Starting RNN 1Hz ##"
@@ -114,15 +83,15 @@ sleep 120
 #
 # ./k1-cv-rnn-1hz.R
 
-echo "#######################"
-echo "## Starting RNN 10Hz ##"
-echo "#######################"
-
-./k1-cv-rnn-10hz.R
+# echo "#######################"
+# echo "## Starting RNN 10Hz ##"
+# echo "#######################"
+#
+# ./k1-cv-rnn-10hz.R
 
 # sleep 60; ./k1-cv-lm.R
 # sleep 60; ./k1-cv-rf.R
 
-echo "\n\n\n"
+echo ""
 echo "BEHOLD! The deed is done!\n"
 echo "*takes bow*"

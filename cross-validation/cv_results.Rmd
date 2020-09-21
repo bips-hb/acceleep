@@ -25,9 +25,9 @@ theme_set(hrbrthemes::theme_ipsum_ps())
 current_best <- tibble::tribble(
   ~model_kind, ~timestamp,
   "CNN",  20200916192100,
-  "DNN",  20200917000101,
+  "DNN",  20200921115935,
   "RNN (1Hz)",  20200917020316,
-  "RNN (10Hz)", 20200912043406,
+  "RNN (10Hz)", 20200919233628,
   "RF",  20200910115426,
   "LM",  20200903163311,
 )
@@ -90,7 +90,7 @@ cv_results %>%
 ```{r boxplot-by-unit-accel}
 cv_results %>%
   tidyr::unnest(data) %>%
-  ggplot(aes(y = reorder(accel, -rmse), x = rmse)) +
+  ggplot(aes(y = forcats::fct_rev(accel), x = rmse)) +
   facet_grid(rows = vars(model_kind), cols = vars(outcome_unit), scales = "free") +
   geom_point(size = 1, alpha = .2, position = position_jitter(width = .01, seed = 23)) +
   geom_boxplot(alpha = .5, outlier.alpha = 0) +
@@ -122,16 +122,45 @@ cv_results %>%
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
   hrbrthemes::theme_ipsum_ps(
-    grid = "Y",
+    grid = "X",
     strip_text_size = 9
   )
 ```
+
+Subset to only primary models of interest:
+
+```{r boxplot-by-unit-mainmodels}
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+```
+
 
 ### Mean + Bootstrap-CI
 
 ```{r meanci-by-unit}
 cv_results %>%
   tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
   ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
   stat_summary(geom = "errorbar", fun.data = "mean_cl_boot")  +
@@ -141,7 +170,10 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Mean + Bootstrap-CI)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+  hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
 ```
 
 ### Mean + SD
@@ -149,6 +181,9 @@ cv_results %>%
 ```{r meansd-by-unit}
 cv_results %>%
   tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
   group_by(model_kind, accel, outcome_unit) %>%
   summarize(
     y = mean(rmse),
@@ -166,9 +201,111 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+    hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
 ```
 
+```{r meansd-by-unit-mainmodels}
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, -y), y = y)) +
+  coord_flip() +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
+  ) +
+    hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN", "LM", "DNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, y), y = y)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (Mean +- SD)"
+  ) +
+    hrbrthemes::theme_ipsum_ps(
+    grid = "Yy",
+    strip_text_size = 9
+  )
+```
+
+### Histograms
+
+```{r hist-by-accel}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = rmse, fill = accel, color = accel)) +
+  facet_grid(cols = vars(outcome_unit), rows = vars(model_kind), scales = "free") +
+  geom_density(aes(y = stat(scaled)), alpha = .1) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+```
+
+```{r hist-by-model}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = rmse, fill = model_kind, color = model_kind)) +
+  facet_grid(cols = vars(outcome_unit), rows = vars(accel), scales = "free") +
+  geom_density(aes(y = stat(scaled)), alpha = .1) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+```
+
+```{r histby-model-mainmodels}
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+    mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  ggplot(aes(x = rmse, fill = model_kind, color = model_kind)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_density(aes(y = stat(scaled)), alpha = .2) +
+  geom_histogram(aes(y = stat(ndensity)), bins = 20, alpha = .2, position = position_dodge2()) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(
+    grid = "Y",
+    strip_text_size = 9
+  )
+```
 
 
 ## Tables

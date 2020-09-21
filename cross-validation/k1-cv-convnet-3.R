@@ -14,7 +14,7 @@ MINI_RUN <- FALSE
 
 tick <- Sys.time()
 # Declaring metadata ----
-model_kind <- "DNN"
+model_kind <- "CNN"
 run_start <- format(tick, '%Y%m%d%H%M%S')
 cliapp::cli_alert_info("Starting {model_kind} LOSO-CV on {run_start}")
 
@@ -37,26 +37,24 @@ for (row in seq_len(nrow(metadata))) {
   # hold current metadata
   metaparams <- metadata[row, ]
   cliapp::cli_alert_info("Starting {model_kind} on {metaparams$model} ({metaparams$placement}) / {metaparams$outcome}")
-
   # browser()
 
   # Collecting original training data only tpo get it's subject IDs
   # resolution is small here because it doesn't matter, actual training data is read later
-  c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_regression(
+  c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_lstm(
     model = metaparams$model, placement = metaparams$placement,
     outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
-    interval_length = 30, res = metaparams$res, normalize = FALSE
+    interval_length = 30,
+    res = 1 # This is on purposes, just for speedier data ingestion to get the training subject IDs etc.
   )
-
-  # This is easier for later subject-splitting I assume.
-  train_data_full$outcome <- train_labels_full
-  train_data_full <- train_data_full %>%
-    select(ID, interval, outcome, everything())
 
   IDs_full <- train_data_full %>%
     pull(.data$ID) %>%
     unique() %>%
     sort()
+
+  # Get the entire dataset (again), from which each LOO-CV train/validation set will be derived
+  full_data <- get_combined_data(model = metaparams$model, placement = metaparams$placement, res = metaparams$res)
 
   # Initialize empty tibble to collect results
   cv_result <- tibble::tibble()
@@ -73,49 +71,47 @@ for (row in seq_len(nrow(metadata))) {
 
     # Dataprep ----
     # Split into train / validation datasets based on subject IDs
-    training_data <- train_data_full %>%
-      filter(.data$ID %in% IDs_full, .data$ID != i) %>%
-      select(-.data$outcome)
+    training_data <- full_data %>%
+      filter(.data$ID %in% IDs_full, .data$ID != i)
 
     # Fail if for some reason left out ID is in training set
     stopifnot(!(i %in% unique(training_data$ID)))
 
-    test_data <- train_data_full %>%
-      filter(.data$ID == i) %>%
-      select(-.data$outcome)
+    validation_data <- full_data %>%
+      filter(.data$ID == i)
 
     # Fail if left out ID is _not_ in validation data where it belongs
-    stopifnot(i %in% unique(test_data$ID))
+    stopifnot(i %in% unique(validation_data$ID))
 
 
     # Check
     unique(training_data$ID)
-    unique(test_data$ID)
+    unique(validation_data$ID)
 
-    # Normalize data
-    training_means <- training_data %>%
-      select(-c("ID", "interval")) %>%
-      purrr::map_dbl(mean)
-
-    training_sds <- training_data %>%
-      select(-c("ID", "interval")) %>%
-      purrr::map_dbl(sd)
-
-    training_data[-c(1:2)] <- scale(training_data[-c(1:2)], center = training_means, scale =  training_sds)
-    test_data[-c(1:2)] <- scale(test_data[-c(1:2)], center = training_means, scale =  training_sds)
+    # Normalize
+    c(training_data, validation_data) %<-% normalize_accelerometry(training_data, validation_data)
 
 
     # Split into data and labels
-    train_labels <- train_data_full %>%
-      filter(.data$ID %in% IDs_full, .data$ID != i) %>%
-      pull(.data$outcome)
+    split_data <- split_data_labels(training_data, validation_data, outcome = metaparams$outcome)
 
-    test_labels <- train_data_full %>%
-      filter(.data$ID == i) %>%
-      pull(.data$outcome)
+    c(train_data, train_labels) %<-% split_data$training
+    c(test_data, test_labels) %<-% split_data$validation
 
-    dim(training_data)
+    # Reshaping to array form, keep train_data_full for later prediction
+    train_data_array <- keras_reshape_accel(
+      accel_tbl = train_data, interval_length = 30, res = metaparams$res
+    )
+
+    test_data_array <- keras_reshape_accel(
+      accel_tbl = test_data, interval_length = 30, res = metaparams$res
+    )
+
+    dim(train_data)
+    dim(train_data_array)
+
     dim(test_data)
+    dim(test_data_array)
 
     length(train_labels)
     length(test_labels)
@@ -124,41 +120,45 @@ for (row in seq_len(nrow(metadata))) {
 
     strategy <- tensorflow::tf$distribute$MirroredStrategy(devices = NULL)
 
-    model_note <- "D512-D512-BN-E30-ES"
+    model_note <- "CF256K20-MP10-CF128K10-GMP-D64-D32-BN-E50-ES_Strides2"
     model_tick <- Sys.time()
 
     with(strategy$scope(), {
       model <- keras_model_sequential() %>%
-        # L1 --
-        layer_dense(
-          input_shape = 30,
-          name = "Dense1",
-          activation = "relu", units = 512
+        # Conv 1
+        layer_conv_1d(
+          name = "Conv1-F256K20-L2",
+          filters = 256, kernel_size = 20, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.01),
+          input_shape = dim(train_data_array)[c(2, 3)],
+          strides = 2L
         )  %>%
         layer_batch_normalization() %>%
-        layer_dropout(rate = 0.2)  %>%
-        # L2 --
-        layer_dense(
-          name = "Dense2",
-          activation = "relu", units = 512
+        # MaxPooling 1
+        layer_max_pooling_1d(name = "MaxPooling1D-10", pool_size = 10) %>%
+        # Conv 2
+        layer_conv_1d(
+          name = "Conv2-F128K10-L2",
+          filters = 128, kernel_size = 10, activation = "relu",
+          kernel_regularizer = regularizer_l2(l = 0.01),
+          strides = 2L
         )  %>%
         layer_batch_normalization() %>%
+        # Global Max Pooling
+        layer_global_max_pooling_1d(name = "GlobalMaxPooling1D") %>%
+        # Dense 1
+        layer_dense(name = "Dense1-64", activation = "relu", units = 64)  %>%
+        layer_batch_normalization() %>%
         layer_dropout(rate = 0.2)  %>%
-        # # L3 --
-        # layer_dense(
-        #   name = "Dense3-64",
-        #   activation = "relu", units = 64
-        # )  %>%
-        # layer_batch_normalization() %>%
-        # layer_dropout(rate = 0.2)  %>%
-        # # L4 --
-        # layer_dense(
-        #   name = "Dense4-32",
-        #   activation = "relu", units = 32
-        # ) %>%
+        # Dense 2
+        layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
+        layer_batch_normalization() %>%
+        layer_dropout(rate = 0.2)  %>%
+        # Dense 3
+        # layer_dense(name = "Dense3-64", activation = "relu", units = 32) %>%
         # layer_batch_normalization() %>%
         # layer_dropout(rate = 0.2) %>%
-        # Output layer
+        # Output
         layer_dense(units = 1, name = "output", activation = "linear")
     })
 
@@ -168,15 +168,15 @@ for (row in seq_len(nrow(metadata))) {
     )
 
     history <- model %>% fit(
-      as.matrix(training_data[-c(1, 2)]), # Make sure to exclude ID and interval columns (1, 2)
+      train_data_array,
       train_labels,
       batch_size = 16,
-      epochs = 30,
+      epochs = 50,
       validation_split = 0,
       # Uncomment the following to monitor validation error during training w/ verbose = 1
       validation_data =
         list(
-          as.matrix(test_data[-c(1, 2)]),
+          test_data_array,
           test_labels
         ),
       verbose = 0,
@@ -185,7 +185,7 @@ for (row in seq_len(nrow(metadata))) {
           callback_early_stopping(
             monitor = "val_loss",
             min_delta = 0.1,
-            patience = 8,
+            patience = 5,
             mode = "min",
             restore_best_weights = TRUE
           )
@@ -197,16 +197,13 @@ for (row in seq_len(nrow(metadata))) {
 
     # Evaluate, save results
     eval_result <- model %>%
-      evaluate(as.matrix(test_data[-c(1, 2)]), test_labels, verbose = 0)
+      evaluate(test_data_array, test_labels, verbose = 0)
 
     # Make predictions
     predicted_obs <- test_data %>%
-      select(ID, interval) %>%
-      # distinct() %>%
-      mutate(
-        outcome = test_labels,
-        predicted = as.numeric(predict(model, as.matrix(test_data[-c(1, 2)])))
-      )
+      select(ID, interval, outcome = metaparams$outcome) %>%
+      distinct() %>%
+      mutate(predicted = as.numeric(predict(model, test_data_array)))
 
     # prediction rmse differs from result of evaluate() o_O
     prediction_rmse <- predicted_obs %>%
@@ -223,7 +220,8 @@ for (row in seq_len(nrow(metadata))) {
       predicted_obs = list(predicted_obs),
       model_note = model_note,
       mini_run = MINI_RUN,
-      model_took = model_took
+      model_took = model_took,
+      epochs_completed = length(history$metrics$loss)
     )
 
     cv_result <- bind_rows(cv_result, current_result)
@@ -244,6 +242,7 @@ for (row in seq_len(nrow(metadata))) {
 
   # Save CV RMSE results
   saveRDS(object = cv_result, file = fs::path(out_dir, filename))
+
 
   # Write model structure to plain text file
   capture.output(summary(model), file =  fs::path(out_dir, fs::path_ext_set(filename, "txt")))
