@@ -688,17 +688,17 @@ keras_prep_regression <- function(
 
   # Normalize
   if (normalize) {
-    training_means <- training_data %>%
+    training_means <- train_data %>%
       select(-c("ID", "interval")) %>%
       purrr::map_dbl(mean)
 
-    training_sds <- training_data %>%
+    training_sds <- train_data %>%
       select(-c("ID", "interval")) %>%
       purrr::map_dbl(sd)
 
     # Important to exclude columns 1 + 2 (ID, interval), quadruple check column ordering
-    training_data[-c(1, 2)] <- scale(training_data[-c(1, 2)], center = training_means, scale =  training_sds)
-    validation_data[-c(1, 2)] <- scale(validation_data[-c(1, 2)], center = training_means, scale =  training_sds)
+    train_data[-c(1, 2)] <- scale(train_data[-c(1, 2)], center = training_means, scale =  training_sds)
+    test_data[-c(1, 2)] <- scale(test_data[-c(1, 2)], center = training_means, scale =  training_sds)
   }
 
 
