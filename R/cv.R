@@ -50,5 +50,60 @@ read_cv_results <- function(path, latest_only = TRUE) {
       # mini_run = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "mini_run", .default = NA)))
     ) %>%
     dplyr::rename(outcome_unit = .data$outcome) %>%
-    dplyr::mutate(model_kind = ifelse(.data$model_kind == "RNN", glue::glue("RNN ({res}Hz)"), .data$model_kind))
+    dplyr::mutate(
+      model_kind = ifelse(.data$model_kind == "RNN", glue::glue("RNN ({res}Hz)"), .data$model_kind),
+      outcome_unit = factor(outcome_unit, levels = c("kJ", "MET", "Jrel")),
+      accel = factor(accel)
+    )
+}
+
+#' Read holdout results and bind them together
+#'
+#' @param path Path to holdout validation results, e.g. `here::here("output/holdout-validation/CNN")`.
+#' @return A tibble
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Iterate over all model output folders, read in latest CV runs, bind together
+#' holdout_results <- purrr::map_df(
+#'  here::here("output/holdout-validation", c("LM", "DNN", "CNN", "RNN")),
+#'   read_holdout_results
+#' )
+#' }
+read_holdout_results <- function(path) {
+  # browser()
+  path <- fs::dir_ls(path)
+
+  # get only latest result
+  path <- rev(sort(path))[[1]]
+
+  purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
+    tibble::tibble(
+      file = .x,
+      data = list(readRDS(.x))
+    )
+  }) %>%
+    mutate(
+      file = fs::path_file(file) %>% fs::path_ext_remove(),
+    ) %>%
+    tidyr::separate(
+      col = .data$file,
+      into = c("folds", "method", "model_kind", "model", "placement", "outcome", "res", "timestamp"),
+      sep = "-"
+    ) %>%
+    dplyr::mutate(
+      accel_id = glue::glue("{.data$model}_{.data$placement}"),
+      # accel = glue::glue("{label_accel_models(.data$model)} ({ purrr::map_chr(.data$placement, label_placement)})"),
+      accel = glue::glue("{label_accel_models(.data$model)} ({label_placement(.data$placement)})"),
+      model_spec = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "model_note", .default = NA))),
+      model_spec = ifelse(is.na(model_spec), model_kind, model_spec),
+      # mini_run = purrr::map_chr(.data$data, ~unique(purrr::pluck(.x, "mini_run", .default = NA)))
+    ) %>%
+    dplyr::rename(outcome_unit = .data$outcome) %>%
+    dplyr::mutate(
+      model_kind = ifelse(.data$model_kind == "RNN", glue::glue("RNN ({res}Hz)"), .data$model_kind),
+      outcome_unit = factor(outcome_unit, levels = c("kJ", "MET", "Jrel")),
+      accel = factor(accel)
+    )
 }

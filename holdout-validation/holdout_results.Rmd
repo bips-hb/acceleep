@@ -1,0 +1,220 @@
+---
+title: "LOSO-CV Results"
+output: 
+  html_document: 
+    toc: yes
+    fig_width: 22
+    fig_height: 13
+    fig.retina: 2
+    device: ragg::agg_png
+    self_contained: no
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+library(acceleep)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(kableExtra)
+library(hrbrthemes)
+
+theme_set(hrbrthemes::theme_ipsum_ps())
+
+# Iterate over all model output folders, read in latest CV runs, bind together
+holdout_results <- purrr::map_df(
+  here::here("output/holdout-validation", c("LM", "RF")), # "DNN", "CNN", "RNN")),
+  ~read_holdout_results(.x)
+) %>%
+  mutate(
+    model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind)
+  )
+```
+
+
+## Boxplot by Accelerometer
+
+```{r boxplot-by-accelerometer}
+holdout_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(grid = "Y")
+
+
+# ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
+```
+
+```{r boxplot-by-unit-accel}
+holdout_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = forcats::fct_rev(accel), x = rmse)) +
+  facet_grid(rows = vars(model_kind), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .01, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(grid = "X")
+```
+
+### Horizontal box plot grouped by model
+
+```{r boxplot-by-unit}
+holdout_results %>%
+  tidyr::unnest(data) %>%
+    mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+```
+
+Subset to only primary models of interest:
+
+```{r boxplot-by-unit-mainmodels}
+holdout_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+```
+
+
+## Tables
+
+```{r table-by-accel}
+holdout_results %>%
+  unnest(data) %>%
+  transmute(
+    model_kind = model_kind,
+    accel = accel,
+    outcome_unit = outcome_unit,
+    measure = round(rmse, 2)
+  ) %>%
+  tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
+  rename(Model = model_kind, Outcome = outcome_unit) %>%
+  kable(caption = glue::glue("Holdout validation results: RMSE")) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1)
+```
+
+```{r table-by-model}
+holdout_results %>%
+  unnest(data) %>%
+  group_by(accel, outcome_unit) %>%
+  mutate(
+    measure = round(rmse, 2),
+    is_min_mean_rmse = rmse == min(rmse)
+  ) %>%
+  ungroup() %>%
+  select(
+    model_kind,
+    accel,
+    outcome_unit,
+    measure,
+    is_min_mean_rmse
+  ) %>%
+  mutate(measure = cell_spec(measure, bold = is_min_mean_rmse)) %>%
+  select(-is_min_mean_rmse) %>%
+  pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
+  rename(Accelerometer = accel, Outcome = outcome_unit) %>%
+  kable(
+    caption = glue::glue("Holdout validation results: RMSE"), escape = FALSE
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1) %>%
+  footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
+```
+
+Preferred table for final text:
+
+```{r table-by-model-redux}
+holdout_results %>%
+  unnest(data) %>%
+  group_by(accel, outcome_unit) %>%
+  mutate(
+    measure = round(rmse, 2),
+    is_min_mean_rmse = rmse == min(rmse)
+  ) %>%
+  ungroup() %>%
+  select(
+    model_kind,
+    accel,
+    outcome_unit,
+    measure,
+    is_min_mean_rmse
+  ) %>%
+  mutate(measure = cell_spec(measure, bold = is_min_mean_rmse)) %>%
+  select(-is_min_mean_rmse) %>%
+  pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
+  rename(Accelerometer = accel, Outcome = outcome_unit) %>%
+  select(Outcome, Accelerometer, everything()) %>%
+  arrange(Outcome) %>%
+  kable(
+    caption = glue::glue("Holdout validation results: RMSE"), escape = FALSE
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1) %>%
+  footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
+```
+
+# Model Runtime
+
+Model runtime summaries (seconds)
+
+```{r runtime}
+holdout_results %>%
+  unnest(data) %>%
+  filter(!is.na(model_took)) %>%
+  group_by(model_kind) %>%
+  summarize(
+    mean_took = mean(model_took, na.rm = TRUE),
+    sd_took =  sd(model_took, na.rm = TRUE),
+    range_took = paste0(range(model_took), collapse = " – "),
+    .groups = "drop"
+  ) %>%
+  kable(digits = 2, caption = "Model runtimes") %>%
+  kable_styling()
+
+```
+
