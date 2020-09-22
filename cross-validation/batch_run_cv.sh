@@ -55,6 +55,14 @@ echo "####################"
 sleep 120
 
 echo "####################"
+echo "## Starting DNN (cb) ##"
+echo "####################"
+
+./k1-cv-dnn-currentbest.R
+
+sleep 120
+
+echo "####################"
 echo "## Starting DNN 1 ##"
 echo "####################"
 
@@ -68,12 +76,7 @@ echo "####################"
 
 sleep 120
 
-echo "####################"
-echo "## Starting DNN (cb) ##"
-echo "####################"
 
-./k1-cv-dnn-currentbest.R
-#
 # echo "####################"
 # echo "## Starting RNN 1Hz ##"
 # echo "####################"
