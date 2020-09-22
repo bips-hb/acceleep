@@ -6,13 +6,13 @@
 #
 # ./k1-cv-convnet-currentbest.R
 
-echo "####################"
-echo "## Starting CNN 1 ##"
-echo "####################"
-
-./k1-cv-convnet-1.R
-
-sleep 120
+# echo "####################"
+# echo "## Starting CNN 1 ##"
+# echo "####################"
+#
+# ./k1-cv-convnet-1.R
+#
+# sleep 120
 
 echo "####################"
 echo "## Starting CNN 2 ##"
@@ -54,14 +54,11 @@ echo "####################"
 
 sleep 120
 
-
 echo "####################"
 echo "## Starting DNN 1 ##"
 echo "####################"
 
 ./k1-cv-dnn-1.R
-
-sleep 120
 
 echo "####################"
 echo "## Starting DNN 2 ##"
@@ -88,6 +85,12 @@ echo "####################"
 # echo "#######################"
 #
 # ./k1-cv-rnn-10hz.R
+
+# echo "#######################"
+# echo "## Starting RNN orig ##"
+# echo "#######################"
+#
+# ./k1-cv-rnn-origres.R
 
 # sleep 60; ./k1-cv-lm.R
 # sleep 60; ./k1-cv-rf.R

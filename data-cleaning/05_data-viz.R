@@ -149,7 +149,7 @@ ggsave(
   plot = p_sdee,
   filename = glue::glue("subj-022-accel-sd-kj-standardized-geneactiv-hip-right.png"),
   path = here::here("output"),
-  width = 13, height = 8
+  width = 10, height = 6
 )
 
 
@@ -170,7 +170,7 @@ p_sdee_offset <- files_overview %>%
   tidyr::pivot_longer(cols = c(ends_with("_sd"), "kJ")) %>%
   # mild offset
   mutate(
-    index = ifelse(name == "kJ", index, index + 2)
+    index = ifelse(name == "kJ", index, index + 1)
   ) %>%
   ggplot(aes(x = index, y = value, color = name)) +
   geom_path() +
@@ -180,7 +180,7 @@ p_sdee_offset <- files_overview %>%
   ) +
   labs(
     title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
-    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized\nkJ offset by 2 intervals",
+    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized\nkJ offset by 1 intervals",
     x = "Interval Index", y = "Standardized Value",
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
@@ -192,6 +192,108 @@ ggsave(
   plot = p_sdee_offset,
   filename = glue::glue("subj-022-accel-sd-kj-offset-standardized-geneactiv-hip-right.png"),
   path = here::here("output"),
+  width = 10, height = 6
+)
+
+# Axis ordering comparison ----
+
+sample_accel_1hz <- bind_rows(
+  get_combined_data(model = "actigraph", placement = "hip_right", res = 1) %>%
+    mutate(accel = glue::glue("{label_accel_models('actigraph')} (right hip)")),
+  get_combined_data(model = "geneactiv", placement = "hip_right", res = 1) %>%
+    mutate(accel = glue::glue("{label_accel_models('geneactiv')} (right hip)"))
+) %>%
+  select(-c("kJ", "Jrel", "MET", "rowid")) %>%
+  filter(ID %in% c("001", "008")) %>%
+  group_by(ID, accel) %>%
+  mutate(minute = seq_along(interval)/60) %>%
+  tidyr::pivot_longer(cols = c("X", "Y", "Z"))
+
+sample_accel_10hz <- bind_rows(
+  get_combined_data(model = "actigraph", placement = "hip_right", res = 10) %>%
+    mutate(accel = glue::glue("{label_accel_models('actigraph')} (right hip)")),
+  get_combined_data(model = "geneactiv", placement = "hip_right", res = 10) %>%
+    mutate(accel = glue::glue("{label_accel_models('geneactiv')} (right hip)"))
+) %>%
+  select(-c("kJ", "Jrel", "MET", "rowid")) %>%
+  filter(ID %in% c("001", "008")) %>%
+  group_by(ID, accel) %>%
+  mutate(minute = seq_along(interval)/10/60) %>%
+  tidyr::pivot_longer(cols = c("X", "Y", "Z"))
+
+sample_accel_100hz <- bind_rows(
+  get_combined_data(model = "actigraph", placement = "hip_right", res = 100) %>%
+    mutate(accel = glue::glue("{label_accel_models('actigraph')} (right hip)")),
+  get_combined_data(model = "geneactiv", placement = "hip_right", res = 100) %>%
+    mutate(accel = glue::glue("{label_accel_models('geneactiv')} (right hip)"))
+) %>%
+  select(-c("kJ", "Jrel", "MET", "rowid")) %>%
+  filter(ID %in% c("001", "008")) %>%
+  group_by(ID, accel) %>%
+  mutate(minute = seq_along(interval)/100/60) %>%
+  tidyr::pivot_longer(cols = c("X", "Y", "Z"))
+
+
+p_axis_order_1 <- ggplot(sample_accel_1hz, aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  hrbrthemes::theme_ipsum_pub() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 1Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_1,
+  filename = glue::glue("axis-order-comparison-hip-right-1Hz.png"),
+  path = here::here("output"),
   width = 13, height = 8
 )
 
+p_axis_order_10 <- ggplot(sample_accel_10hz, aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  hrbrthemes::theme_ipsum_pub() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 10Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_10,
+  filename = glue::glue("axis-order-comparison-hip-right-10Hz.png"),
+  path = here::here("output"),
+  width = 13, height = 8
+)
+
+
+p_axis_order_100 <- ggplot(sample_accel_100hz, aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  hrbrthemes::theme_ipsum_pub() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 100Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_100,
+  filename = glue::glue("axis-order-comparison-hip-right-100Hz.png"),
+  path = here::here("output"),
+  width = 13, height = 8
+)

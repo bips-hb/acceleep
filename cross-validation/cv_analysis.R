@@ -15,22 +15,6 @@ cv_results_full <- purrr::map_df(
   ~read_cv_results(.x, latest_only = FALSE)
 )
 
-# RF num.trees comparison
-cv_results_full %>%
-  filter(model_kind == "RF") %>%
-  ggplot(aes(x = "", y = mean_rmse, fill = timestamp)) +
-  facet_grid(rows = vars(outcome_unit), cols = vars(accel), scales = "free") +
-  geom_point(size = 4, alpha = .5, shape = 21, color = "black", position = position_dodge2(width = .5)) +
-  scale_fill_brewer(palette = "Set1") +
-  labs(
-    title = "RF: LOSO-CV RMSE (mean)",
-    subtitle = "Blue: Model with num.trees = 500 for all units\nRed: num.trees = 50 for MET, 500 else",
-    x = "", y = "Mean RMSE", fill = "Model ID"
-  ) +
-  hrbrthemes::theme_ipsum_ps() +
-  theme(legend.position = "top")
-
-
 # predict() vs evaluate() ----
 cv_results %>%
   tidyr::unnest(data) %>%

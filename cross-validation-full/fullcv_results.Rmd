@@ -22,10 +22,20 @@ library(hrbrthemes)
 
 theme_set(hrbrthemes::theme_ipsum_ps())
 
+# current_best <- tibble::tribble(
+#   ~model_kind, ~timestamp,
+#   "CNN",  20200916192100,
+#   "DNN",  20200921115935,
+#   "RNN (1Hz)",  20200917020316,
+#   "RNN (10Hz)", 20200919233628,
+#   "RF",  20200910115426,
+#   "LM",  20200903163311,
+# )
+
 # Iterate over all model output folders, read in latest CV runs, bind together
-holdout_results <- purrr::map_df(
-  here::here("output/holdout-validation", c("LM", "RF", "DNN")), # "CNN", "RNN")),
-  ~read_holdout_results(.x)
+cv_results <- purrr::map_df(
+  here::here("output/cross-validation-full", c("LM", "RF")), #"DNN", "CNN", "RNN")),
+  ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(
     model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind)
@@ -36,7 +46,7 @@ holdout_results <- purrr::map_df(
 ## Boxplot by Accelerometer
 
 ```{r boxplot-by-accelerometer}
-holdout_results %>%
+cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
   facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
@@ -55,7 +65,7 @@ holdout_results %>%
 ```
 
 ```{r boxplot-by-unit-accel}
-holdout_results %>%
+cv_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(y = forcats::fct_rev(accel), x = rmse)) +
   facet_grid(rows = vars(model_kind), cols = vars(outcome_unit), scales = "free") +
@@ -73,7 +83,7 @@ holdout_results %>%
 ### Horizontal box plot grouped by model
 
 ```{r boxplot-by-unit}
-holdout_results %>%
+cv_results %>%
   tidyr::unnest(data) %>%
     mutate(
     accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
@@ -97,7 +107,7 @@ holdout_results %>%
 Subset to only primary models of interest:
 
 ```{r boxplot-by-unit-mainmodels}
-holdout_results %>%
+cv_results %>%
   filter(model_kind %in% c("RF", "CNN")) %>%
   tidyr::unnest(data) %>%
   mutate(
@@ -119,42 +129,164 @@ holdout_results %>%
   )
 ```
 
+### Mean + SD
+
+```{r meansd-by-unit}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, -y), y = y)) +
+  coord_flip() +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
+  ) +
+    hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+```
+
+```{r meansd-by-unit-mainmodels}
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, -y), y = y)) +
+  coord_flip() +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
+  ) +
+    hrbrthemes::theme_ipsum_ps(
+    grid = "X",
+    strip_text_size = 9
+  )
+
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN", "LM", "DNN")) %>%
+  tidyr::unnest(data) %>%
+  mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    y = mean(rmse),
+    ymin = y - sd(rmse),
+    ymax = y + sd(rmse),
+    .groups = "drop"
+  ) %>%
+  ggplot(aes(x = reorder(model_kind, y), y = y)) +
+  facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free") +
+  geom_errorbar(aes(ymin = ymin, ymax = ymax)) +
+  geom_point(fill = "white", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    x = "Model Type", y = "Per-Subject RMSE (Mean +- SD)"
+  ) +
+    hrbrthemes::theme_ipsum_ps(
+    grid = "Yy",
+    strip_text_size = 9
+  )
+```
+
+### Histograms
+
+```{r hist-by-accel}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = rmse, fill = accel, color = accel)) +
+  facet_grid(cols = vars(outcome_unit), rows = vars(model_kind), scales = "free") +
+  geom_density(aes(y = stat(scaled)), alpha = .1) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+```
+
+```{r hist-by-model}
+cv_results %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = rmse, fill = model_kind, color = model_kind)) +
+  facet_grid(cols = vars(outcome_unit), rows = vars(accel), scales = "free") +
+  geom_density(aes(y = stat(scaled)), alpha = .1) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+```
+
+```{r histby-model-mainmodels}
+cv_results %>%
+  filter(model_kind %in% c("RF", "CNN")) %>%
+  tidyr::unnest(data) %>%
+    mutate(
+    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
+  ) %>%
+  ggplot(aes(x = rmse, fill = model_kind, color = model_kind)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
+  geom_density(aes(y = stat(scaled)), alpha = .2) +
+  geom_histogram(aes(y = stat(ndensity)), bins = 20, alpha = .2, position = position_dodge2()) +
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
+  ) +
+  hrbrthemes::theme_ipsum_ps(
+    grid = "Y",
+    strip_text_size = 9
+  )
+```
+
 
 ## Tables
 
 ```{r table-by-accel}
-holdout_results %>%
-  unnest(data) %>%
+cv_results %>%
   transmute(
     model_kind = model_kind,
     accel = accel,
     outcome_unit = outcome_unit,
-    measure = round(rmse, 2)
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
   ) %>%
-  group_by(model_kind, outcome_unit) %>%
-  mutate(
-    is_min_rmse = measure == min(measure),
-    measure = cell_spec(measure, bold = is_min_rmse)
-  ) %>%
-  select(-is_min_rmse) %>%
-  tidyr::pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = accel, values_from = measure) %>%
-  select(outcome_unit, model_kind, everything()) %>%
-  arrange(outcome_unit) %>%
+  tidyr::pivot_wider(names_from = accel, values_from = measure) %>%
   rename(Model = model_kind, Outcome = outcome_unit) %>%
-  kable(caption = glue::glue("Holdout validation results: RMSE"), escape = FALSE) %>%
+  kable(caption = glue::glue("LOSO-CV results, Mean RMSE (SD)")) %>%
   kable_styling() %>%
-  collapse_rows(columns = 1) %>%
-  footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Model and Outcome)")
-
+  collapse_rows(columns = 1)
 ```
 
 ```{r table-by-model}
-holdout_results %>%
-  unnest(data) %>%
+cv_results %>%
+  mutate(
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
+  ) %>%
   group_by(accel, outcome_unit) %>%
   mutate(
-    measure = round(rmse, 2),
-    is_min_mean_rmse = rmse == min(rmse)
+    # min_rmse = min(mean_rmse),
+    is_min_mean_rmse = mean_rmse == min(mean_rmse)
   ) %>%
   ungroup() %>%
   select(
@@ -169,7 +301,7 @@ holdout_results %>%
   pivot_wider(id_cols = c(model_kind, accel, outcome_unit), names_from = model_kind, values_from = measure) %>%
   rename(Accelerometer = accel, Outcome = outcome_unit) %>%
   kable(
-    caption = glue::glue("Holdout validation results: RMSE"), escape = FALSE
+    caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1) %>%
@@ -179,12 +311,14 @@ holdout_results %>%
 Preferred table for final text:
 
 ```{r table-by-model-redux}
-holdout_results %>%
-  unnest(data) %>%
+cv_results %>%
+  mutate(
+    measure = glue::glue("{round(mean_rmse, 2)} ({round(sd_rmse, 2)})") %>% as.character()
+  ) %>%
   group_by(accel, outcome_unit) %>%
   mutate(
-    measure = round(rmse, 2),
-    is_min_mean_rmse = rmse == min(rmse)
+    # min_rmse = min(mean_rmse),
+    is_min_mean_rmse = mean_rmse == min(mean_rmse)
   ) %>%
   ungroup() %>%
   select(
@@ -201,7 +335,7 @@ holdout_results %>%
   select(Outcome, Accelerometer, everything()) %>%
   arrange(Outcome) %>%
   kable(
-    caption = glue::glue("Holdout validation results: RMSE"), escape = FALSE
+    caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1) %>%
@@ -213,7 +347,7 @@ holdout_results %>%
 Model runtime summaries (seconds)
 
 ```{r runtime}
-holdout_results %>%
+cv_results %>%
   unnest(data) %>%
   filter(!is.na(model_took)) %>%
   group_by(model_kind) %>%

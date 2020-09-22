@@ -25,7 +25,7 @@ theme_set(hrbrthemes::theme_ipsum_ps())
 current_best <- tibble::tribble(
   ~model_kind, ~timestamp,
   "CNN",  20200916192100,
-  "DNN",  20200921115935,
+  "DNN",  20200922124354,
   "RNN (1Hz)",  20200917020316,
   "RNN (10Hz)", 20200919233628,
   "RF",  20200910115426,
