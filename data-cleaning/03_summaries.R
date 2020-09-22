@@ -51,6 +51,10 @@ files_overview %>%
   group_by(model) %>%
   count(wt = n)
 
+# Real N by accel/placement
+files_overview %>%
+  count(model, placement)
+
 
 # Raw(ish) data example
 set.seed(71)
