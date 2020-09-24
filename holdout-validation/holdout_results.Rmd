@@ -24,7 +24,7 @@ theme_set(hrbrthemes::theme_ipsum_ps())
 
 # Iterate over all model output folders, read in latest CV runs, bind together
 holdout_results <- purrr::map_df(
-  here::here("output/holdout-validation", c("LM", "RF", "DNN")), # "CNN", "RNN")),
+  here::here("output/holdout-validation", c("LM", "RF", "RNN")), # "CNN", "RNN")),
   ~read_holdout_results(.x)
 ) %>%
   mutate(
