@@ -23,19 +23,9 @@ library(tadaathemes)
 
 theme_set(theme_ipsum_ss())
 
-# current_best <- tibble::tribble(
-#   ~model_kind, ~timestamp,
-#   "CNN",  20200916192100,
-#   "DNN",  20200921115935,
-#   "RNN (1Hz)",  20200917020316,
-#   "RNN (10Hz)", 20200919233628,
-#   "RF",  20200910115426,
-#   "LM",  20200903163311,
-# )
-
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
-  here::here("output/cross-validation-full", c("LM", "RF")), #"DNN", "CNN", "RNN")),
+  here::here("output/cross-validation-full", c("LM", "RF", "DNN", "CNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(

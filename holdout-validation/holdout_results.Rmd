@@ -33,7 +33,6 @@ holdout_results <- purrr::map_df(
   )
 ```
 
-
 ## Boxplot by Accelerometer
 
 ```{r boxplot-by-accelerometer}
@@ -41,12 +40,10 @@ holdout_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(x = reorder(model_kind, rmse), y = rmse)) +
   facet_grid(cols = vars(accel), rows = vars(outcome_unit), scales = "free_y") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  geom_point(size = 3) +
   labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    title = "Holdout Validation",
+    subtitle = "Against the respective validation set (1/3 of complete data)",
     x = "Model Type", y = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
   theme_ipsum_ss(grid = "Y")
@@ -60,12 +57,10 @@ holdout_results %>%
   tidyr::unnest(data) %>%
   ggplot(aes(y = forcats::fct_rev(accel), x = rmse)) +
   facet_grid(rows = vars(model_kind), cols = vars(outcome_unit), scales = "free") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .01, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  geom_point(size = 3) +
   labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    title = "Holdout Validation",
+    subtitle = "Against the respective validation set (1/3 of complete data)",
     y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
   theme_ipsum_ss(grid = "X")
@@ -81,12 +76,10 @@ holdout_results %>%
   ) %>%
   ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
   facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
+  geom_point(size = 3) +
   labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    title = "Holdout Validation",
+    subtitle = "Against the respective validation set (1/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
   theme_ipsum_ss(
@@ -94,32 +87,6 @@ holdout_results %>%
     strip_text_size = 9
   )
 ```
-
-Subset to only primary models of interest:
-
-```{r boxplot-by-unit-mainmodels}
-holdout_results %>%
-  filter(model_kind %in% c("RF", "CNN")) %>%
-  tidyr::unnest(data) %>%
-  mutate(
-    accel = stringr::str_replace(accel, "\\s\\(", "\n\\(")
-  ) %>%
-  ggplot(aes(y = reorder(model_kind, -rmse), x = rmse)) +
-  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free_x") +
-  geom_point(size = 1, alpha = .2, position = position_jitter(width = .05, seed = 23)) +
-  geom_boxplot(alpha = .5, outlier.alpha = 0) +
-  stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
-  labs(
-    title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
-    y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
-  ) +
-  theme_ipsum_ss(
-    grid = "X",
-    strip_text_size = 9
-  )
-```
-
 
 ## Tables
 
