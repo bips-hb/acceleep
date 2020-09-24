@@ -1,5 +1,9 @@
 #! /usr/bin/env bash
 
+echo "####################################"
+echo "## Starting full cross validation ##"
+echo "####################################"
+
 cd ~/projects/acceleep/cross-validation-full
 
 echo "#######################"

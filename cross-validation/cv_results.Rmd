@@ -19,8 +19,9 @@ library(dplyr)
 library(tidyr)
 library(kableExtra)
 library(hrbrthemes)
+library(tadaathemes)
 
-theme_set(hrbrthemes::theme_ipsum_ps())
+theme_set(theme_ipsum_ss())
 
 current_best <- tibble::tribble(
   ~model_kind, ~timestamp,
@@ -81,7 +82,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     x = "Model Type", y = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+  theme_ipsum(base_family = "Source Sans 3", grid = "Y")
 
 
 # ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
@@ -100,7 +101,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "X")
+  theme_ipsum(base_family = "Source Sans 3", grid = "X")
 ```
 
 ### Horizontal box plot grouped by model
@@ -121,7 +122,8 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum(
+    base_family = "Source Sans 3",
     grid = "X",
     strip_text_size = 9
   )
@@ -146,7 +148,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -170,7 +172,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Mean + Bootstrap-CI)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -201,7 +203,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+    theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -231,7 +233,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+    theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -258,7 +260,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     x = "Model Type", y = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+    theme_ipsum_ss(
     grid = "Yy",
     strip_text_size = 9
   )
@@ -301,7 +303,7 @@ cv_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "Y",
     strip_text_size = 9
   )
@@ -406,7 +408,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  hrbrthemes::theme_ipsum_pub(
+  theme_ipsum_pub(
     grid = "X", base_size = 8
   )
 ```
@@ -453,7 +455,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)\nAveraged over accelerometers",
     x = "Model Spec", y = "Per-Subject RMSE (Mean +- SD)"
   ) +
-  hrbrthemes::theme_ipsum_pub(grid = "X")
+  theme_ipsum_pub(grid = "X")
 ```
 
 Ranked within outcome unit, averaged over accelerometers
@@ -496,7 +498,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  hrbrthemes::theme_ipsum_pub(grid = "X")
+  theme_ipsum_pub(grid = "X")
 ```
 
 Table with mean'd accelerometers, quick glance at "best overall" model ranking
@@ -559,7 +561,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  hrbrthemes::theme_ipsum_pub(grid = "X") +
+  theme_ipsum_pub(grid = "X") +
   theme(legend.position = "top")
 ```
 

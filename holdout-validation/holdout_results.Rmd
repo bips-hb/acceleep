@@ -19,12 +19,13 @@ library(dplyr)
 library(tidyr)
 library(kableExtra)
 library(hrbrthemes)
+library(tadaathemes)
 
-theme_set(hrbrthemes::theme_ipsum_ps())
+theme_set(theme_ipsum_ss())
 
 # Iterate over all model output folders, read in latest CV runs, bind together
 holdout_results <- purrr::map_df(
-  here::here("output/holdout-validation", c("LM", "RF", "RNN")), # "CNN", "RNN")),
+  here::here("output/holdout-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
   ~read_holdout_results(.x)
 ) %>%
   mutate(
@@ -48,7 +49,7 @@ holdout_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     x = "Model Type", y = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+  theme_ipsum_ss(grid = "Y")
 
 
 # ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
@@ -67,7 +68,7 @@ holdout_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "X")
+  theme_ipsum_ss(grid = "X")
 ```
 
 ### Horizontal box plot grouped by model
@@ -88,7 +89,7 @@ holdout_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -113,7 +114,7 @@ holdout_results %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )

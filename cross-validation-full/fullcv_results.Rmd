@@ -19,8 +19,9 @@ library(dplyr)
 library(tidyr)
 library(kableExtra)
 library(hrbrthemes)
+library(tadaathemes)
 
-theme_set(hrbrthemes::theme_ipsum_ps())
+theme_set(theme_ipsum_ss())
 
 # current_best <- tibble::tribble(
 #   ~model_kind, ~timestamp,
@@ -55,10 +56,10 @@ cv_results %>%
   stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     x = "Model Type", y = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "Y")
+  theme_ipsum_ss(grid = "Y")
 
 
 # ggsave(filename = here::here("LOSO-CV-boxplot-20200907.pdf"), device = cairo_pdf, scale = 2, width = 10, height = 5)
@@ -74,10 +75,10 @@ cv_results %>%
   stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Accelerometer", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(grid = "X")
+  theme_ipsum_ss(grid = "X")
 ```
 
 ### Horizontal box plot grouped by model
@@ -95,10 +96,10 @@ cv_results %>%
   stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -120,10 +121,10 @@ cv_results %>%
   stat_summary(geom = "point", fun = mean, fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -151,10 +152,10 @@ cv_results %>%
   geom_point(fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -181,10 +182,10 @@ cv_results %>%
   geom_point(fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Model Type", x = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "X",
     strip_text_size = 9
   )
@@ -208,10 +209,10 @@ cv_results %>%
   geom_point(fill = "white", shape = 21, color = "black", size = 2) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     x = "Model Type", y = "Per-Subject RMSE (Mean +- SD)"
   ) +
-    hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "Yy",
     strip_text_size = 9
   )
@@ -225,7 +226,8 @@ cv_results %>%
   ggplot(aes(x = rmse, fill = accel, color = accel)) +
   facet_grid(cols = vars(outcome_unit), rows = vars(model_kind), scales = "free") +
   geom_density(aes(y = stat(scaled)), alpha = .1) +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  theme_ipsum_ss()
 ```
 
 ```{r hist-by-model}
@@ -234,7 +236,8 @@ cv_results %>%
   ggplot(aes(x = rmse, fill = model_kind, color = model_kind)) +
   facet_grid(cols = vars(outcome_unit), rows = vars(accel), scales = "free") +
   geom_density(aes(y = stat(scaled)), alpha = .1) +
-  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill"))
+  scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
+  theme_ipsum_ss()
 ```
 
 ```{r histby-model-mainmodels}
@@ -251,10 +254,10 @@ cv_results %>%
   scale_color_brewer(palette = "Dark2", aesthetics = c("color", "fill")) +
   labs(
     title = "Leave-One-Subject-Out Cross Validation",
-    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    subtitle = "Across all subjects in the sample dataset",
     y = "Model Type", x = "Per-Subject RMSE (Quartiles + Mean)"
   ) +
-  hrbrthemes::theme_ipsum_ps(
+  theme_ipsum_ss(
     grid = "Y",
     strip_text_size = 9
   )
