@@ -25,7 +25,7 @@ theme_set(theme_ipsum_ss())
 
 current_best <- tibble::tribble(
   ~model_kind, ~timestamp,
-  "CNN",  20200916192100,
+  "CNN",  20200921164853,
   "DNN",  20200923144304,
   "RNN (1Hz)",  20200917020316,
   "RNN (10Hz)", 20200919233628,
@@ -408,7 +408,27 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  theme_ipsum_pub(
+  theme_ipsum_ss(
+    grid = "X", base_size = 8
+  )
+```
+
+```{r cnn-results-boxplot-best-derivs}
+# By accelerometer (flipped)
+cv_results_full %>%
+  filter(stringr::str_detect(model_spec, "CF256K20\\-MP10\\-CF128K10") | timestamp == 20200910115426) %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(y = reorder(model_spec, -rmse), x = rmse)) +
+  facet_grid(rows = vars(accel), cols = vars(outcome_unit), scales = "free") +
+  geom_point(size = 1, alpha = .2, position = position_jitter(width = .15, seed = 23)) +
+  geom_boxplot(alpha = .5, outlier.alpha = 0) +
+  stat_summary(geom = "point", fun = mean, fill = "red", shape = 21, color = "black", size = 2) +
+  labs(
+    title = "Leave-One-Subject-Out Cross Validation",
+    subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
+    y = "Model", x = "Per-Subject RMSE (+ Mean)"
+  ) +
+  theme_ipsum_ss(
     grid = "X", base_size = 8
   )
 ```
@@ -418,6 +438,7 @@ Table with mean'd accelerometers, quick glance at "best overall" model ranking
 ```{r cnn-results-table}
 cv_results_full %>%
   filter(model_kind == "CNN" | timestamp == 20200910115426) %>%
+  # filter(stringr::str_detect(model_spec, "CF256K20\\-MP10\\-CF128K10") | timestamp == 20200910115426) %>%
   tidyr::unnest(data) %>%
   group_by(timestamp, model_spec, outcome_unit) %>%
   summarize(
@@ -455,7 +476,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)\nAveraged over accelerometers",
     x = "Model Spec", y = "Per-Subject RMSE (Mean +- SD)"
   ) +
-  theme_ipsum_pub(grid = "X")
+  theme_ipsum_ss(grid = "X")
 ```
 
 Ranked within outcome unit, averaged over accelerometers
@@ -463,6 +484,27 @@ Ranked within outcome unit, averaged over accelerometers
 ```{r cnn-results-ranked}
 cv_results_full %>%
   filter(model_kind == "CNN" | timestamp == 20200910115426) %>%
+  tidyr::unnest(data) %>%
+  group_by(model_spec, timestamp, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse),
+    .groups = "drop"
+  ) %>%
+  group_by(outcome_unit) %>%
+  mutate(rank = rank(mean_rmse)) %>%
+  group_by(model_spec, timestamp) %>%
+  summarize(mean_rank = mean(rank), .groups = "drop") %>%
+  arrange(mean_rank) %>%
+  kable(
+    digits = 2,
+    caption = "Average rank of model across outcome units, averaged over accelerometers"
+  ) %>%
+  kable_styling()
+```
+
+```{r cnn-results-ranked-best-derivs}
+cv_results_full %>%
+  filter(stringr::str_detect(model_spec, "CF256K20\\-MP10\\-CF128K10") | timestamp == 20200910115426) %>%
   tidyr::unnest(data) %>%
   group_by(model_spec, timestamp, outcome_unit) %>%
   summarize(
@@ -498,7 +540,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  theme_ipsum_pub(grid = "X")
+  theme_ipsum_ss(grid = "X")
 ```
 
 Table with mean'd accelerometers, quick glance at "best overall" model ranking
@@ -561,7 +603,7 @@ cv_results_full %>%
     subtitle = "Across all subjects in the respective training set (2/3 of complete data)",
     y = "Model", x = "Per-Subject RMSE (+ Mean)"
   ) +
-  theme_ipsum_pub(grid = "X") +
+  theme_ipsum_ss(grid = "X") +
   theme(legend.position = "top")
 ```
 
