@@ -102,10 +102,6 @@ for (row in seq_len(nrow(metadata))) {
       layer_dense(name = "Dense2-32", activation = "relu", units = 32)  %>%
       layer_batch_normalization() %>%
       layer_dropout(rate = 0.2)  %>%
-      # Dense 3
-      # layer_dense(name = "Dense3-64", activation = "relu", units = 32) %>%
-      # layer_batch_normalization() %>%
-      # layer_dropout(rate = 0.2) %>%
       # Output
       layer_dense(units = 1, name = "output", activation = "linear")
   })
