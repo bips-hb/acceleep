@@ -76,7 +76,8 @@ read_holdout_results <- function(path) {
   path <- fs::dir_ls(path)
 
   # get only latest result
-  path <- rev(sort(path))[[1]]
+  # Can't do that because of the multiple RNNs
+  # path <- rev(sort(path))[[1]]
 
   purrr::map_df(fs::dir_ls(path, glob = "*.rds"), ~{
     tibble::tibble(
