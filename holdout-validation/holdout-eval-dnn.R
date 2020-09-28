@@ -145,7 +145,9 @@ for (row in seq_len(nrow(metadata))) {
   eval_result <- tibble::tibble(
     rmse = prediction_rmse,
     predicted_obs = list(predicted_obs),
-    model_took = model_took
+    model_note = model_note,
+    model_took = model_took,
+    epochs_completed = length(history$metrics$loss)
   )
 
   # Save per-device model
