@@ -523,7 +523,6 @@ cv_results_full %>%
   kable_styling()
 ```
 
-
 ## DNNs
 
 ```{r dnn-results-boxplot}
