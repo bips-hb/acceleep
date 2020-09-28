@@ -39,13 +39,13 @@ for (row in seq_len(nrow(metadata))) {
   cliapp::cli_alert_info("Starting {model_kind} on {metaparams$model} ({metaparams$placement}) / {metaparams$outcome}")
   # browser()
 
-  # Collecting original training data only tpo get it's subject IDs
+  # Collecting original training data only to get it's subject IDs
   # resolution is small here because it doesn't matter, actual training data is read later
   c(c(train_data_full, train_labels_full), c(., .)) %<-% keras_prep_lstm(
     model = metaparams$model, placement = metaparams$placement,
-    outcome = metaparams$outcome, random_seed = 19283, val_split = 1/3,
+    outcome = metaparams$outcome, random_seed = 19283, val_split = 0, # no validation data => full dataset
     interval_length = 30,
-    res = 1 # This is on purposes, just for speedier data ingestion to get the training subject IDs etc.
+    res = 1 # This is on purpose, just for speedier data ingestion to get the training subject IDs etc.
   )
 
   IDs_full <- train_data_full %>%
@@ -227,7 +227,7 @@ for (row in seq_len(nrow(metadata))) {
     cv_result <- bind_rows(cv_result, current_result)
 
     # Save per-subject model maybe?
-    out_dir_models <- here::here("output", "cross-validation", model_kind, run_start, "models")
+    out_dir_models <- here::here("output", "cross-validation-full", model_kind, run_start, "models")
     if (!fs::dir_exists(out_dir_models)) fs::dir_create(out_dir_models)
     filename_model <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-LOSO_{i}-{run_start}.hdf5")
     save_model_hdf5(model, filepath = fs::path(out_dir_models, filename_model))
@@ -237,7 +237,7 @@ for (row in seq_len(nrow(metadata))) {
   # Save result tibble
   filename <- glue::glue("k1-cv-{model_kind}-{metaparams$model}-{metaparams$placement}-{metaparams$outcome}-{metaparams$res}-{run_start}.rds")
 
-  out_dir <- here::here("output", "cross-validation", model_kind, run_start)
+  out_dir <- here::here("output", "cross-validation-full", model_kind, run_start)
   if (!fs::dir_exists(out_dir)) fs::dir_create(out_dir)
 
   # Save CV RMSE results
