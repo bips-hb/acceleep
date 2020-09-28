@@ -9,9 +9,6 @@ reticulate::use_condaenv(condaenv = "acceleep", required = TRUE)
 reticulate:::ensure_python_initialized()
 reticulate::dict(python = "says okay")
 
-# If this is true, only geneactiv hip_right / kJ will be CV'd for quicker iteration
-MINI_RUN <- FALSE
-
 tick <- Sys.time()
 # Declaring metadata ----
 model_kind <- "CNN"
@@ -23,14 +20,9 @@ metadata <- get_overview_table() %>%
   tidyr::expand_grid(outcome = c("kJ", "Jrel", "MET")) %>%
   mutate(res = ifelse(model == "activpal", 20, 100))
 
-if (MINI_RUN) {
-  cliapp::cli_alert_warning("Only running on GENEActiv (right hip) with kJ!")
 
-  metadata <- metadata %>%
-    filter(model == "geneactiv", placement == "hip_right", outcome == "kJ")
-} else {
-  cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
-}
+cliapp::cli_alert_warning("Running on on {nrow(metadata)} accelerometer/outcome combinations!")
+
 
 # Big loop over accelerometers, placements, outcomes
 for (row in seq_len(nrow(metadata))) {
@@ -219,7 +211,6 @@ for (row in seq_len(nrow(metadata))) {
       eval_rmse = sqrt(eval_result[["loss"]]),
       predicted_obs = list(predicted_obs),
       model_note = model_note,
-      mini_run = MINI_RUN,
       model_took = model_took,
       epochs_completed = length(history$metrics$loss)
     )
