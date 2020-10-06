@@ -37,3 +37,41 @@ label_placement <- function(x) {
   })
 
 }
+
+
+#' Label outcome units
+#'
+#' Translates:
+#' - "kJ" -> "kJ/min"
+#' - "Jrel" -> "J/min/kg"
+#' - "MET" is kept as is.
+#'
+#' @param x A string correspnding to a unit as found in the dataset, e.g. `"kJ"`.
+#' @param with_abbr `[FALSE]` If `TRUE`, `"kJ"` and `"Jrel"` are appended "(AEE)"
+#' and "(REE)" respectively.
+#'
+#' @return A character vector of the same length as `x`
+#' @export
+#'
+#' @examples
+#' label_outcome("kJ")
+#' label_outcome("Jrel")
+#' label_outcome(c("kJ", "Jrel", "MET"))
+#'  label_outcome(c("kJ", "Jrel", "MET"), with_abbr = TRUE)
+label_outcome <- function(x, with_abbr = FALSE) {
+
+  if (with_abbr) {
+    dplyr::case_when(
+      x == "kJ" ~ "kJ/min (AEE)",
+      x == "Jrel" ~ "J/min/kg (REE)",
+      TRUE ~ x
+    )
+  } else {
+    dplyr::case_when(
+      x == "kJ" ~ "kJ/min",
+      x == "Jrel" ~ "J/min/kg",
+      TRUE ~ x
+    )
+  }
+
+}
