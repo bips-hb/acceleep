@@ -27,5 +27,5 @@ Translates:
 label_outcome("kJ")
 label_outcome("Jrel")
 label_outcome(c("kJ", "Jrel", "MET"))
- label_outcome(c("kJ", "Jrel", "MET"), with_abbr = TRUE)
+label_outcome(c("kJ", "Jrel", "MET"), with_abbr = TRUE)
 }

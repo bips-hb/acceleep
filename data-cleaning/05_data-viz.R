@@ -2,6 +2,8 @@ library(ggplot2)
 library(dplyr)
 library(acceleep)
 
+usethis::use_directory("output/raw-measurements")
+
 files_overview <- get_overview_table() %>%
   distinct(model, placement)
 
@@ -36,46 +38,46 @@ for (row in seq_len(nrow(files_overview))) {
       geom_path() +
       labs(
         title = "Per-subject Energy Expenditure",
-        y = outcome
+        subtitle = glue::glue("Measure in {label_outcome(outcome, with_abbr = TRUE)}"),
+        x = "Interval Index", y = label_outcome(outcome, with_abbr = FALSE)
       ) +
-      theme_minimal()
-
+      tadaathemes::theme_ipsum_ss()
 
     ggsave(
       plot = p_ee,
       filename = glue::glue("orig-data-ee-{outcome}.png"),
-      path = here::here("output"),
+      path = here::here("output/raw-measurements"),
       width = 20, height = 14
     )
   }
 
 
-  # Accel
-  p_accel <- full_data %>%
-    # filter(ID == "021") %>%
-    arrange(ID, interval, rowid) %>%
-    group_by(ID) %>%
-    mutate(index = seq_along(ID)) %>%
-    tidyr::pivot_longer(cols = c("X", "Y", "Z"), names_to = "axis", values_to = "value") %>%
-    ggplot(aes(x = index, y = value, color = axis)) +
-    facet_wrap(~ID) +
-    geom_path() +
-    scale_color_brewer(palette = "Dark2") +
-    labs(
-      title = "Per-subject Accelerometry data",
-      subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
-      x = "Time Index", y = "Measurement (not normalized)",
-      color = "Axis"
-    ) +
-    theme_minimal() +
-    theme(legend.position = "top")
-
-    ggsave(
-      plot = p_accel,
-      filename = glue::glue("orig-data-accel-{model}-{placement}-{res}Hz.png"),
-      path = here::here("output"),
-      width = 20, height = 14
-    )
+  # # Accel
+  # p_accel <- full_data %>%
+  #   # filter(ID == "021") %>%
+  #   arrange(ID, interval, rowid) %>%
+  #   group_by(ID) %>%
+  #   mutate(index = seq_along(ID)) %>%
+  #   tidyr::pivot_longer(cols = c("X", "Y", "Z"), names_to = "axis", values_to = "value") %>%
+  #   ggplot(aes(x = index, y = value, color = axis)) +
+  #   facet_wrap(~ID) +
+  #   geom_path() +
+  #   scale_color_brewer(palette = "Dark2") +
+  #   labs(
+  #     title = "Per-subject Accelerometry data",
+  #     subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
+  #     x = "Time Index", y = "Measurement (not normalized)",
+  #     color = "Axis"
+  #   ) +
+  #   tadaathemes::theme_ipsum_ss() +
+  #   theme(legend.position = "top")
+  #
+  #   ggsave(
+  #     plot = p_accel,
+  #     filename = glue::glue("orig-data-accel-{model}-{placement}-{res}Hz.png"),
+  #     path = here::here("output/raw-measurements"),
+  #     width = 20, height = 14
+  #   )
 
 }
 
@@ -105,7 +107,7 @@ files_overview %>%
     x = "Time Index", y = "Measurement (not normalized)",
     color = "Axis"
   ) +
-  theme_minimal() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top")
 
 
@@ -141,7 +143,7 @@ p_sdee <- files_overview %>%
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
   ) +
-  theme_minimal() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top")
 
 
@@ -185,7 +187,7 @@ p_sdee_offset <- files_overview %>%
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
   ) +
-  theme_minimal() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top")
 
 ggsave(
@@ -238,7 +240,7 @@ p_axis_order_1 <- ggplot(sample_accel_1hz, aes(x = minute, y = value, color = na
   facet_grid(rows = vars(accel), cols = vars(ID)) +
   geom_path() +
   scale_color_brewer(palette = "Dark2") +
-  hrbrthemes::theme_ipsum_pub() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
     title = "Raw accelerometry data",
@@ -251,7 +253,7 @@ p_axis_order_1 <- ggplot(sample_accel_1hz, aes(x = minute, y = value, color = na
 ggsave(
   plot = p_axis_order_1,
   filename = glue::glue("axis-order-comparison-hip-right-1Hz.png"),
-  path = here::here("output"),
+  path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
 
@@ -259,7 +261,7 @@ p_axis_order_10 <- ggplot(sample_accel_10hz, aes(x = minute, y = value, color = 
   facet_grid(rows = vars(accel), cols = vars(ID)) +
   geom_path() +
   scale_color_brewer(palette = "Dark2") +
-  hrbrthemes::theme_ipsum_pub() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
     title = "Raw accelerometry data",
@@ -272,7 +274,7 @@ p_axis_order_10 <- ggplot(sample_accel_10hz, aes(x = minute, y = value, color = 
 ggsave(
   plot = p_axis_order_10,
   filename = glue::glue("axis-order-comparison-hip-right-10Hz.png"),
-  path = here::here("output"),
+  path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
 
@@ -281,7 +283,7 @@ p_axis_order_100 <- ggplot(sample_accel_100hz, aes(x = minute, y = value, color 
   facet_grid(rows = vars(accel), cols = vars(ID)) +
   geom_path() +
   scale_color_brewer(palette = "Dark2") +
-  hrbrthemes::theme_ipsum_pub() +
+  tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
     title = "Raw accelerometry data",
@@ -294,6 +296,159 @@ p_axis_order_100 <- ggplot(sample_accel_100hz, aes(x = minute, y = value, color 
 ggsave(
   plot = p_axis_order_100,
   filename = glue::glue("axis-order-comparison-hip-right-100Hz.png"),
-  path = here::here("output"),
+  path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
+
+
+# Only first Interval ----
+
+p_axis_order_1_int1 <- sample_accel_1hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval)) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 1Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_1_int1,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-1Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
+p_axis_order_10_int1 <- sample_accel_10hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval)) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 10Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_10_int1,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-10Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
+
+p_axis_order_100_int1 <- sample_accel_100hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval)) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 100Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_100_int1,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-100Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
+
+# An interval in the middle
+
+p_axis_order_1_int40 <- sample_accel_1hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval) + 40) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 1Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_1_int40,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-1Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
+p_axis_order_10_int40 <- sample_accel_10hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval) + 40) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 10Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_10_int40,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-10Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
+
+p_axis_order_100_int40 <- sample_accel_100hz %>%
+  group_by(ID) %>%
+  filter(interval == first(interval) + 40) %>%
+  ggplot(aes(x = minute, y = value, color = name)) +
+  facet_grid(rows = vars(accel), cols = vars(ID)) +
+  geom_path() +
+  scale_color_brewer(palette = "Dark2") +
+  tadaathemes::theme_ipsum_ss() +
+  theme(legend.position = "top") +
+  labs(
+    title = "Raw accelerometry data",
+    subtitle = "Selected subjects and devices at the same placement",
+    x = "Time (m)", y = "Accelerometer Value",
+    color = "Axis",
+    caption = "Resolution: 100Hz"
+  )
+
+ggsave(
+  plot = p_axis_order_100_int40,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-100Hz.png"),
+  path = here::here("output/raw-measurements"),
+  width = 13, height = 8
+)
+
