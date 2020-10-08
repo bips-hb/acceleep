@@ -25,7 +25,7 @@ theme_set(theme_ipsum_ss())
 
 # Iterate over all model output folders, read in latest CV runs, bind together
 cv_results <- purrr::map_df(
-  here::here("output/cross-validation-full", c("LM", "RF", "DNN", "CNN", "RNN")),
+  here::here("output/cross-validation-full", c("LM", "LM0", "RF", "DNN", "CNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(
