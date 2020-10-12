@@ -1,5 +1,5 @@
 ---
-title: "LOSO-CV Results"
+title: "Full LOSO-CV Results"
 output: 
   html_document: 
     toc: yes
