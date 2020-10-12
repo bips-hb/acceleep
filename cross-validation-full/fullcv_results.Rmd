@@ -29,7 +29,8 @@ cv_results <- purrr::map_df(
   ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(
-    model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind)
+    model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind),
+    model_kind = ifelse(model_kind %in% c("RNN (100Hz)", "RNN (20Hz)"), "RNN (100Hz/20Hz)", model_kind)
   )
 ```
 
@@ -327,11 +328,14 @@ cv_results %>%
   rename(Accelerometer = accel, Outcome = outcome_unit) %>%
   select(Outcome, Accelerometer, everything()) %>%
   arrange(Outcome) %>%
+  select(-Outcome) %>%
   kable(
     caption = glue::glue("LOSO-CV results: Mean RMSE (SD)"), escape = FALSE
   ) %>%
   kable_styling() %>%
-  collapse_rows(columns = 1) %>%
+  pack_rows("kJ/min (AEE)", 1, 6) %>%
+  pack_rows("MET", 7, 12) %>%
+  pack_rows("J/min/kg (REE)", 13, 18) %>%
   footnote(general_title = "Bold:", general = "Minimal RMSE per Row (Accelerometer and Outcome)")
 ```
 

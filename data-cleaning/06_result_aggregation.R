@@ -47,7 +47,7 @@ saveRDS(cv_results, file = here::here("output", "results", "cv_results.rds"))
 # Full CV (incomplete)
 
 full_cv_results <- purrr::map_df(
-  here::here("output/cross-validation-full", c("LM", "RF", "CNN", "DNN", "RNN")),
+  here::here("output/cross-validation-full", c("LM", "LM0", "RF", "CNN", "DNN", "RNN")),
   ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(
