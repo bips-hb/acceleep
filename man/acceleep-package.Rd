@@ -4,9 +4,10 @@
 \name{acceleep-package}
 \alias{acceleep}
 \alias{acceleep-package}
-\title{acceleep: Dummy Package}
+\title{acceleep: A Packaged Analysis Project}
 \description{
-This is only a dummy package to (hopefully) ease some workflows.
+Analysis and model development project packaged to utilize
+  package infrastructure for easier maintenance of uility functions.
 }
 \author{
 \strong{Maintainer}: Lukas Burk \email{lukas@quantenbrot.de} (\href{https://orcid.org/0000-0001-7528-3795}{ORCID})
