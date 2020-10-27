@@ -58,18 +58,10 @@ tuning_runs <- tuning_run(
     validation_split = 0.2,
     verbose = 1
   ))
-pushoverr::pushover("Runs are done!", title = "Modelling Hell")
 
 compare_runs(ls_runs(latest_n = 2))
 
-###
-
-View(ls_runs())
-
-clean_runs(ls_runs(completed == FALSE))
-
 view_run(ls_runs(metric_val_loss == min(metric_val_loss)))
-
 
 runs <- ingest_runs()
 

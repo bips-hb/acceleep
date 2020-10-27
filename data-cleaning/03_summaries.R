@@ -65,12 +65,6 @@ rand_accel_files <- files_overview %>%
   sample_n(1) %>%
   ungroup()
 
-purrr::map(rand_accel_files$file_accel, ~{
-   vroom::vroom(.x, n_max = 3000) %>%
-    sample_n(2)
-}) %>%
-  purrr::set_names(rand_accel_files$model) %>%
-  saveRDS(here::here("output/accel_example_lines.rds"))
 
 files_overview %>%
   sample_n(1) %>%
