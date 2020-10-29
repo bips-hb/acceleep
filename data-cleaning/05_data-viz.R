@@ -45,7 +45,8 @@ for (row in seq_len(nrow(files_overview))) {
 
     ggsave(
       plot = p_ee,
-      filename = glue::glue("orig-data-ee-{outcome}.png"),
+      device = cairo_pdf,
+      filename = glue::glue("orig-data-ee-{outcome}.pdf"),
       path = here::here("output/raw-measurements"),
       width = 20, height = 14
     )
@@ -74,7 +75,8 @@ for (row in seq_len(nrow(files_overview))) {
 
     ggsave(
       plot = p_accel,
-      filename = glue::glue("orig-data-accel-{model}-{placement}-{res}Hz.png"),
+      device = cairo_pdf,
+      filename = glue::glue("orig-data-accel-{model}-{placement}-{res}Hz.pdf"),
       path = here::here("output/raw-measurements"),
       width = 20, height = 14
     )
@@ -116,7 +118,8 @@ resolution_comparison_plot <- function(model, placement, ID, intervals, res = c(
 
   ggsave(
     plot = p,
-    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-accel-{model}-{placement}-all-res.png"),
+    device = cairo_pdf,
+    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-accel-{model}-{placement}-all-res.pdf"),
     path = here::here("output/raw-measurements"),
     width = 12, height = 7
   )
@@ -157,7 +160,8 @@ single_subject_ee_plot <- function(ID, intervals, unit) {
 
   ggsave(
     plot = p,
-    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-EE-{unit}.png"),
+    device = cairo_pdf,
+    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-EE-{unit}.pdf"),
     path = here::here("output/raw-measurements"),
     width = 12, height = 7
   )
@@ -168,12 +172,12 @@ single_subject_ee_plot <- function(ID, intervals, unit) {
 single_subject_ee_plot(ID = "028", intervals = c(65:70), unit = "kJ")
 single_subject_ee_plot(ID = "028", intervals = c(65:70), unit = "MET")
 single_subject_ee_plot(ID = "028", intervals = c(65:70), unit = "Jrel")
-single_subject_ee_plot(ID = "028", intervals = c(0:1000), unit = "Jrel")
+# single_subject_ee_plot(ID = "028", intervals = c(0:1000), unit = "Jrel")
 
 # Experiment: Accel SD only ----
 
 files_overview <- get_overview_table() %>%
-  distinct(model, placement)
+  distinct(model, placement, .keep_all = TRUE)
 
 p_sdee <- files_overview %>%
   filter(model == "geneactiv", placement == "hip_right") %>%
@@ -211,7 +215,8 @@ p_sdee <- files_overview %>%
 
 ggsave(
   plot = p_sdee,
-  filename = glue::glue("subj-022-accel-sd-kj-standardized-geneactiv-hip-right.png"),
+  device = cairo_pdf,
+  filename = glue::glue("subj-022-accel-sd-kj-standardized-geneactiv-hip-right.pdf"),
   path = here::here("output"),
   width = 10, height = 6
 )
@@ -254,7 +259,8 @@ p_sdee_offset <- files_overview %>%
 
 ggsave(
   plot = p_sdee_offset,
-  filename = glue::glue("subj-022-accel-sd-kj-offset-standardized-geneactiv-hip-right.png"),
+  device = cairo_pdf,
+  filename = glue::glue("subj-022-accel-sd-kj-offset-standardized-geneactiv-hip-right.pdf"),
   path = here::here("output"),
   width = 10, height = 6
 )
@@ -315,7 +321,8 @@ p_axis_order_1 <- ggplot(sample_accel_1hz, aes(x = minute, y = value, color = na
 
 ggsave(
   plot = p_axis_order_1,
-  filename = glue::glue("axis-order-comparison-hip-right-1Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-hip-right-1Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -338,7 +345,8 @@ p_axis_order_10 <- ggplot(sample_accel_10hz, aes(x = minute, y = value, color = 
 
 ggsave(
   plot = p_axis_order_10,
-  filename = glue::glue("axis-order-comparison-hip-right-10Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-hip-right-10Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -361,7 +369,8 @@ p_axis_order_100 <- ggplot(sample_accel_100hz, aes(x = minute, y = value, color 
 
 ggsave(
   plot = p_axis_order_100,
-  filename = glue::glue("axis-order-comparison-hip-right-100Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-hip-right-100Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -388,7 +397,8 @@ p_axis_order_1_int1 <- sample_accel_1hz %>%
 
 ggsave(
   plot = p_axis_order_1_int1,
-  filename = glue::glue("axis-order-comparison-int1-hip-right-1Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-1Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -412,7 +422,8 @@ p_axis_order_10_int1 <- sample_accel_10hz %>%
 
 ggsave(
   plot = p_axis_order_10_int1,
-  filename = glue::glue("axis-order-comparison-int1-hip-right-10Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-10Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -437,7 +448,8 @@ p_axis_order_100_int1 <- sample_accel_100hz %>%
 
 ggsave(
   plot = p_axis_order_100_int1,
-  filename = glue::glue("axis-order-comparison-int1-hip-right-100Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int1-hip-right-100Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -464,7 +476,8 @@ p_axis_order_1_int40 <- sample_accel_1hz %>%
 
 ggsave(
   plot = p_axis_order_1_int40,
-  filename = glue::glue("axis-order-comparison-int40-hip-right-1Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-1Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -488,7 +501,8 @@ p_axis_order_10_int40 <- sample_accel_10hz %>%
 
 ggsave(
   plot = p_axis_order_10_int40,
-  filename = glue::glue("axis-order-comparison-int40-hip-right-10Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-10Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
@@ -513,7 +527,8 @@ p_axis_order_100_int40 <- sample_accel_100hz %>%
 
 ggsave(
   plot = p_axis_order_100_int40,
-  filename = glue::glue("axis-order-comparison-int40-hip-right-100Hz.png"),
+  device = cairo_pdf,
+  filename = glue::glue("axis-order-comparison-int40-hip-right-100Hz.pdf"),
   path = here::here("output/raw-measurements"),
   width = 13, height = 8
 )
