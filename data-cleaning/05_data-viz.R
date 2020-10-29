@@ -518,3 +518,58 @@ ggsave(
   width = 13, height = 8
 )
 
+
+
+# Model sizes ----
+# Based on models from full-sample LOSO-CV
+
+model_sizes <- purrr::map_df(c("CNN", "DNN", "RF", "LM", "RNN"), ~{
+  #browser()
+  model_dir <- here::here("output", "cross-validation-full", .x) %>%
+    fs::dir_ls()
+
+  tibble::tibble(
+    model_kind = .x,
+    model_file = fs::dir_ls(fs::path(model_dir, "models")),
+    model_size = fs::file_size(model_file)
+  ) %>%
+    mutate(model_file = fs::path_file(model_file))
+})
+
+model_sizes <- model_sizes %>%
+  tidyr::separate(
+    col = model_file,
+    into = c("folds", "method", "model_kind", "model", "placement", "outcome", "res", "left_out", "timestamp"),
+    sep = "-"
+  )
+
+model_sizes %>%
+  ggplot(aes(x = model_kind, y = as.numeric(model_size)/1024^2)) +
+  geom_boxplot() +
+  scale_y_continuous(breaks = seq(0, 20, 1)) +
+  labs(
+    title = "File Size Comparison",
+    subtitle = "All models generated during full-sample LOSO-CV",
+    x = NULL, y = "Model Size (MiB)"
+  ) +
+  tadaathemes::theme_ipsum_ss()
+
+ggsave(
+  plot = last_plot(),
+  device = cairo_pdf,
+  filename = glue::glue("model-size-comparison.pdf"),
+  path = here::here("output/results/"),
+  width = 10, height = 7
+)
+
+model_size_summary <- model_sizes %>%
+  group_by(model_kind) %>%
+  summarize(
+    min = min(model_size),
+    max = max(model_size),
+    median = median(model_size),
+    .groups = "drop"
+  )
+
+save_output_data(model_sizes)
+save_output_data(model_size_summary)
