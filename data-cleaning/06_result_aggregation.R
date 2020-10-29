@@ -182,3 +182,36 @@ holdout_residuals %>%
     x = "Residual = Observed - Predicted", y = "Frequency (scaled)"
   ) +
   tadaathemes::theme_ipsum_ss()
+
+# Completed epochs ----
+library(ggplot2)
+library(dplyr)
+library(acceleep)
+fullcv <- readRDS(here::here("output/results/full_cv_results.rds"))
+
+fullcv %>%
+  filter(model_kind == "CNN") %>%
+  tidyr::unnest(data) %>%
+  group_by(model, placement, outcome_unit) %>%
+  summarize(
+    min = min(epochs_completed),
+    mean = mean(epochs_completed),
+    median = median(epochs_completed),
+    max = max(epochs_completed),
+    .groups = "drop"
+  )
+
+
+fullcv %>%
+  filter(model_kind == "CNN") %>%
+  tidyr::unnest(data) %>%
+  ggplot(aes(x = paste(label_accel_models(model), label_placement(placement), sep = "\n"), y = epochs_completed)) +
+  facet_wrap(vars(outcome_unit), labeller = as_labeller(label_outcome)) +
+  geom_boxplot() +
+  labs(
+    title = "Completed Epochs During LOSO-CV",
+    subtitle = "Number of epochs limited by early-stopping callback",
+    x = "Accelerometer", y = "Completed Epochs"
+  ) +
+  tadaathemes::theme_ipsum_ss()
+
