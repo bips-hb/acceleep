@@ -183,6 +183,66 @@ holdout_residuals %>%
   ) +
   tadaathemes::theme_ipsum_ss()
 
+# Predicted vs Observed scatterplot
+
+predicted_observed_scatter <- function(holdout_residuals, model_kind = "CNN", outcome_unit = "kJ") {
+  require(rlang)
+  #browser()
+
+  xdf <- holdout_residuals %>%
+    filter(.data$model_kind == .env$model_kind) %>%
+    filter(.data$outcome_unit == .env$outcome_unit)
+
+  xyrange <- range(floor(xdf$outcome), ceiling(xdf$predicted) + 1)
+
+  xdf %>%
+    #filter(ID %in% c("042", "043")) %>%
+    ggplot(aes(x = outcome, y = predicted)) + #, fill = ID)) +
+    coord_cartesian(
+      xlim = xyrange,
+      ylim = xyrange
+    ) +
+    geom_point(shape = 21, alpha = .5, color = "black") +
+    geom_abline(color = "black", size = 1) +
+    labs(
+      title = glue::glue("{model_kind}: Predicted vs. Observed"),
+      subtitle = "Hold-out validation models. Reference line (y = x)",
+      x = glue::glue("Observed ({label_outcome(outcome_unit)})"),
+      y = glue::glue("Predicted ({label_outcome(outcome_unit)})")
+    ) +
+    tadaathemes::theme_ipsum_ss()
+}
+
+predicted_observed_scatter(holdout_residuals, "CNN", "Jrel")
+predicted_observed_scatter(holdout_residuals, "DNN", "kJ")
+predicted_observed_scatter(holdout_residuals, "RF", "kJ")
+predicted_observed_scatter(holdout_residuals, "RNN (1Hz)", "kJ")
+predicted_observed_scatter(holdout_residuals, "RNN (10Hz)", "kJ")
+predicted_observed_scatter(holdout_residuals, "RNN (100Hz/20Hz)", "kJ")
+
+
+tidyr::crossing(
+  model_kind = c("CNN", "DNN", "RF", "RNN (1Hz)", "RNN (10Hz)", "RNN (100Hz/20Hz)"),
+  outcome_unit = c("kJ", "MET", "Jrel")
+) %>%
+  purrr::pwalk(~{
+    model_kind <- ..1
+    outcome_unit <- ..2
+    #browser()
+    p <- predicted_observed_scatter(holdout_residuals, model_kind, outcome_unit)
+
+    model_kind <- model_kind %>%
+      stringr::str_replace_all("\\(|\\)|\\/|\\s", "")
+
+    ggsave(
+      plot = p,
+      filename = glue::glue("{model_kind}_observed-predicted-{outcome_unit}.png"),
+      #device = cairo_pdf,
+      path = here::here("output/results/predictions"),
+      width = 8, height = 6
+    )
+  })
+
 # Completed epochs ----
 library(ggplot2)
 library(dplyr)
