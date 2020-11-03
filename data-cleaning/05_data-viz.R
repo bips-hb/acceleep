@@ -33,15 +33,15 @@ for (row in seq_len(nrow(files_overview))) {
       group_by(.data$ID) %>%
       mutate(index = seq_along(.data$ID)) %>%
       rename(outcome = .env$outcome) %>%
-      ggplot(aes(x = index, y = outcome)) +
+      ggplot(aes(x = (index*30)/60, y = outcome)) +
       facet_wrap(~ID) +
       geom_path() +
       labs(
         title = "Per-subject Energy Expenditure",
         subtitle = glue::glue("Measure in {label_outcome(outcome, with_abbr = TRUE)}"),
-        x = "Interval Index", y = label_outcome(outcome, with_abbr = FALSE)
+        x = "Time (minutes from measurement start)", y = label_outcome(outcome, with_abbr = FALSE)
       ) +
-      tadaathemes::theme_ipsum_ss()
+      tadaathemes::theme_ipsum_ss(axis_title_just = "l")
 
     ggsave(
       plot = p_ee,
@@ -58,7 +58,7 @@ for (row in seq_len(nrow(files_overview))) {
     # filter(ID == "021") %>%
     arrange(ID, interval, rowid) %>%
     group_by(ID) %>%
-    mutate(index = seq_along(ID)) %>%
+    mutate(index = (seq_along(.data$ID)/res)/60) %>%
     tidyr::pivot_longer(cols = c("X", "Y", "Z"), names_to = "axis", values_to = "value") %>%
     ggplot(aes(x = index, y = value, color = axis)) +
     facet_wrap(~ID) +
@@ -67,10 +67,10 @@ for (row in seq_len(nrow(files_overview))) {
     labs(
       title = "Per-subject Accelerometry data",
       subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
-      x = "Time Index", y = "Measurement",
+      x = "Time (minutes from measurement start)", y = "Measurement",
       color = "Axis"
     ) +
-    tadaathemes::theme_ipsum_ss() +
+    tadaathemes::theme_ipsum_ss(axis_title_just = "l") +
     theme(legend.position = "top")
 
     ggsave(
