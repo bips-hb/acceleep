@@ -8,14 +8,14 @@ usethis::use_directory("output/results")
 
 # Holdout results ----
 holdout_results <- purrr::map_df(
-  here::here("output/holdout-validation", c("LM", "RF", "DNN", "CNN", "RNN")),
+  here::here("output/holdout-validation", c("LM", "LM0", "RF", "DNN", "CNN", "RNN")),
   ~read_holdout_results(.x)
 ) %>%
   mutate(
+    model_kind = ifelse(model_kind == "LM0", "Null Model", model_kind),
     model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind),
     model_kind = ifelse(model_kind %in% c("RNN (100Hz)", "RNN (20Hz)"), "RNN (100Hz/20Hz)", model_kind)
   )
-
 
 saveRDS(holdout_results, file = here::here("output", "results", "holdout.rds"))
 
@@ -51,6 +51,7 @@ full_cv_results <- purrr::map_df(
   ~read_cv_results(.x, latest_only = FALSE)
 ) %>%
   mutate(
+    model_kind = ifelse(model_kind == "LM0", "Null Model", model_kind),
     model_kind = ifelse(model_kind == "RNN", glue::glue("{model_kind} ({res}Hz)"), model_kind),
     model_kind = ifelse(model_kind %in% c("RNN (100Hz)", "RNN (20Hz)"), "RNN (100Hz/20Hz)", model_kind)
   )
