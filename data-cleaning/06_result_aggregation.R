@@ -17,7 +17,33 @@ holdout_results <- purrr::map_df(
     model_kind = ifelse(model_kind %in% c("RNN (100Hz)", "RNN (20Hz)"), "RNN (100Hz/20Hz)", model_kind)
   )
 
+# After-the-fact per-subject median RMSE
+xdf <- holdout_results %>%
+  tidyr::unnest(data) %>%
+  tidyr::unnest(predicted_obs) %>%
+  group_by(model_kind, accel, outcome_unit, ID) %>%
+  summarize(
+    rmse_persubj = mean(sqrt((outcome - predicted)^2)),
+    .groups = "drop"
+  ) %>%
+  group_by(model_kind, accel, outcome_unit) %>%
+  summarize(
+    mean_rmse = mean(rmse_persubj),
+    sd_rmse = sd(rmse_persubj),
+    median_rmse = median(rmse_persubj),
+    .groups = "drop"
+  )
+
+holdout_results <- full_join(
+  holdout_results,
+  xdf %>%
+    select(model_kind, accel, outcome_unit, mean_rmse, sd_rmse, median_rmse),
+  by = c("model_kind", "accel", "outcome_unit")
+)
+
+
 saveRDS(holdout_results, file = here::here("output", "results", "holdout.rds"))
+rm(xdf)
 
 # Development CV ----
 
