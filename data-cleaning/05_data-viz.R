@@ -67,7 +67,7 @@ for (row in seq_len(nrow(files_overview))) {
     labs(
       title = "Per-subject Accelerometry data",
       subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
-      x = "Time (minutes from measurement start)", y = "Measurement",
+      x = "Time (minutes from measurement start)", y = "Accelerometer Value",
       color = "Axis"
     ) +
     tadaathemes::theme_ipsum_ss() +
@@ -111,7 +111,7 @@ resolution_comparison_plot <- function(model, placement, ID, intervals, res = c(
       title = glue::glue("Raw Accelerometry: {label_accel_models(model)} ({label_placement(placement)})"),
       subtitle = glue::glue("6 intervals (3 minutes) of measurement from randomly selected subject
                             Original resolution ({max(res)}Hz) and downsampled data"),
-      x = "Time (minutes from measurement start)", y = "Accelerometer value",
+      x = "Time (minutes from measurement start)", y = "Accelerometer Value",
       color = "Axis"
     ) +
     tadaathemes::theme_ipsum_ss(grid = "xXY")
