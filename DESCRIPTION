@@ -5,7 +5,7 @@ Authors@R:
     person(given = "Lukas",
            family = "Burk",
            role = c("aut", "cre"),
-           email = "lukas@quantenbrot.de",
+           email = "burk@leibniz-bips.de",
            comment = c(ORCID = "0000-0001-7528-3795"))
 Description: Analysis and model development project packaged to
     utilize package infrastructure for easier maintenance of uility
@@ -13,6 +13,7 @@ Description: Analysis and model development project packaged to
 License: MIT + file LICENSE
 Imports: 
     cliapp,
+    cli,
     dplyr,
     fs,
     ggplot2,
