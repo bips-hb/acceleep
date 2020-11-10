@@ -41,7 +41,7 @@ for (row in seq_len(nrow(files_overview))) {
         subtitle = glue::glue("Measure in {label_outcome(outcome, with_abbr = TRUE)}"),
         x = "Time (minutes from measurement start)", y = label_outcome(outcome, with_abbr = FALSE)
       ) +
-      tadaathemes::theme_ipsum_ss(axis_title_just = "l")
+      tadaathemes::theme_ipsum_ss()
 
     ggsave(
       plot = p_ee,
@@ -70,7 +70,7 @@ for (row in seq_len(nrow(files_overview))) {
       x = "Time (minutes from measurement start)", y = "Measurement",
       color = "Axis"
     ) +
-    tadaathemes::theme_ipsum_ss(axis_title_just = "l") +
+    tadaathemes::theme_ipsum_ss() +
     theme(legend.position = "top")
 
     ggsave(
