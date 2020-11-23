@@ -70,7 +70,7 @@ cv_results <- purrr::map_df(
 saveRDS(cv_results, file = here::here("output", "results", "cv_results.rds"))
 
 
-# Full CV (incomplete)
+# Full CV ----
 
 full_cv_results <- purrr::map_df(
   here::here("output/cross-validation-full", c("LM", "LM0", "RF", "CNN", "DNN", "RNN")),
