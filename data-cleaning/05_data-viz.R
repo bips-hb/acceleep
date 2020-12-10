@@ -37,8 +37,8 @@ for (row in seq_len(nrow(files_overview))) {
       facet_wrap(~ID) +
       geom_path() +
       labs(
-        title = "Per-subject Energy Expenditure",
-        subtitle = glue::glue("Measure in {label_outcome(outcome, with_abbr = TRUE)}"),
+        #title = "Per-subject Energy Expenditure",
+        #subtitle = glue::glue("Measure in {label_outcome(outcome, with_abbr = TRUE)}"),
         x = "Time (minutes from measurement start)", y = label_outcome(outcome, with_abbr = FALSE)
       ) +
       tadaathemes::theme_ipsum_ss()
@@ -65,8 +65,8 @@ for (row in seq_len(nrow(files_overview))) {
     geom_path(alpha = .8) +
     scale_color_brewer(palette = "Dark2") +
     labs(
-      title = "Per-subject Accelerometry data",
-      subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
+      #title = "Per-subject Accelerometry data",
+      #subtitle = glue::glue("{label_accel_models(model)} ({label_placement(placement)}) at {res}Hz"),
       x = "Time (minutes from measurement start)", y = "Accelerometer Value",
       color = "Axis"
     ) +
@@ -108,9 +108,9 @@ resolution_comparison_plot <- function(model, placement, ID, intervals, res = c(
     scale_x_continuous(breaks = seq(0, 1e3, 1), minor_breaks = seq(0, 1e3, .5)) +
     scale_color_brewer(palette = "Dark2") +
     labs(
-      title = glue::glue("Raw Accelerometry: {label_accel_models(model)} ({label_placement(placement)})"),
-      subtitle = glue::glue("6 intervals (3 minutes) of measurement from randomly selected subject
-                            Original resolution ({max(res)}Hz) and downsampled data"),
+      #title = glue::glue("Raw Accelerometry: {label_accel_models(model)} ({label_placement(placement)})"),
+      #subtitle = glue::glue("6 intervals (3 minutes) of measurement from randomly selected subject
+      #                      Original resolution ({max(res)}Hz) and downsampled data"),
       x = "Time (minutes from measurement start)", y = "Accelerometer Value",
       color = "Axis"
     ) +
@@ -119,7 +119,7 @@ resolution_comparison_plot <- function(model, placement, ID, intervals, res = c(
   ggsave(
     plot = p,
     device = cairo_pdf,
-    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-accel-{model}-{placement}-all-res.pdf"),
+    filename = glue::glue("single-subject-ID{ID}-int{paste0(range(intervals), collapse = '_')}-accel-{model}-{placement}-{paste0(res, collapse = '_')}-res.pdf"),
     path = here::here("output/raw-measurements"),
     width = 12, height = 7
   )
@@ -133,6 +133,14 @@ resolution_comparison_plot("activpal", "thigh_right", ID = "028", c(65:70), res 
 resolution_comparison_plot("geneactiv", "wrist_left", ID = "028", c(65:70), res = c(1, 10, 100))
 resolution_comparison_plot("geneactiv", "wrist_right", ID = "028", c(65:70), res = c(1, 10, 100))
 resolution_comparison_plot("geneactiv", "hip_right", ID = "028", c(65:70), res = c(1, 10, 100))
+
+resolution_comparison_plot("actigraph", "hip_left", ID = "028", c(65:70), res = c(100))
+resolution_comparison_plot("actigraph", "hip_left", ID = "028", c(65:70), res = c(10))
+resolution_comparison_plot("actigraph", "hip_left", ID = "028", c(65:70), res = c(1))
+resolution_comparison_plot("activpal", "thigh_right", ID = "028", c(65:70), res = c(20))
+resolution_comparison_plot("activpal", "thigh_right", ID = "028", c(65:70), res = c(10))
+resolution_comparison_plot("activpal", "thigh_right", ID = "028", c(65:70), res = c(1))
+
 
 single_subject_ee_plot <- function(ID, intervals, unit) {
   #browser()
@@ -151,8 +159,8 @@ single_subject_ee_plot <- function(ID, intervals, unit) {
     geom_point() +
     scale_x_continuous(breaks = seq(0, 1e3, 1), minor_breaks = seq(0, 1e3, .5)) +
     labs(
-      title = glue::glue("Energy Expenditure: {label_outcome(unit)}"),
-      subtitle = glue::glue("6 intervals (3 minutes) of measurement from randomly selected subject"),
+      #title = glue::glue("Energy Expenditure: {label_outcome(unit)}"),
+      #subtitle = glue::glue("6 intervals (3 minutes) of measurement from randomly selected subject"),
       x = "Time (minutes from measurement start)", y = label_outcome(unit),
       color = "Axis"
     ) +
@@ -203,8 +211,8 @@ p_sdee <- files_overview %>%
     labels = c(kJ = "kJ", x_sd = "SD(X)", y_sd = "SD(Y)", z_sd = "SD(Z)")
   ) +
   labs(
-    title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
-    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized",
+    # title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
+    # subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized",
     x = "Interval Index", y = "Standardized Value",
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
@@ -248,8 +256,8 @@ p_sdee_offset <- files_overview %>%
     labels = c(kJ = "kJ", x_sd = "SD(X)", y_sd = "SD(Y)", z_sd = "SD(Z)")
   ) +
   labs(
-    title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
-    subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized\nkJ offset by 1 intervals",
+    # title = "Single-Subject Accelerometry Standard Deviation and EE (kJ)",
+    # subtitle = "Accelerometry reduced to standard deviation over a given interval\nAll values standardized\nkJ offset by 1 intervals",
     x = "Interval Index", y = "Standardized Value",
     caption = glue::glue("{label_accel_models('geneactiv')} ({label_placement('hip_right')})"),
     color = ""
@@ -312,8 +320,8 @@ p_axis_order_1 <- ggplot(sample_accel_1hz, aes(x = minute, y = value, color = na
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 1Hz"
@@ -336,8 +344,8 @@ p_axis_order_10 <- ggplot(sample_accel_10hz, aes(x = minute, y = value, color = 
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 10Hz"
@@ -360,8 +368,8 @@ p_axis_order_100 <- ggplot(sample_accel_100hz, aes(x = minute, y = value, color 
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 100Hz"
@@ -388,8 +396,8 @@ p_axis_order_1_int1 <- sample_accel_1hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 1Hz"
@@ -413,8 +421,8 @@ p_axis_order_10_int1 <- sample_accel_10hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 10Hz"
@@ -439,8 +447,8 @@ p_axis_order_100_int1 <- sample_accel_100hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 100Hz"
@@ -467,8 +475,8 @@ p_axis_order_1_int40 <- sample_accel_1hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 1Hz"
@@ -492,8 +500,8 @@ p_axis_order_10_int40 <- sample_accel_10hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 10Hz"
@@ -518,8 +526,8 @@ p_axis_order_100_int40 <- sample_accel_100hz %>%
   tadaathemes::theme_ipsum_ss() +
   theme(legend.position = "top") +
   labs(
-    title = "Raw accelerometry data",
-    subtitle = "Selected subjects and devices at the same placement",
+    # title = "Raw accelerometry data",
+    # subtitle = "Selected subjects and devices at the same placement",
     x = "Time (minutes from measurement start)", y = "Accelerometer Value",
     color = "Axis",
     caption = "Resolution: 100Hz"
@@ -559,13 +567,15 @@ model_sizes <- model_sizes %>%
   )
 
 model_sizes %>%
-  ggplot(aes(x = model_kind, y = as.numeric(model_size)/1024^2)) +
-  geom_boxplot() +
+  mutate(res = factor(res, levels = sort(unique(as.numeric(res))))) %>%
+  ggplot(aes(x = model_kind, y = as.numeric(model_size)/1024^2, fill = res)) +
+  geom_boxplot(alpha = .5) +
   scale_y_continuous(breaks = seq(0, 20, 1)) +
+  scale_fill_brewer(palette = "Set1") +
   labs(
-    title = "File Size Comparison",
-    subtitle = "All models generated during full-sample LOSO-CV",
-    x = NULL, y = "Model Size (MiB)"
+    # title = "File Size Comparison",
+    # subtitle = "All models generated during full-sample LOSO-CV",
+    x = NULL, y = "Model Size (MiB)", fill = "Resolution (Hz)"
   ) +
   tadaathemes::theme_ipsum_ss()
 
@@ -577,8 +587,8 @@ ggsave(
   width = 10, height = 7
 )
 
-model_size_summary <- model_sizes %>%
-  group_by(model_kind) %>%
+model_sizes %>%
+  group_by(model_kind, res) %>%
   summarize(
     min = min(model_size),
     max = max(model_size),
@@ -587,4 +597,3 @@ model_size_summary <- model_sizes %>%
   )
 
 save_output_data(model_sizes)
-save_output_data(model_size_summary)

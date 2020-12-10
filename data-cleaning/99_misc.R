@@ -8,6 +8,7 @@ library(reticulate)
 library(tfruns)
 library(rmarkdown)
 library(fs)
+library(ranger)
 
 sess <- sessioninfo::session_info()
 saveRDS(sess, file = here::here("output/sessioninfo.rds"))
