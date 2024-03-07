@@ -14,3 +14,6 @@
 ^todo\.md$
 ^data-cleaning$
 ^cross-validation$
+^holdout-validation$
+^cross-validation-full$
+^final-model-fit$
