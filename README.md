@@ -2,21 +2,24 @@
 
 > **Accel**erometry-based **E**nergy **E**xpenditure **P**redection (using D**eep** Learning)
 
-Preliminary thesis title: *"Accelerometry-Based Prediction of Energy Expenditure in Preschoolers Using Deep Learning"*
+Thesis title: *"Accelerometry-Based Prediction of Energy Expenditure in Preschoolers Using Deep Learning"*
 
 <!-- badges: start -->
-[![R build status](https://github.com/bips-hb/acceleep/workflows/R-CMD-check/badge.svg)](https://github.com/bips-hb/acceleep/actions)
 <!-- badges: end -->
 
-Associated R code for experimentation.  
-Presumably also containing the actual analysis code for the master's thesis at a later date.
+Associated R code for experimentation and model development.  
+The project is a valid R package, meaning you can `devtools::install()` it to load utility functions for analysis.
 
 This repository is technically a valid R package to enable the documentation of helper functions, but will contain non-standard folders which are noted in `.Rbuildignore` to not interfere with the package building/installation process.
 
 Additional folders with their intended purposes:
 
+- [`R`](R) and [man](man): Utility functions for data preparation, analysis, model development, with their generated documentation.
 - [`simulated-data`](simulated-data): Simulation of structurally similiar accelerometry data, reshaping to keras/tensorflow-compatible shapes for experimentation. (The "dry run"-stage)
 - [`data-cleaning`](data-cleaning): Code to read the raw `.csv` accelerometry and spirometry data, merge them, and save them as more space-efficient `.rds` files.
 - [`modelling`](modelling): Modelling code, i.e. keras models, output if possible, etc.
+
+- [holdout-validation](holdout-validation), [cross-validation](cross-validation), [cross-validation-full](cross-validation-full): Code for final model evaluation runs.
+- [final-model-fit](final-model-fit): Code to fit final models on all available data.
 
 - [`output`](output): Intermediate output for data description, including summary data.
