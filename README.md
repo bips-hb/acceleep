@@ -12,7 +12,19 @@ The project is a valid R package, meaning you can `devtools::install()` it to lo
 
 This repository is technically a valid R package to enable the documentation of helper functions, but will contain non-standard folders which are noted in `.Rbuildignore` to not interfere with the package building/installation process.
 
-Additional folders with their intended purposes:
+## Primary Result / Final Models
+
+The final models can be found in [`output/models`](output/models).
+
+Models are stored in [HDF5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format) and using the following naming convention:
+
+```
+final-<network-type>-<Resolution>Hz-<accelerometer model>-<placement>-<outcome unit>-<timestamp>.hdf5
+```
+
+For example `final-CNN-100Hz-actigraph-hip_left-Jrel-20201029123026.hdf5`
+
+## Project Structure
 
 - [`R`](R) and [man](man): Utility functions for data preparation, analysis, model development, with their generated documentation.
 - [`simulated-data`](simulated-data): Simulation of structurally similiar accelerometry data, reshaping to keras/tensorflow-compatible shapes for experimentation. (The "dry run"-stage)
